@@ -1,0 +1,38 @@
+services:
+  qualcomm-ci:
+    # BUILD
+    image: ${IMAGE_NAME}
+    build:
+      context: .
+      dockerfile: qcom-ci-docker
+      args:
+        BASE_DOCKER_IMAGE: ${BASE_DOCKER_IMAGE}
+        HOST_UID: ${HOST_UID}
+        HOST_GID: ${HOST_GID}
+
+    # RUN
+    container_name: ${CONTAINER_NAME}
+    
+    command: ["sleep", "infinity"]
+    
+    environment:
+      - MANIFEST_REPOSITORY=${MANIFEST_REPOSITORY}
+      - MANIFEST_BRANCH=${MANIFEST_BRANCH}
+      - MANIFEST_XML=${MANIFEST_XML}
+      - IMAGE=${IMAGE}
+      - RELEASE_NAME=${RELEASE_NAME}
+      - BUILD_VERSION=${BUILD_VERSION}
+      - KERNEL_VARIANT=${KERNEL_VARIANT}
+      - QCOM_ROOT_DIR=/home/dev/Qualcomm/${QCS_SOURCES}
+      - PYENV=${PYENV}
+      - MACHINE=${MACHINE}
+      - DISTRO=${DISTRO}
+      - IMDT_PATCH_SCRIPT_PATH=${IMDT_PATCH_SCRIPT_PATH}
+
+    volumes:
+      - ${BUILD_PROJECT_DIR}:/home/dev/Qualcomm
+      - ${BUILD_PROJECT_DIR}/release:/home/dev/Qualcomm/release
+      - ${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/
+      - ${DL_DIR}:/home/dev/downloads
+      - ${SSTATE_DIR}:/home/dev/sstate-cache
+      - ${HOME}/.netrc:/home/dev/.netrc
