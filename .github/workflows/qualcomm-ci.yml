@@ -52,7 +52,7 @@ jobs:
       - name: Verify container is running
         run: |
           docker ps | grep $CONTAINER_NAME
-          
+
       - name: Kill container if it's still alive
         if: always()
         run: |
@@ -60,5 +60,3 @@ jobs:
           chmod +x ./stop-container.sh
           ./stop-container.sh $CONTAINER_NAME 
       
-      - run: Container kill status - ${{ job.status }}.
-
