@@ -21,7 +21,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 #if variables not set, show usage and exit
-if [[ -z "${container_name:-}" || -z "${bsp_dir:-}" || -z "${docker_ver:-}"]]; then
+if [[ -z "${container_name}" || -z "${bsp_dir}" || -z "${docker_ver}" ]]; then
     usage
 fi
 
@@ -42,7 +42,7 @@ echo "Docker Version: $docker_ver"
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
     --name "$container_name" \
-    -v "${bsp_dir}:/home/dev/Qualcomm" \
+        -v $(pwd)/for_docker:/workflows \
     imdtec/imdt-qualcomm-build-setup:${docker_ver} \
     sleep infinity
 
