@@ -38,7 +38,7 @@ jobs:
           cd ${{ github.workspace }}
           container_name="ci_qualcomm_$(date +%s)"
           echo "CONTAINER_NAME=$container_name" >> $GITHUB_ENV
-          ls -l ./qualcomm-docker-run.sh
+          chmod +x ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --container-name $container_name \
           --bsp-dir /mnt/nvme0/jaime/QCS8550-SBC-BSP-v1.1.0 \
