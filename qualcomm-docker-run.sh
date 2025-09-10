@@ -12,7 +12,6 @@ usage() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         --container-name) container_name="$2"; shift ;;
-        --docker-ver) docker_ver="$2"; shift ;;
 
         *) echo "Unknown option $1"; usage ;;
     esac
@@ -20,7 +19,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 #if variables not set, show usage and exit
-if [[ -z "${container_name}" || -z "${docker_ver}" ]]; then
+if [[ -z "${container_name}" ]]; then
     usage
 fi
 
@@ -34,14 +33,13 @@ fi
 # echo "Manifest Branch: $manifest_branch"
 # echo "Manifest XML: $manifest_xml"
 echo "Container Name: $container_name"
-echo "Docker Version: $docker_ver"
 
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
     --name "$container_name" \
         -v $(pwd)/for_docker:/workflows \
-    imdtec/imdt-qualcomm-build-setup:${docker_ver} \
+    imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
 # docker run -it -d --rm -v ${BSP_DIR}/:/Qualcomm --name qualcomm-build-env imdtec/imdt-qualcomm-build-setup:${DOCKER_VERSION}

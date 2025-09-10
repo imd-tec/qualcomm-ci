@@ -41,7 +41,6 @@ jobs:
           chmod +x ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --container-name $container_name \
-          --docker-ver 0.5.1 \
         # --manifest-repo https://github.com/imd-tec/imdt-renesas-manifest.git \
         # --manifest-branch imdt-linux-dunfell \
         # --manifest-xml imdt-v2-bsp-v3.0.0 \
