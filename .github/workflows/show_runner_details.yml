@@ -1,4 +1,4 @@
-name: Build bsp v3.0.0 public
+name: Show Runner Details
 run-name: ${{ github.actor }} is Showing Runner Details 
 defaults:
   run:
