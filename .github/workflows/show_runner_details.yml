@@ -1,0 +1,38 @@
+name: Build bsp v3.0.0 public
+run-name: ${{ github.actor }} is Showing Runner Details 
+defaults:
+  run:
+    #fail on any error
+    shell: bash -ieo pipefail {0}
+on:
+  workflow_dispatch:
+jobs:
+  show-runner-details:
+    runs-on: [self-hosted, linux, x64, qcom-ci]
+    steps:
+      - name: Show runner details
+        run: |
+            echo "Runner OS: $RUNNER_OS"
+            echo "Runner Arch: $RUNNER_ARCH"
+            echo "Runner Temp: $RUNNER_TEMP"
+            echo "Runner Tool Cache: $RUNNER_TOOL_CACHE"
+            echo "Workspace: $GITHUB_WORKSPACE"
+            echo "Job: $GITHUB_JOB"
+            echo "Actor: $GITHUB_ACTOR"
+            echo "Event: $GITHUB_EVENT_NAME"
+
+            echo
+            echo "---- uname ----"
+            uname -a
+            echo
+            echo "---- CPU info ----"
+            lscpu || true
+            echo
+            echo "---- Memory ----"
+            free -h || true
+            echo
+            echo "---- Disk ----"
+            df -h || true
+            echo
+            echo "---- Env Vars ----"
+            env | sort
