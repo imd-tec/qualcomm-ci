@@ -1,0 +1,64 @@
+# This is a basic workflow to help you get started with Actions
+
+name: qualcomm-ci
+run-name: ${{ github.actor }} is running qualcomm-ci
+
+defaults:
+  run:
+    #fail on any error
+    shell: bash -ieo pipefail {0}
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  # push:
+  #   branches: [ "master" ]
+  # pull_request:
+  #   branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  # - cron: '0 21 * * *'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build-qualcomm-bsp:
+    # The type of runner that the job will run on
+    runs-on: [self-hosted, linux, x64]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
+
+      - name: Start Qualcomm container
+        id: qc_env_container
+        #temporarily point to my own directory + static dockerimage version
+        run: |
+          cd ${{ github.workspace }}
+          container_name="ci_qualcomm_$(date +%s)"
+          echo "CONTAINER_NAME=$container_name" >> $GITHUB_ENV
+          ./qualcomm-docker-run.sh \
+          --container-name $container_name \
+          --bsp-dir /mnt/nvme0/jaime/QCS8550-SBC-BSP-v1.1.0 \
+          --docker-ver 0.51 \
+        # --manifest-repo https://github.com/imd-tec/imdt-renesas-manifest.git \
+        # --manifest-branch imdt-linux-dunfell \
+        # --manifest-xml imdt-v2-bsp-v3.0.0 \
+
+      - run: echo "Container run status - ${{ job.status }}."
+
+      - name: stop/kill container if it's still alive
+        if: always()
+        run: |
+          cd ${{ github.workspace }}
+          ./stop-container.sh $CONTAINER_NAME 
+      
+      - run: echo "Container kill status - ${{ job.status }}."
+
