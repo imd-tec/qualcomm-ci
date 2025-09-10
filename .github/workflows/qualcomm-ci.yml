@@ -38,9 +38,11 @@ jobs:
           cd ${{ github.workspace }}
           container_name="ci_qualcomm_$(date +%s)"
           echo "CONTAINER_NAME=$container_name" >> $GITHUB_ENV
+          docker images 
           chmod +x ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --container-name $container_name \
+          
         # --manifest-repo https://github.com/imd-tec/imdt-renesas-manifest.git \
         # --manifest-branch imdt-linux-dunfell \
         # --manifest-xml imdt-v2-bsp-v3.0.0 \
@@ -54,5 +56,5 @@ jobs:
           chmod +x ./stop-container.sh
           ./stop-container.sh $CONTAINER_NAME 
       
-      - run: echo "Container kill status - ${{ job.status }}."
+      - run: Container kill status - ${{ job.status }}.
 
