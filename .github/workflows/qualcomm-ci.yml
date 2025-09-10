@@ -6,7 +6,7 @@ run-name: ${{ github.actor }} is running qualcomm-ci
 defaults:
   run:
     #fail on any error
-    shell: bash -ieo pipefail {0}
+    shell: bash -eo pipefail {0}
 
 # Controls when the workflow will run
 on:
@@ -38,6 +38,7 @@ jobs:
           cd ${{ github.workspace }}
           container_name="ci_qualcomm_$(date +%s)"
           echo "CONTAINER_NAME=$container_name" >> $GITHUB_ENV
+          ls -l ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --container-name $container_name \
           --bsp-dir /mnt/nvme0/jaime/QCS8550-SBC-BSP-v1.1.0 \
