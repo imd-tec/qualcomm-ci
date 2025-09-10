@@ -1,5 +1,5 @@
 name: Build qc bsp v1.0.0 public
-run-name: ${{ github.actor }} is building qc bsp v1.0.0 bsp
+run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 
 defaults:
   run:
@@ -17,8 +17,8 @@ jobs:
     runs-on: [self-hosted, linux, x64, qcom-ci]
 
     steps:
-      - run: Triggered by ${{ github.event_name }} event.
-      - run: Branch is ${{ github.ref }} and your repository is ${{ github.repository }}.
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       
       - name: Checkout repository code
         uses: actions/checkout@v4
