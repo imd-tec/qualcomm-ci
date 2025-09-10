@@ -39,7 +39,7 @@ echo "Container Name: $container_name"
 docker run -d --rm \
     --name "$container_name" \
         -v $(pwd)/for_docker:/workflows \
-    imdtec/imdt-qualcomm-build-setup:0.5.1 \
+    imdtec/imdt-qualcomm-build-setup:0.2 \
     sleep infinity
 
 # docker run -it -d --rm -v ${BSP_DIR}/:/Qualcomm --name qualcomm-build-env imdtec/imdt-qualcomm-build-setup:${DOCKER_VERSION}
