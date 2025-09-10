@@ -9,7 +9,7 @@ defaults:
 on:
   #workflow is executed every night at 9
   workflow_dispatch:
-  - cron: '0 21 * * *'
+  # - cron: '0 21 * * *'
 
 jobs:
   build-qualcomm-bsp:
