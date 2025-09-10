@@ -37,18 +37,19 @@ echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
 echo "Manifest XML: $manifest_xml"
 
-# # Set SSH_DIR if usessh is enabled
-# if [[ "$usessh" -eq 1 ]]; then
-#     echo "# Horrid .ssh permissions hack"
-#     echo "# setting SSH_DIR to ~/ssh_1000 if it exists, else ~/.ssh"
-#     if [ -d ~/ssh_1000 ]; then
-#         SSH_DIR=~/ssh_1000
-#     else
-#         SSH_DIR=~/.ssh
-#     fi
-# fi
+# Set SSH_DIR if usessh is enabled
+if [[ "$usessh" -eq 1 ]]; then
+    echo "# Horrid .ssh permissions hack"
+    echo "# setting SSH_DIR to ~/ssh_1000 if it exists, else ~/.ssh"
+    if [ -d ~/ssh_1000 ]; then
+        SSH_DIR=~/ssh_1000
+    else
+        SSH_DIR=~/.ssh
+    fi
+fi
 
-# set -e
+set -x
+set -e
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
