@@ -12,7 +12,6 @@ usage() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         --container-name) container_name="$2"; shift ;;
-        --bsp-dir) bsp_dir="$2"; shift ;;
         --docker-ver) docker_ver="$2"; shift ;;
 
         *) echo "Unknown option $1"; usage ;;
@@ -21,7 +20,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 #if variables not set, show usage and exit
-if [[ -z "${container_name}" || -z "${bsp_dir}" || -z "${docker_ver}" ]]; then
+if [[ -z "${container_name}" || -z "${docker_ver}" ]]; then
     usage
 fi
 
@@ -35,7 +34,6 @@ fi
 # echo "Manifest Branch: $manifest_branch"
 # echo "Manifest XML: $manifest_xml"
 echo "Container Name: $container_name"
-echo "BSP Directory: $bsp_dir"
 echo "Docker Version: $docker_ver"
 
 

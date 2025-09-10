@@ -41,18 +41,18 @@ jobs:
           chmod +x ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --container-name $container_name \
-          --bsp-dir /mnt/nvme0/jaime/QCS8550-SBC-BSP-v1.1.0 \
-          --docker-ver 0.51 \
+          --docker-ver 0.5.1 \
         # --manifest-repo https://github.com/imd-tec/imdt-renesas-manifest.git \
         # --manifest-branch imdt-linux-dunfell \
         # --manifest-xml imdt-v2-bsp-v3.0.0 \
 
-      - run: echo "Container run status - ${{ job.status }}."
+      - run: Container run status - ${{ job.status }}.
 
-      - name: stop/kill container if it's still alive
+      - name: Kill container if it's still alive
         if: always()
         run: |
           cd ${{ github.workspace }}
+          chmod +x ./stop-container.sh
           ./stop-container.sh $CONTAINER_NAME 
       
       - run: echo "Container kill status - ${{ job.status }}."
