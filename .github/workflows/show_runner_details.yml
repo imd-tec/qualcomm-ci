@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 jobs:
   show-runner-details:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [self-hosted, linux, x64, qcom-ci]
     steps:
       - name: Show runner details
         run: |
