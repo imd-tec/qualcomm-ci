@@ -17,7 +17,7 @@ export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 #Initialize user if UID/GID == 1000
 if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     echo "Host and container user IDs do not match. Executing user initialization scripts."
-    ./
+    
 fi
 # source /home/host/.bashrc
 
