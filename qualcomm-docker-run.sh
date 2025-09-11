@@ -37,15 +37,20 @@ echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
 echo "Manifest XML: $manifest_xml"
 
+# # Set SSH_DIR if usessh is enabled
+# if [[ "$usessh" -eq 1 ]]; then
+#     echo "# Horrid .ssh permissions hack"
+#     echo "# setting SSH_DIR to ~/ssh_1000 if it exists, else ~/.ssh"
+#     if [ -d ~/ssh_1000 ]; then
+#         SSH_DIR=~/ssh_1000
+#     else
+#         SSH_DIR=~/.ssh
+#     fi
+# fi
+
 # Set SSH_DIR if usessh is enabled
 if [[ "$usessh" -eq 1 ]]; then
-    echo "# Horrid .ssh permissions hack"
-    echo "# setting SSH_DIR to ~/ssh_1000 if it exists, else ~/.ssh"
-    if [ -d ~/ssh_1000 ]; then
-        SSH_DIR=~/ssh_1000
-    else
         SSH_DIR=~/.ssh
-    fi
 fi
 
 set -x
@@ -59,7 +64,7 @@ docker run -d --rm \
     # ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
     sleep infinity
 
-bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+# bitbake_command="/wsshorkflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
 
 
