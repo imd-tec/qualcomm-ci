@@ -41,9 +41,9 @@ jobs:
           --swu \
           --v2n \
           --container-name $container_name \
-          --manifest-repo https://github.com/imd-tec/imdt-qcom-manifest \
+          --manifest-repo https://github.com/imd-tec/imdt-qcom-manifest.git \
           --manifest-branch kirkstone \
-          --manifest-xml imdt-qcom-bsp-v1.0.0 \
+          --manifest-xml default \
 
 
       - name: Verify that the container is running
