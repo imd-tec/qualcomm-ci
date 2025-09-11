@@ -55,33 +55,30 @@ id
 
 set -x
 
-ls /mnt/nvme1/qcom_ci/builds/
+if [ -n "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>dev/null)"  ]; then 
+    echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
+    exit 1
+fi
+
+export $CI_DIR=/mnt/nvme1/qcom_ci
 
 #CREATE THE CONTAINER
-#mount sources directory and scripts netrc
+#mount sources and scripts from host machine, and mount build script from repo 
 docker run -d --rm \
     --name "$container_name" \
-     -v /mnt/nvme1/qcom_ci/builds/:/Qualcomm \
-     -v /mnt/nvme1/qcom_ci/scripts/build_netrc.sh:/home/dev/build_netrc.sh \
+    -v $(pwd)/for_docker:/workflows \
+     -v "$CI_DIR/builds/:/Qualcomm" \
+     -v "$CI_DIR/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-docker exec "$container_name" bash -c '
-    ls /Qualcomm
-    ls /home/dev/
-    export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
-    echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
-    ls $QCOM_ROOT_DIR
-    '
-
-
-# chmod +x for_docker/bitbake-build.sh
-# bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+chmod +x for_docker/bitbake-build.sh
+bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
 
 # # Run the script inside the container using docker exec with the container name
-# echo "# Running the script inside the container."
-# docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
+echo "#running ./bitbake-build.sh script inside the container."
+docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
 
 # # Copy the /output directory from the container to the local working_directory
 # echo "# Copying the output directory from the container."

@@ -34,18 +34,10 @@ echo "Build SDK: $sdk"
 echo "Build SWU: $swu"
 echo "Build for V2N: $v2n"
 
-echo "# Script running inside docker container."
-git config --global user.name "CI machine"
-git config --global user.email "imdt@imd-tec.com"
-
-# echo "# Test github authentication"
-# ssh git@github.com
-
-./sync_repos
-
-
-
-
-
-#setup host
-
+#Commands
+ls /Qualcomm
+ls /home/dev/
+export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
+echo QCOM_ROOT_DIR
+$QCOM_ROOT_DIR
+./home/dev/build_netrc.sh
