@@ -53,7 +53,7 @@ if [[ "$usessh" -eq 1 ]]; then
         SSH_DIR=~/.ssh
 fi
 
-set -x
+set -e
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
