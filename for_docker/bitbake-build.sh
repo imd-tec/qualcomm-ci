@@ -37,6 +37,7 @@ echo "Build for V2N: $v2n"
 
 #Commands
 set -euo pipefail -x
+id
 ls /Qualcomm
 ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
