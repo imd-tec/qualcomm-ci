@@ -65,6 +65,13 @@ docker run -d --rm \
 
 bitbake_command="/wsshorkflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
+# Run the script inside the container using docker exec with the container name
+echo "# Running the script inside the container."
+docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
 
+# Copy the /output directory from the container to the local working_directory
+echo "# Copying the output directory from the container."
+mkdir working_directory
+docker cp "${container_name}:/home/imdt/output" "$(pwd)/working_directory"
 
 

@@ -29,7 +29,7 @@ jobs:
         run: |
           docker images
 
-      - name: Start Qualcomm container
+      - name: Run Qualcomm container
         id: qc_env_container
         run: |
           cd ${{ github.workspace }}
