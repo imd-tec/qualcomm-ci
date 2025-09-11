@@ -54,7 +54,6 @@ if [[ "$usessh" -eq 1 ]]; then
 fi
 
 set -e
-set -x
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
@@ -64,7 +63,7 @@ docker run -d --rm \
     ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
     sleep infinity
 
-# bitbake_command="/wsshorkflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+bitbake_command="/wsshorkflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
 
 
