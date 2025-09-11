@@ -72,7 +72,7 @@ docker run -d --rm \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+bitbake_command="bash /workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
 
 # # Run the script inside the container using docker exec with the container name
