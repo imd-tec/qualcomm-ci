@@ -34,10 +34,13 @@ echo "Build SDK: $sdk"
 echo "Build SWU: $swu"
 echo "Build for V2N: $v2n"
 
+
 #Commands
+set -x
 ls /Qualcomm
 ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
-echo QCOM_ROOT_DIR
 $QCOM_ROOT_DIR
+pwd
+./home/dev/build_netrc.sh
 ./home/dev/build_netrc.sh
