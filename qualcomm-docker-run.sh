@@ -55,6 +55,8 @@ fi
 
 set -e
 
+chmod +x for_docker/bitbake-build.sh
+
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
     --name "$container_name" \
@@ -63,7 +65,10 @@ docker run -d --rm \
     ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
     sleep infinity
 
+
 bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+
+id
 
 # Run the script inside the container using docker exec with the container name
 echo "# Running the script inside the container."
