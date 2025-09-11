@@ -54,7 +54,6 @@ if [[ "$usessh" -eq 1 ]]; then
 fi
 
 set -x
-set -e
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
