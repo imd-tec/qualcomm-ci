@@ -45,10 +45,5 @@ $QCOM_ROOT_DIR
 # cat /home/dev/.netrc
 
 #Synchronise Repos
-if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/*patch* 2>/dev/null)" ]; then 
-    echo "Error: no patches found in /mnt/nvme1/qcom_ci/builds/"
-    exit 1
-fi
-
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
 ls /Qualcomm/
