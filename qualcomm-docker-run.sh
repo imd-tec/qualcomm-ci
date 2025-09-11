@@ -53,7 +53,6 @@ id
 #     fi
 # fi
 
-
 #CREATE THE CONTAINER
 #mount sources directory and scripts netrc
 docker run -d --rm \
@@ -63,11 +62,13 @@ docker run -d --rm \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
+ls /mnt/nvme1/qcom_ci/builds/:
 
+ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
 ls $QCOM_ROOT_DIR
-ls /home/dev/
+
 
 
 # chmod +x for_docker/bitbake-build.sh
