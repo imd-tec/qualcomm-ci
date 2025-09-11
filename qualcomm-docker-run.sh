@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail -x
 
 #arguments from Lewis' ver that will probably not be needed...
 usage() {
@@ -37,7 +36,6 @@ echo "Container Name: $container_name"
 echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
 echo "Manifest XML: $manifest_xml"
-id
 
 # # Set SSH_DIR if usessh is enabled
 # if [[ "$usessh" -eq 1 ]]; then
@@ -50,7 +48,8 @@ id
 #     fi
 # fi
 
-set -x
+set -euo pipefail -x
+
 ls /mnt/nvme1/qcom_ci/builds/
 if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then 
     echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
