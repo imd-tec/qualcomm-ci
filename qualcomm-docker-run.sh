@@ -67,7 +67,7 @@ docker run -d --rm \
     -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
-     -v "$CI_DIR/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
+     -v "$CI_DIR/scripts/:/home/dev/tools/" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
