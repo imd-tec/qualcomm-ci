@@ -4,12 +4,13 @@ run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 defaults:
   run:
     #fail on any error
-    shell: bash -eo pipefail {0}
+    shell: bash -ieo pipefail {0}
 
 on:
   #workflow is executed every night at 9
   workflow_dispatch:
-  # - cron: '0 21 * * *'
+  # schedule:
+    # - cron: '0 21 * * *'
 
 jobs:
   build-qualcomm-bsp:
