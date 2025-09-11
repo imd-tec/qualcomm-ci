@@ -53,6 +53,8 @@ id
 #     fi
 # fi
 
+set -x
+
 ls /mnt/nvme1/qcom_ci/builds/
 
 #CREATE THE CONTAINER
