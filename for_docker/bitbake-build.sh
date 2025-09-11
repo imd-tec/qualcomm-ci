@@ -41,6 +41,4 @@ ls /Qualcomm
 ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 $QCOM_ROOT_DIR
-pwd
-./home/dev/build_netrc.sh
-./home/dev/build_netrc.sh
+/home/dev/build_netrc.sh
