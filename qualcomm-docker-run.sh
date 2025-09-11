@@ -1,14 +1,11 @@
 #!/bin/bash
+set -euo pipefail -x
 
-set -e
-
-# Function to display usage
+#arguments from Lewis' ver that will probably not be needed...
 usage() {
     echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
 }
-
-
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -61,19 +58,22 @@ if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then
 fi
 
 export CI_DIR=/mnt/nvme1/qcom_ci
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
 
 #CREATE THE CONTAINER
 #Mount sources and netrc script from host machine. Mount build script from repo 
 docker run -d --rm \
     --name "$container_name" \
+    -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-bitbake_command="bash /workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
-
+# bitbake_command="bash /workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+bitbake_command="bash /workflows/bitbake-build.sh"
 
 # # Run the script inside the container using docker exec with the container name
 echo "Running ./bitbake-build.sh script inside the container."
