@@ -7,6 +7,8 @@ defaults:
     shell: bash -ieo pipefail {0}
 
 on:
+  push:
+    
   #workflow is executed every night at 9
   workflow_dispatch:
   # schedule:
