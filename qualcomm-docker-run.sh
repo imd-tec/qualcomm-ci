@@ -66,13 +66,13 @@ docker run -d --rm \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-ls /Qualcomm
-
-ls /home/dev/
-export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
-echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
-ls $QCOM_ROOT_DIR
-
+dokcer exec -it "$container_name" bash -lc '
+    ls /Qualcomm
+    ls /home/dev/
+    export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
+    echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
+    ls $QCOM_ROOT_DIR
+    '
 
 
 # chmod +x for_docker/bitbake-build.sh
