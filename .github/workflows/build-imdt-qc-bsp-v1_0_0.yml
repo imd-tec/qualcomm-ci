@@ -8,7 +8,9 @@ defaults:
 
 on:
   push:
-    
+    branches:
+      - master
+
   #workflow is executed every night at 9
   workflow_dispatch:
   # schedule:

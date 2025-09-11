@@ -64,7 +64,7 @@ docker run -d --rm \
     sleep infinity
 
 
-export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps.git
+export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
 ls $QCOM_ROOT_DIR
 ls /home/dev/
