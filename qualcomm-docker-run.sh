@@ -54,8 +54,8 @@ id
 # fi
 
 set -x
-
-if [ -n "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then 
+ls /mnt/nvme1/qcom_ci/builds/
+if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then 
     echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
     exit 1
 fi
