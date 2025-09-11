@@ -62,7 +62,7 @@ docker run -d --rm \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-ls /mnt/nvme1/qcom_ci/builds/:
+ls /Qualcomm
 
 ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
