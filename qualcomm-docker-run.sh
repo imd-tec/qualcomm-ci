@@ -1,10 +1,14 @@
 #!/bin/bash
 
+set -e
+
 # Function to display usage
 usage() {
     echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
 }
+
+
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -49,35 +53,34 @@ id
 #     fi
 # fi
 
-# Set SSH_DIR if usessh is enabled
-if [[ "$usessh" -eq 1 ]]; then
-        SSH_DIR=~/.ssh
-fi
 
-set -e
-
-chmod +x for_docker/bitbake-build.sh
-
-# echo "# Running Qualcomm container: $container_name"
+#CREATE THE CONTAINER
+#mount sources directory and scripts netrc
 docker run -d --rm \
     --name "$container_name" \
-    -v $(pwd)/for_docker:/workflows \
+     -v "/mnt/nvme1/qcom_ci/builds/:Qualcomm" \
+     -v "/mnt/nvme1/qcom_ci/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
-    ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
     sleep infinity
 
 
-bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
+export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps.git
+echo "QCOM_ROOT_DIR=$QCOM_ROOT_DIR"
+ls $QCOM_ROOT_DIR
+ls /home/dev/
 
 
+# chmod +x for_docker/bitbake-build.sh
+# bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
 
-# Run the script inside the container using docker exec with the container name
-echo "# Running the script inside the container."
-docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
 
-# Copy the /output directory from the container to the local working_directory
-echo "# Copying the output directory from the container."
-mkdir working_directory
-docker cp "${container_name}:/home/imdt/output" "$(pwd)/working_directory"
+# # Run the script inside the container using docker exec with the container name
+# echo "# Running the script inside the container."
+# docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
+
+# # Copy the /output directory from the container to the local working_directory
+# echo "# Copying the output directory from the container."
+# mkdir working_directory
+# docker cp "${container_name}:/home/imdt/output" "$(pwd)/working_directory"
 
 
