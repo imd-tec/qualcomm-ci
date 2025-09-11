@@ -54,13 +54,14 @@ if [[ "$usessh" -eq 1 ]]; then
 fi
 
 set -e
+set -x
 
 # echo "# Running Qualcomm container: $container_name"
 docker run -d --rm \
     --name "$container_name" \
         -v $(pwd)/for_docker:/workflows \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
-    # ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
+    ${usessh:+-v ${SSH_DIR}:/home/imdt/.ssh:ro} \
     sleep infinity
 
 # bitbake_command="/wsshorkflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"
