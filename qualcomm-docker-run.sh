@@ -53,6 +53,8 @@ id
 #     fi
 # fi
 
+ls /mnt/nvme1/qcom_ci/builds/
+
 #CREATE THE CONTAINER
 #mount sources directory and scripts netrc
 docker run -d --rm \
