@@ -1,12 +1,12 @@
 #!/bin/bash
-set -euo pipefail -x
-
 #Commands
 echo "====================BITBAKE-BUILD COMMANDS========================="
-echo "USER DETAILS"
+echo "CONTAINER USER DETAILS"
 echo "PWD: $(pwd)"
 echo "IDs: $(id)"
 echo "==================================================================="
+
+set -euo pipefail -x
 ls /Qualcomm
 ls /home/dev/
 ls /home/dev/tools/
@@ -17,7 +17,9 @@ export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 #Initialize user if UID/GID == 1000
 if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     echo "Host and container user IDs do not match. Executing user initialization scripts."
-    
+    id
+    /home/dev/tools/new_user_setup_1.sh
+    id
 fi
 # source /home/host/.bashrc
 
