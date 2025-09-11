@@ -42,4 +42,12 @@ ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 $QCOM_ROOT_DIR
 /home/dev/build_netrc.sh
-cat /home/dev/.netrc
+# cat /home/dev/.netrc
+
+#Synchronise Repos
+if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/*patch* 2>/dev/null)" ]; then 
+    echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
+    exit 1
+fi
+
+tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
