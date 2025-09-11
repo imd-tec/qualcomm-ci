@@ -58,7 +58,7 @@ id
 #mount sources directory and scripts netrc
 docker run -d --rm \
     --name "$container_name" \
-     -v "/mnt/nvme1/qcom_ci/builds/:/Qualcomm/" \
+     -v "/mnt/nvme1/qcom_ci/builds/:/Qualcomm" \
      -v "/mnt/nvme1/qcom_ci/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
