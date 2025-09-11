@@ -66,7 +66,7 @@ docker run -d --rm \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
     sleep infinity
 
-docker exec -it "$container_name" bash -lc '
+docker exec "$container_name" bash -c '
     ls /Qualcomm
     ls /home/dev/
     export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
