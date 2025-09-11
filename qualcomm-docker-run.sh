@@ -55,18 +55,18 @@ id
 
 set -x
 
-if [ -n "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>dev/null)"  ]; then 
+if [ -n "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then 
     echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
     exit 1
 fi
 
-export $CI_DIR=/mnt/nvme1/qcom_ci
+export CI_DIR=/mnt/nvme1/qcom_ci
 
 #CREATE THE CONTAINER
-#mount sources and scripts from host machine, and mount build script from repo 
+#Mount sources and netrc script from host machine. Mount build script from repo 
 docker run -d --rm \
     --name "$container_name" \
-    -v $(pwd)/for_docker:/workflows \
+    -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/build_netrc.sh:/home/dev/build_netrc.sh" \
     imdtec/imdt-qualcomm-build-setup:0.5.1 \
@@ -77,7 +77,7 @@ bitbake_command="/workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --
 
 
 # # Run the script inside the container using docker exec with the container name
-echo "#running ./bitbake-build.sh script inside the container."
+echo "Running ./bitbake-build.sh script inside the container."
 docker exec "${container_name}" /bin/bash -c "${bitbake_command}"
 
 # # Copy the /output directory from the container to the local working_directory
