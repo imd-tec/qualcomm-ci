@@ -40,7 +40,7 @@ set -euo pipefail -x
 ls /Qualcomm
 ls /home/dev/
 export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
-$QCOM_ROOT_DIR
+echo $QCOM_ROOT_DIR
 /home/dev/build_netrc.sh
 # cat /home/dev/.netrc
 
