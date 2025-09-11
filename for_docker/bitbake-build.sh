@@ -13,7 +13,7 @@ echo $QCOM_ROOT_DIR
 # cat /home/dev/.netrc
 
 #Initialize user if UID/GID == 1000
-if [ "$HOST_UID" != $(id -u) || "$HOST_GID" != $(id -g) ]; then
+if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     echo "Host and container user IDs do not match. Executing user initialization scripts."
 fi
 # source /home/host/.bashrc
