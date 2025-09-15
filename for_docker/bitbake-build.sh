@@ -45,7 +45,7 @@ set -euo pipefail
 id
 ls -a
 pwd
-cat ~/.netrc
+sudo cat ~/.netrc
 
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
