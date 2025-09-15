@@ -6,6 +6,7 @@ echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
 echo "Who: $(whoami)"
 echo "HOST IDs: $HOST_UID $HOST_GID"
+echo $"MANI_REPO: $MANI_REPO\n MANI_BRANCH: $MANI_BRANCH\n MANI_XML: $MANI_XML"
 echo "==================================================================="
 
 set -euo pipefail -x
@@ -29,14 +30,15 @@ source /home/host/.bashrc
 
 # fi
 
-# sudo -u host -i bash -lc 'ls -a; id; pwd'
 sudo -u host -i bash -l <<'HOST_SHELL'
 set -euo pipefail
 id
 ls -a
 pwd
-HOST_SHELL
 
 #Patch and Synchronise Repos
-# tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
-# ls /Qualcomm/ 
+tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
+ls /Qualcomm/ 
+patch ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh \ ~/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch
+~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+HOST_SHELL

@@ -65,6 +65,8 @@ export HOST_GID=$(id -g)
 docker run -d --rm \
     --name "$container_name" \
     -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" \
+    -e MANI_REPO="$manifest_repo" -e MANI_BRANCH="$manifest_branch" \
+    -e MANI_XML="$manifest_xml" \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \
