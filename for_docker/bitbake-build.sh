@@ -15,10 +15,10 @@ echo "MANI_XML: $MANI_XML"
 echo "==================================================================="
 
 #set key environment variables
-MANI_REPO="$MANI_REPO" 
-MANI_BRANCH="$MANI_BRANCH" 
-MANI_XML="$MANI_XML" 
-QCOM_ROOT_DIR="/Qualcomm/$SRC_REPO"
+export MANI_REPO="$MANI_REPO" 
+export MANI_BRANCH="$MANI_BRANCH" 
+export MANI_XML="$MANI_XML" 
+export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 
 ls /Qualcomm
 ls /home/dev/
@@ -36,15 +36,15 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tool
 # sudo cat /etc/sudoers
 # sudo getent group
 sudo bash /home/dev/tools/new_user_setup_2.sh
-source /home/host/.bashrc
+# source /home/host/.bashrc
 # fi
 
-sudo -preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
+sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
  <<'HOST_SHELL'
 set -euo pipefail
-id
-ls -a
-pwd
+# id
+# ls -a
+# pwd
 # sudo cat ~/.netrc
 
 echo $QCOM_ROOT_DIR
