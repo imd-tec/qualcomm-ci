@@ -30,7 +30,7 @@ source /home/host/.bashrc
 # fi
 
 exec sudo -u host -i bash -lc 'ls -a; id; pwd'
-'
+
 
 #Patch and Synchronise Repos
 # tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
