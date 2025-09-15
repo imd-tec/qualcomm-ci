@@ -26,9 +26,11 @@ if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     sudo cat /etc/sudoers
     sudo getent group
 fi
-# source /home/host/.bashrc
-# ls -a 
 
+bash /home/dev/tools/build_netrc.sh
+source /home/host/.bashrc
+ls -a 
+id
 
 
 #Patch and Synchronise Repos
