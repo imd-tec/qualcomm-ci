@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#arguments from Lewis' ver that will probably not be needed...
+#soem arguments are from Lewis' ver that will probably not be needed...
 usage() {
     echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
