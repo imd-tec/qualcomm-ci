@@ -4,7 +4,7 @@ echo "====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
 echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
-echo "Who: $(who)"
+# echo "Who: $(who)"
 echo "HOST IDs: $HOST_UID $HOST_GID"
 echo "==================================================================="
 
@@ -26,8 +26,8 @@ if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     # sudo cat /etc/sudoers
     # sudo getent group
 fi
-source /home/host/.bashrc
-id
+# source /home/host/.bashrc
+# ls -a 
 
 
 
