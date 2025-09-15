@@ -29,8 +29,13 @@ source /home/host/.bashrc
 
 # fi
 
-exec sudo -u host -i bash -lc 'ls -a; id; pwd'
-
+# sudo -u host -i bash -lc 'ls -a; id; pwd'
+sudo -u host -i bash -lc <<'HOST_SHELL'
+set -euo pipefail
+id
+ls -a
+pwd
+HOST_SHELL
 
 #Patch and Synchronise Repos
 # tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
