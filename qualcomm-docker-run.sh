@@ -2,7 +2,7 @@
 
 #arguments from Lewis' ver that will probably not be needed...
 usage() {
-    echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
+    echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
 }
 
@@ -13,6 +13,7 @@ while [[ "$#" -gt 0 ]]; do
         --swu) swu=1 ;;
         --v2n) v2n=1 ;;
         --container-name) container_name="$2"; shift ;;
+        --source-repo) source_repo="$2"; shift ;;
         --manifest-repo) manifest_repo="$2"; shift ;;
         --manifest-xml) manifest_xml="$2"; shift ;;
         --manifest-branch) manifest_branch="$2"; shift ;;
@@ -22,7 +23,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate arguments
-if [[ -z "$container_name" || -z "$manifest_repo" || -z "$manifest_xml" || -z "$manifest_branch" ]]; then
+if [[ -z "$container_name" || -z "$source_repo" || -z "$manifest_repo" || -z "$manifest_xml" || -z "$manifest_branch" ]]; then
     echo "Error: Missing required arguments."
     usage
 fi
@@ -33,6 +34,7 @@ echo "Build SDK: $sdk"
 echo "Build SWU: $swu"
 echo "Build for V2N: $v2n"
 echo "Container Name: $container_name"
+echo "Source repo: $source_repo"
 echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
 echo "Manifest XML: $manifest_xml"
@@ -65,8 +67,8 @@ export HOST_GID=$(id -g)
 docker run -d --rm \
     --name "$container_name" \
     -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" \
-    -e MANI_REPO="$manifest_repo" -e MANI_BRANCH="$manifest_branch" \
-    -e MANI_XML="$manifest_xml" \
+    -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
+    -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \

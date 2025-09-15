@@ -1,21 +1,31 @@
 #!/bin/bash
 #Commands
+set -euo pipefail -x
+
+echo " "
 echo "====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
 echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
-echo "Who: $(whoami)"
 echo "HOST IDs: $HOST_UID $HOST_GID"
-echo $"MANI_REPO: $MANI_REPO\n MANI_BRANCH: $MANI_BRANCH\n MANI_XML: $MANI_XML"
+echo "SOURCES_REPO: $SRC_REPO"
+echo "MANI_REPO: $MANI_REPO"
+echo "MANI_BRANCH: $MANI_BRANCH" 
+echo "MANI_XML: $MANI_XML"
 echo "==================================================================="
 
-set -euo pipefail -x
+#set key environment variables
+MANI_REPO="$MANI_REPO" 
+MANI_BRANCH="$MANI_BRANCH" 
+MANI_XML="$MANI_XML" 
+QCOM_ROOT_DIR=/Qualcomm/$SRC_REPO
+
 ls /Qualcomm
 ls /home/dev/
 ls /home/dev/tools/
-export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
-/home/dev/tools/build_netrc.sh
 
+#build netrc file
+/home/dev/tools/build_netrc.sh
 # cat /home/dev/.netrc
 
 #Create new user with matching IDs if ID does not match host
@@ -27,18 +37,33 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tool
 # sudo getent group
 sudo bash /home/dev/tools/new_user_setup_2.sh
 source /home/host/.bashrc
-
 # fi
 
-sudo -u host -i bash -l <<'HOST_SHELL'
+sudo -E=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
+ <<'HOST_SHELL'
 set -euo pipefail
 id
 ls -a
 pwd
+cat ~/.netrc
 
-#Patch and Synchronise Repos
-tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
-ls /Qualcomm/ 
-patch ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh \ ~/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch
-~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+echo $QCOM_ROOT_DIR
+echo $MANI_REPO
+echo $MANI_BRANCH
+echo $MANI_XML
+
+
+#patch and synchronise Repos
+# tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
+# ls /Qualcomm/ 
+# patch ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh \ ~/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch
+# ~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+
+# #configure kernel directories
+# ~/build_scripts/setup_kernel.sh
+
+# #apply IMDT patchs to QC source
+# cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
+# ./imdt-patch-qcs8550-build.sh
+
 HOST_SHELL
