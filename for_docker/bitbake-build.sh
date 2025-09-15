@@ -30,7 +30,7 @@ source /home/host/.bashrc
 # fi
 
 # sudo -u host -i bash -lc 'ls -a; id; pwd'
-sudo -u host -i bash -lc <<'HOST_SHELL'
+sudo -u host -i bash -l <<'HOST_SHELL'
 set -euo pipefail
 id
 ls -a
