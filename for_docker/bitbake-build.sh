@@ -17,20 +17,21 @@ export QCOM_ROOT_DIR=/Qualcomm/qcs8550-le-1-0_amss_standard_oem_apqgps
 
 # cat /home/dev/.netrc
 
-#Initialize user if UID/GID == 1000
+#Create new user with matching IDs if UID/GID == 1000
 if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     echo "Host and container user IDs do not match. Executing user initialization scripts."
     id
-    # sudo bash /home/dev/tools/new_user_setup_1.sh
     sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tools/new_user_setup_1.sh'
     # sudo cat /etc/sudoers
     # sudo getent group
+    sudo bash /home/dev/tools/new_user_setup_2.sh
+    source /home/host/.bashrc
+    sudo -u host -i
+    ls -a 
+    id
 fi
 
-sudo bash /home/dev/tools/new_user_setup_2.sh
-source /home/host/.bashrc
-ls -a 
-id
+
 
 
 #Patch and Synchronise Repos
