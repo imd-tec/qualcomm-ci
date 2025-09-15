@@ -18,7 +18,7 @@ echo "==================================================================="
 MANI_REPO="$MANI_REPO" 
 MANI_BRANCH="$MANI_BRANCH" 
 MANI_XML="$MANI_XML" 
-QCOM_ROOT_DIR=/Qualcomm/$SRC_REPO
+QCOM_ROOT_DIR=""/Qualcomm/$SRC_REPO"
 
 ls /Qualcomm
 ls /home/dev/
@@ -45,7 +45,7 @@ set -euo pipefail
 id
 ls -a
 pwd
-sudo cat ~/.netrc
+# sudo cat ~/.netrc
 
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
