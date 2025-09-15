@@ -27,7 +27,7 @@ if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     # sudo getent group
 fi
 
-bash /home/dev/tools/new_user_setup_2.sh
+sudo bash /home/dev/tools/new_user_setup_2.sh
 source /home/host/.bashrc
 ls -a 
 id
