@@ -4,6 +4,7 @@ echo "====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
 echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
+echo "Who: $(who)"
 echo "HOST IDs: $HOST_UID $HOST_GID"
 echo "==================================================================="
 
