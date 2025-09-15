@@ -23,8 +23,8 @@ if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     id
     # sudo bash /home/dev/tools/new_user_setup_1.sh
     sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tools/new_user_setup_1.sh'
-    # sudo cat /etc/sudoers
-    # sudo getent group
+    sudo cat /etc/sudoers
+    sudo getent group
 fi
 # source /home/host/.bashrc
 # ls -a 
