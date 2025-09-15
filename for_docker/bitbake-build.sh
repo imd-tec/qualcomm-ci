@@ -39,7 +39,7 @@ sudo bash /home/dev/tools/new_user_setup_2.sh
 source /home/host/.bashrc
 # fi
 
-sudo -E=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
+sudo -preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
  <<'HOST_SHELL'
 set -euo pipefail
 id
