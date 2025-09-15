@@ -27,7 +27,7 @@ if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
     # sudo getent group
 fi
 source /home/host/.bashrc
-# id
+id
 
 
 
