@@ -29,9 +29,7 @@ source /home/host/.bashrc
 
 # fi
 
-exec sudo -u host -i bash -lc '
-ls -a
-id
+exec sudo -u host -i bash -lc 'ls -a; id; pwd'
 '
 
 #Patch and Synchronise Repos
