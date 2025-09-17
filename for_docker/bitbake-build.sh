@@ -26,19 +26,14 @@ export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 
 
 #execute user creation scripts to avoid mismatches with host and container IDs
-sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_setup_1.sh
+# sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_setup_1.sh
 # sudo cat /etc/sudoers
 # sudo getent group
 sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
-sudo -u host bash -c 'cat > ~/.bash_profile <<EOF
-if [ -f ~/.bashrc ]; then
-    . ~/.bashrc
-fi
-EOF'
 
-sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
-set -euo pipefail
+# sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
+# set -euo pipefail
 
 #CHECK IF .BASHRC IS LINKED
 if [ -n "$(diff /home/dev/.bashrc /home/host/.bashrc)" ]; then
