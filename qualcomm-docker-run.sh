@@ -54,21 +54,24 @@ echo "Manifest XML: $manifest_xml"
 
 set -euo pipefail -x
 
-ls /mnt/nvme1/qcom_ci/builds/
-if [ -z "$(ls -A /mnt/nvme1/qcom_ci/builds/ 2>/dev/null)" ]; then 
-    echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
-    exit 1
-fi
 
+
+#set environment variables for ID and directory
 export CI_DIR=/mnt/nvme1/qcom_ci
 export HOST_UID=$(id -u)
 export HOST_GID=$(id -g)
+
+#verify that (some) build files are present
+if [[ -z "$(ls -A "$CI_DIR/mnt/nvme1/qcom_ci/builds/" 2>/dev/null)" ]]; then 
+    echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
+    exit 1
+fi
 
 #CREATE THE CONTAINER
 #Mount sources and netrc script from host machine. Mount build script from repo 
 #include user intialization in docker build process
 #ensure that image is based on my recent build ver
-docker build -f /mnt/nvme1/qcom/docker/qc_ci_docker -t imdt-qualcomm-ci:"$docker_version" /mnt/nvme1/qcom_ci/docker
+docker build -f /mnt/nvme1/qcom_ci/docker/qc_ci_docker -t imdt-qualcomm-ci:"$docker_version" /mnt/nvme1/qcom_ci/docker
 
 docker run -d --rm \
     --name "$container_name" \
@@ -80,10 +83,6 @@ docker run -d --rm \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
-
-# # create host user
-# docker exec "$container_name" bash -c \
-#  "sudo bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
 docker exec "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
