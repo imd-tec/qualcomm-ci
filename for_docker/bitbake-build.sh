@@ -32,32 +32,33 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_set
 sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
 
-sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
- <<'HOST_SHELL'
+sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l <<'HOST_SHELL'
 set -euo pipefail -x
 
-#source host changes
 source /home/host/.bashrc
 
 #CREATE NETRC FILE
-echo "CREATING .netrc"
+echo; echo "CREATING NETRC"
 /home/host/tools/build_netrc.sh
 
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
 echo $MANI_BRANCH
 echo $MANI_XML
+echo "SHELL:  $SHELL"
+echo "BASH_ENV: $BASH_ENV"
+echo "PATH:   $PATH"
 
 #PATCH AND SYNCHRONISE REPOS
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
 # ls /Qualcomm/
 
-echo "PATCHING"
-PATCHFILE="/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch"
+echo; echo "PATCHING"
+PATCHFILE="/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
 TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
 patch --batch "$TARGET" "$PATCHFILE" 
 
-echo "SYNCHRONISING REPOS"
+echo; echo "SYNCHRONISING REPOS"
 ~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
 # #configure kernel directories
