@@ -33,13 +33,19 @@ sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
 
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l <<'HOST_SHELL'
-set -euo pipefail -x
+set -euo pipefail
 
-whoami
+#CHECK IF .BASHRC IS LINKED
+if [ -n "$(diff /home/dev/.bashrc /home/host/.bashrc)" ]; then
+    echo "Error: .bashrc no linked to host"
+    exit 1
+fi
+
+# whoami
 source /home/host/.bashrc
-echo
-cat ~/.bashrc
-echo 
+# echo
+# cat ~/.bashrc
+# echo 
 
 #CREATE NETRC FILE
 echo; echo "CREATING NETRC"
@@ -51,8 +57,6 @@ echo $QCOM_ROOT_DIR
 echo $MANI_REPO
 echo $MANI_BRANCH
 echo $MANI_XML
-
-
 
 #PATCH AND SYNCHRONISE REPOS
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
