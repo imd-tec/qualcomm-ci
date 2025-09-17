@@ -71,7 +71,9 @@ fi
 #Mount sources and netrc script from host machine. Mount build script from repo 
 #include user intialization in docker build process
 #ensure that image is based on my recent build ver
-docker build -f /mnt/nvme1/qcom_ci/docker/qc_ci_docker -t imdt-qualcomm-ci:"$docker_version" /mnt/nvme1/qcom_ci/docker
+docker build -f "$CI_DIR/docker/qc_ci_docker" \
+        -t imdt-qualcomm-ci:"$docker_version" \
+        "$CI_DIR/docker"
 
 docker run -d --rm \
     --name "$container_name" \
