@@ -25,7 +25,7 @@ ls /home/dev/
 ls /home/dev/tools/
 
 #build netrc file
-/home/dev/tools/build_netrc.sh
+
 # cat /home/dev/.netrc
 
 #Create new user with matching IDs if ID does not match host
@@ -35,13 +35,14 @@ id
 sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tools/user_setup_1.sh'
 # sudo cat /etc/sudoers
 # sudo getent group
-sudo bash user_setup_2.sh
+sudo /home/dev/tools/bash user_setup_2.sh
 # fi
 
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
  <<'HOST_SHELL'
 set -euo pipefail -x
 source /home/host/.bashrc
+/home/host/tools/build_netrc.sh
 # id
 # ls -a
 # pwd
