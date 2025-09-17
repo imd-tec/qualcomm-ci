@@ -1,6 +1,6 @@
 #!/bin/bash
 #Commands
-set -euo pipefail -x
+set -euo pipefail
 
 echo " "
 echo "====================BITBAKE-BUILD COMMANDS========================="
@@ -20,9 +20,9 @@ export MANI_BRANCH="$MANI_BRANCH"
 export MANI_XML="$MANI_XML" 
 export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 
-ls /Qualcomm/
-ls /home/dev/
-ls /home/dev/tools/
+# ls /Qualcomm/
+# ls /home/dev/
+# ls /home/dev/tools/
 
 
 #execute user creation scripts to avoid mismatches with host and container IDs
@@ -31,8 +31,15 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_set
 # sudo getent group
 sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
+cat > /home/host/.bash_profile <<'EOF'
+# Source .bashrc for login shells
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+EOF
+chown host:host /home/host/.bash_profile
 
-sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l <<'HOST_SHELL'
+sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
 set -euo pipefail
 
 #CHECK IF .BASHRC IS LINKED
