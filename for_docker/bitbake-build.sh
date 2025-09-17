@@ -46,7 +46,6 @@ echo $MANI_REPO
 echo $MANI_BRANCH
 echo $MANI_XML
 echo "SHELL:  $SHELL"
-echo "BASH_ENV: $BASH_ENV"
 echo "PATH:   $PATH"
 
 #PATCH AND SYNCHRONISE REPOS
