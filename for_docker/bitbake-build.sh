@@ -36,6 +36,9 @@ sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash
 set -euo pipefail -x
 
 source /home/host/.bashrc
+echo
+cat ~/.bashrc
+echo 
 
 #CREATE NETRC FILE
 echo; echo "CREATING NETRC"
@@ -46,9 +49,7 @@ echo $MANI_REPO
 echo $MANI_BRANCH
 echo $MANI_XML
 
-echo
-cat ~/.pyenv
-echo 
+
 
 #PATCH AND SYNCHRONISE REPOS
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
