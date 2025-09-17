@@ -82,7 +82,7 @@ docker exec "$container_name" bash -lc \
  "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
-docker exec --user host "$container_name" bash -lc " bash /workflows/bitbake-build.sh"
+docker exec --user host "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
 
 
 # # Copy the /output directory from the container to the local working_directory
