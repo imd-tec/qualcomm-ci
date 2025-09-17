@@ -35,6 +35,7 @@ sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l <<'HOST_SHELL'
 set -euo pipefail -x
 
+whoami
 source /home/host/.bashrc
 echo
 cat ~/.bashrc
@@ -44,6 +45,8 @@ echo
 echo; echo "CREATING NETRC"
 /home/host/tools/build_netrc.sh
 
+#ENV VARIABLES
+echo; echo "ENVIRONMENT VARIABLES
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
 echo $MANI_BRANCH
