@@ -79,7 +79,7 @@ docker run -d --rm \
 
 
 # create host user
-docker exec "$container_name" bash -c \
+docker exec "$container_name" bash -lc \
  "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
