@@ -66,25 +66,27 @@ export HOST_GID=$(id -g)
 
 #CREATE THE CONTAINER
 #Mount sources and netrc script from host machine. Mount build script from repo 
+#include user intialization in docker build process
+#ensure that image is based on my recent build ver
+docker build -f /mnt/nvme1/qcom/docker/qc_ci_docker -t imdt-qualcomm-ci:"$docker_version" /mnt/nvme1/qcom_ci/docker
+
 docker run -d --rm \
     --name "$container_name" \
-    -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \
-    imdtec/imdt-qualcomm-build-setup:$docker_version\
+    imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
 
-# create host user
-docker exec "$container_name" bash -c \
- "sudo bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
+# # create host user
+# docker exec "$container_name" bash -c \
+#  "sudo bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
-docker exec --user host "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
-
+docker exec "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
 
 # # Copy the /output directory from the container to the local working_directory
 # echo "# Copying the output directory from the container."

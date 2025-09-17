@@ -20,47 +20,14 @@ export MANI_BRANCH="$MANI_BRANCH"
 export MANI_XML="$MANI_XML" 
 export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 
-# ls /Qualcomm/
-# ls /home/dev/
-# ls /home/dev/tools/
-
-#execute user creation scripts to avoid mismatches with host and container IDs
-# sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_setup_1.sh
-# sudo cat /etc/sudoers
-# sudo getent group
-
-bash /home/dev/tools/user_setup_2.sh
-
-# sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
-# set -euo pipefail
-
-#CHECK IF .BASHRC IS LINKED
-if [ -n "$(diff /home/dev/.bashrc /home/host/.bashrc)" ]; then
-    echo "Error: .bashrc no linked to host"
-    exit 1
-fi
-
-# whoami
-source /home/host/.bashrc
-# echo
-# cat ~/.bashrc
-# echo 
 
 #CREATE NETRC FILE
 echo; echo "CREATING NETRC"
 bash /home/host/tools/build_netrc.sh
 
-#ENV VARIABLES
-echo; echo "ENVIRONMENT VARIABLES"
-echo $QCOM_ROOT_DIR
-echo $MANI_REPO
-echo $MANI_BRANCH
-echo $MANI_XML
-
 #PATCH AND SYNCHRONISE REPOS
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
 # ls /Qualcomm/
-
 echo; echo "PATCHING"
 PATCHFILE="/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
 TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
