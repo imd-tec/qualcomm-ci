@@ -1,6 +1,6 @@
 #!/bin/bash
 #Commands
-set -euo pipefail
+set -euo pipefail -x
 
 echo " "
 echo "====================BITBAKE-BUILD COMMANDS========================="
@@ -25,17 +25,12 @@ ls /home/dev/
 ls /home/dev/tools/
 
 
-# cat /home/dev/.netrc
-
-#Create new user with matching IDs if ID does not match host
-# if [ "$HOST_UID" != $(id -u) ] || [ "$HOST_GID" != $(id -g) ]; then
-# echo "Host and container user IDs do not match. Executing user initialization scripts."
-id
-sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash -lc 'bash /home/dev/tools/user_setup_1.sh'
+#execute user creation scripts to avoid mismatches with host and container IDs
+sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_setup_1.sh
 # sudo cat /etc/sudoers
 # sudo getent group
-sudo bash /home/dev/tools/user_setup_2.sh
-# fi
+sudo -u host -i bash /home/dev/tools/user_setup_2.sh
+
 
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
  <<'HOST_SHELL'
@@ -44,12 +39,9 @@ set -euo pipefail -x
 #source host changes
 source /home/host/.bashrc
 
-#build netrc file
+#CREATE NETRC FILE
+echo "CREATING .netrc"
 /home/host/tools/build_netrc.sh
-# id
-# ls -a
-# pwd
-# sudo cat ~/.netrc
 
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
