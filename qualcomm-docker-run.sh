@@ -57,12 +57,12 @@ set -euo pipefail -x
 
 
 #set environment variables for ID and directory
-export CI_DIR=/mnt/nvme1/qcom_ci
+export CI_DIR="/mnt/nvme1/qcom_ci"
 export HOST_UID=$(id -u)
 export HOST_GID=$(id -g)
 
 #verify that (some) build files are present
-if [[ -z "$(ls -A "$CI_DIR/mnt/nvme1/qcom_ci/builds/" 2>/dev/null)" ]]; then 
+if [[ -z "$(ls -A "$CI_DIR/builds/" 2>/dev/null)" ]]; then 
     echo "Error: no files found in /mnt/nvme1/qcom_ci/builds/"
     exit 1
 fi
