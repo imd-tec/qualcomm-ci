@@ -46,7 +46,7 @@ echo; echo "CREATING NETRC"
 /home/host/tools/build_netrc.sh
 
 #ENV VARIABLES
-echo; echo "ENVIRONMENT VARIABLES
+echo; echo "ENVIRONMENT VARIABLES"
 echo $QCOM_ROOT_DIR
 echo $MANI_REPO
 echo $MANI_BRANCH
