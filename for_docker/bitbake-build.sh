@@ -24,7 +24,6 @@ export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 # ls /home/dev/
 # ls /home/dev/tools/
 
-
 #execute user creation scripts to avoid mismatches with host and container IDs
 # sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_setup_1.sh
 # sudo cat /etc/sudoers
@@ -68,7 +67,7 @@ TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
 patch --batch "$TARGET" "$PATCHFILE" 
 
 echo; echo "SYNCHRONISING REPOS"
-~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+# ~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
 # #configure kernel directories
 # ~/build_scripts/setup_kernel.sh
@@ -76,5 +75,3 @@ echo; echo "SYNCHRONISING REPOS"
 # #apply IMDT patchs to QC source
 # cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
 # ./imdt-patch-qcs8550-build.sh
-
-HOST_SHELL

@@ -78,8 +78,9 @@ docker run -d --rm \
 
 
 # create host user
+chmod +x scripts/user_setup_1.sh
 docker exec "$container_name" bash -lc \
- "/home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
+ "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
 docker exec --user host "$container_name" bash -l -c "/workflows/bitbake-build.sh"
