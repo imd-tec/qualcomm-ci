@@ -68,6 +68,7 @@ export HOST_GID=$(id -g)
 #Mount sources and netrc script from host machine. Mount build script from repo 
 docker run -d --rm \
     --name "$container_name" \
+    -e HOST_UID="$HOST_UID" -e HOST_GID="$HOST_GID" 
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
     -v "$PWD/for_docker:/workflows"\
@@ -78,7 +79,7 @@ docker run -d --rm \
 
 
 # create host user
-docker exec "$container_name" bash -lc \
+docker exec "$container_name" bash -l -c \
  "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
