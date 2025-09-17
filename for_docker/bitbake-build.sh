@@ -29,8 +29,7 @@ export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
 # sudo cat /etc/sudoers
 # sudo getent group
 
-
-/home/dev/tools/user_setup_2.sh
+bash /home/dev/tools/user_setup_2.sh
 
 # sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
 # set -euo pipefail
@@ -49,7 +48,7 @@ source /home/host/.bashrc
 
 #CREATE NETRC FILE
 echo; echo "CREATING NETRC"
-/home/host/tools/build_netrc.sh
+bash /home/host/tools/build_netrc.sh
 
 #ENV VARIABLES
 echo; echo "ENVIRONMENT VARIABLES"
