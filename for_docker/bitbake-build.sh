@@ -31,13 +31,11 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_set
 # sudo getent group
 sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
-sudo cat > /home/host/.bash_profile <<'EOF'
-# Source .bashrc for login shells
+sudo -u host bash -c 'cat > ~/.bash_profile <<EOF
 if [ -f ~/.bashrc ]; then
     . ~/.bashrc
 fi
-EOF
-chown host:host /home/host/.bash_profile
+EOF'
 
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash <<'HOST_SHELL'
 set -euo pipefail
