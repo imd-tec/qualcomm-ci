@@ -2,7 +2,7 @@
 
 #soem arguments are from Lewis' ver that will probably not be needed...
 usage() {
-    echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
+    echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --docker-version <setup_version_num> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
 }
 
@@ -13,6 +13,7 @@ while [[ "$#" -gt 0 ]]; do
         --swu) swu=1 ;;
         --v2n) v2n=1 ;;
         --container-name) container_name="$2"; shift ;;
+        --docker-version) docker_version="$2"; shift ;;
         --source-repo) source_repo="$2"; shift ;;
         --manifest-repo) manifest_repo="$2"; shift ;;
         --manifest-xml) manifest_xml="$2"; shift ;;
@@ -23,7 +24,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate arguments
-if [[ -z "$container_name" || -z "$source_repo" || -z "$manifest_repo" || -z "$manifest_xml" || -z "$manifest_branch" ]]; then
+if [[ -z "$container_name" || -z "$source_repo" || -z "$docker_version" || -z "$manifest_repo" || -z "$manifest_xml" || -z "$manifest_branch" ]]; then
     echo "Error: Missing required arguments."
     usage
 fi
@@ -34,6 +35,7 @@ echo "Build SDK: $sdk"
 echo "Build SWU: $swu"
 echo "Build for V2N: $v2n"
 echo "Container Name: $container_name"
+echo "Build version: $docker_version"
 echo "Source repo: $source_repo"
 echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
@@ -72,7 +74,7 @@ docker run -d --rm \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \
-    imdtec/imdt-qualcomm-build-setup:0.5.1 \
+    imdtec/imdt-qualcomm-build-setup:$docker_version\
     sleep infinity
 
 # bitbake_command="bash /workflows/bitbake-build.sh --manifest-repo ${manifest_repo} --manifest-branch ${manifest_branch} --manifest-xml ${manifest_xml} ${sdk:+--sdk} ${swu:+--swu} ${v2n:+--v2n}"

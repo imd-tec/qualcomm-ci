@@ -46,6 +46,7 @@ jobs:
           --v2n \
           --container-name $container_name \
           --source-repo qcs8550-le-1-0_amss_standard_oem_apqgps \
+          --docker-version 0.5.1 \
           --manifest-repo https://github.com/imd-tec/imdt-qcom-manifest.git \
           --manifest-branch kirkstone \
           --manifest-xml default \
