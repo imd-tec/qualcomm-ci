@@ -49,7 +49,7 @@ jobs:
           --docker-version 0.5.1 \
           --manifest-repo https://github.com/imd-tec/imdt-qcom-manifest.git \
           --manifest-branch kirkstone \
-          --manifest-xml default \
+          --manifest-xml imdt-qcom-bsp-v1.0.0.xml \
 
 
       - name: Verify that the container is running
