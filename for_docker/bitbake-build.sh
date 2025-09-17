@@ -56,7 +56,7 @@ echo $MANI_XML
 
 #patch and synchronise Repos
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
-ls Qualcomm/
+ls /Qualcomm
 patch ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh \ Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch
 ~/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
