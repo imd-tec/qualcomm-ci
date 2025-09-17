@@ -40,7 +40,7 @@ sudo bash /home/dev/tools/new_user_setup_2.sh
 
 sudo --preserve-env=MANI_REPO,MANI_BRANCH,MANI_XML,QCOM_ROOT_DIR -u host -i bash -l \
  <<'HOST_SHELL'
-set -euo pipefail
+set -euo pipefail -x
 
 source /home/host/.bashrc
 # id
