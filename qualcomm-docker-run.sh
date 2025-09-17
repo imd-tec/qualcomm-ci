@@ -78,7 +78,7 @@ docker run -d --rm \
 
 
 # create host user
-chmod +x scripts/user_setup_1.sh
+chmod +x $CI_DIR/scripts/user_setup_1.sh
 docker exec "$container_name" bash -lc \
  "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
