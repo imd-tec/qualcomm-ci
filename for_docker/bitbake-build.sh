@@ -45,8 +45,10 @@ echo $QCOM_ROOT_DIR
 echo $MANI_REPO
 echo $MANI_BRANCH
 echo $MANI_XML
-echo "SHELL:  $SHELL"
-echo "PATH:   $PATH"
+
+echo
+cat ~/.pyenv
+echo 
 
 #PATCH AND SYNCHRONISE REPOS
 tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
