@@ -1,6 +1,6 @@
 #!/bin/bash
 #Commands
-set -euo pipefail
+set -euo pipefail -x
 
 echo " "
 echo "====================BITBAKE-BUILD COMMANDS========================="
