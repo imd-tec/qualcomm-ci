@@ -31,7 +31,7 @@ sudo env HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" bash /home/dev/tools/user_set
 # sudo getent group
 sudo -u host -i bash /home/dev/tools/user_setup_2.sh
 
-cat > /home/host/.bash_profile <<'EOF'
+sudo cat > /home/host/.bash_profile <<'EOF'
 # Source .bashrc for login shells
 if [ -f ~/.bashrc ]; then
     . ~/.bashrc
