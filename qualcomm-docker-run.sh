@@ -80,7 +80,7 @@ docker run -d --rm \
 
 # create host user
 docker exec "$container_name" bash -c \
- "bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
+ "sudo bash /home/dev/tools/user_setup_1.sh ${HOST_UID} ${HOST_GID}"
 
 # execute build as host
 docker exec --user host "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
