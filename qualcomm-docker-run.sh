@@ -87,10 +87,14 @@ docker run -d --rm \
     sleep infinity
 
 # echo "[workflow] waiting for container to be ready…"
-# timeout 120 bash -c 'until docker logs "$container_name" 2>&1 | grep -q "READY (uid="; do sleep 2; done'
+timeout 180 bash -c '
+  docker logs -f "$1" 2>&1 \
+  | tee /dev/stderr \
+  | grep -m1 -q "READY (uid="
+' _ "$container_name"
 
-echo "[workflow] entrypoint logs:"
-docker logs "$container_name"
+# echo "[workflow] entrypoint logs:"
+# docker logs "$container_name"
 
 
 # execute build
