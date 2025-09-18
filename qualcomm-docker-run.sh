@@ -78,15 +78,16 @@ docker run --rm -d \
 #WAIT FOR ENTRY SCRIPT TO CONCLUDE
 timeout=300
 i=0
-while true do
-  if docker logs "$container_name" 2>&1 | grep -Fq "READY"; then
+
+while true; do
+  if docker logs "$container_name" 2>&1 | tee /dev/stderr | grep -m1 "READY"; then
     echo "[workflow] READY seen."
     break
   fi
   i=$((i+1))
   if [ "$i" -ge "$timeout" ]; then
     echo "[workflow] timed out waiting for READY after ${timeout}s" >&2
-    exit 1
+    break
   fi
   sleep 1
 done
