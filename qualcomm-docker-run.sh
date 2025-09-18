@@ -73,9 +73,10 @@ fi
 #ensure that image is based on my recent build ver
 docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
-        "$CI_DIR/docker"
+        "$CI_DIR/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
 
-docker run -d --rm \
+#Removed --rm
+docker run -d \
     --name "$container_name" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
@@ -91,6 +92,8 @@ DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
     docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
+    else
+    echo "IDs set. Continuing..."
 fi
 
 # execute build
