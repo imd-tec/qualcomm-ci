@@ -76,9 +76,21 @@ docker run --rm -d \
     sleep infinity
 
 #WAIT FOR ENTRY SCRIPT TO CONCLUDE
-timeout 300 bash -c '
-  docker logs -f "$1" 2>&1 | { tee /dev/stderr | grep -m1 -q -F "[entrypoint] READY"; }
-' _ "$container_name"
+wait_s=180
+i=0
+while :; do
+  if docker logs "$container_name" 2>&1 | grep -Fq "READY"; then
+    echo "[workflow] READY seen."
+    break
+  fi
+  i=$((i+1))
+  if [ "$i" -ge "$wait_s" ]; then
+    echo "[workflow] timed out waiting for READY after ${wait_s}s" >&2
+  fi
+  sleep 1
+done
+
+
 
 #VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"

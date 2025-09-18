@@ -32,6 +32,8 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
 fi
 
 echo "[entrypoint] READY - dev IDS: (uid=$(id -u dev), gid=$(id -g dev))"
-exec sudo -E -H -u dev -- "${@:-sleep infinity}"
+
+#create new shell, preserve environment (-E), set $HOME (-H) and run as dev.
+exec sudo -E -H -u dev -- 
 # sudo -u dev bash
 
