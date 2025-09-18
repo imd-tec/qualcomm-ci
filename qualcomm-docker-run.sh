@@ -76,7 +76,8 @@ docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
         "$CI_DIR/docker"
 
-docker run -d --rm \
+#No detached
+docker run --rm \
     --name "$container_name" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
@@ -90,7 +91,7 @@ docker run -d --rm \
 #VERIFY THAT ENTRY POINT SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev' 2>/dev/null || echo -1)"
 if [ $DEV_UID != $HOST_UID ]; then
-    echo "ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
+    echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
     docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
 fi
 

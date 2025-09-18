@@ -32,5 +32,5 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
     usermod -a -G dev2 dev
 fi
 
-echo "[entrypoint] READY (uid=$(id -u dev), gid=$(id -g dev))"
+echo "[entrypoint] READY - dev IDS: (uid=$(id -u dev), gid=$(id -g dev))"
 sudo -u dev bash
