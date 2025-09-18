@@ -72,7 +72,7 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "bash "~/tools/build_netrc.sh"
+          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "bash ~/tools/build_netrc.sh"
 
       # - name: Patch and synchronize repos
       #   run: |
