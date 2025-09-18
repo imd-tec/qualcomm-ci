@@ -4,7 +4,7 @@ run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 defaults:
   run:
     #fail on any error
-    shell: set -euo pipefail
+    shell: bash set -euo pipefail
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_VER: "0.5.1"
@@ -52,7 +52,6 @@ jobs:
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         run: |
           set -euo pipefail
-          cd ${{ github.workspace }}
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
