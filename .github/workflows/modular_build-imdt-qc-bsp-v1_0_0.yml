@@ -4,7 +4,7 @@ run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 defaults:
   run:
     #fail on any error
-    shell: bash set -euo pipefail
+    shell: bash -eo pipefail {0}
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_VER: "0.5.1"
