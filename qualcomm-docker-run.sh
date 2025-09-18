@@ -87,14 +87,12 @@ docker run -d --rm \
     sleep infinity
 
 
-echo "[workflow] entrypoint logs:"
-docker logs "$container_name"
-
 #VERIFY THAT ENTRY POINT WORKED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev' 2>/dev/null || echo -1)"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
     docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh"
+fi
 
 # execute build
 docker exec -u dev "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
