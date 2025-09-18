@@ -80,7 +80,7 @@ timeout=300
 i=0
 
 while true; do
-  if docker logs "$container_name" 2>&1 | tee /dev/stderr | grep -m1 "READY"; then
+  if docker logs -f -t --tail 0 "$container_name" 2>&1 | tee /dev/stderr | grep -m1 "READY"; then
     echo "[workflow] READY seen."
     break
   fi
@@ -91,6 +91,10 @@ while true; do
   fi
   sleep 1
 done
+
+# docker logs -f --tail 0 "$container_name" 2>&1 \
+#  | awk '!seen[$0]++ { print; if (index($0,"[entrypoint] READY")) exit 0 }'
+# echo "[workflow] READY seen."
 
 #VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
