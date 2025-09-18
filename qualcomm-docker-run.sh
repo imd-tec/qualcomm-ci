@@ -80,7 +80,7 @@ timeout=300
 i=0
 
 while true; do
-  if docker logs -f -t --tail 0 "$container_name" 2>&1 | tee /dev/stderr | grep -m1 "READY"; then
+  if docker logs "$container_name" 2>&1 | tee /dev/stderr | grep -m1 -q "READY"; then
     echo "[workflow] READY seen."
     break
   fi
