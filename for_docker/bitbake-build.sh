@@ -7,7 +7,7 @@ echo "====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
 echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
-echo "HOST IDs: $HOST_UID $HOST_GID"
+# echo "HOST IDs: $HOST_UID $HOST_GID"
 echo "SOURCES_REPO: $SRC_REPO"
 echo "MANI_REPO: $MANI_REPO"
 echo "MANI_BRANCH: $MANI_BRANCH" 
@@ -19,6 +19,9 @@ export MANI_REPO="$MANI_REPO"
 export MANI_BRANCH="$MANI_BRANCH" 
 export MANI_XML="$MANI_XML" 
 export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
+
+#VERIFY THAT FILES OWNERSHIP WAS CHANGED CORRECTLY
+ls -la
 
 
 #CREATE NETRC FILE

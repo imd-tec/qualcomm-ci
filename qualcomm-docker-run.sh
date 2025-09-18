@@ -87,7 +87,7 @@ docker run -d --rm \
 
 
 # execute build as host
-docker exec "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
+docker exec -u dev "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
 
 # # Copy the /output directory from the container to the local working_directory
 # echo "# Copying the output directory from the container."
