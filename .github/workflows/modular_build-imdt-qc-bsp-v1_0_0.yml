@@ -13,6 +13,7 @@ env:
   MANI_BRANCH: "kirkstone"
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
+  BUILD_DIR: "/mnt/nvme1/qcom_ci/builds"
 
 on:
   push:
@@ -41,7 +42,8 @@ jobs:
       - name: Extract clean source files
         run: |
           cd ${{ github.workspace }}
-          ls /mnt/nvme1/qcom_ci/builds 
+          tar -xf "${BUILD_DIR}/qcs8550-le-1-0_amss_standard_oem_apqgps.tar.gz" -C . 
+          
 
       # - name: Run & intialize Qualcomm container (Container, permissions, netrc)
       #   run: |
@@ -74,8 +76,14 @@ jobs:
       # - name: Generate CDT
       #   run: |
 
-      # - name: Clean up sources
-      #   run: |
+      - name: Clean up sources
+        run: |
+          set -euo pipefail
+          [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+          rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          [ -d "/mnt/nvme1/qcom_ci/builds/patches"" ] && \
+            rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
+
 
       # - name: Kill container if it's still alive
       #   if: always()
