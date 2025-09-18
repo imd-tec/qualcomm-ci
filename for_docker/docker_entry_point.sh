@@ -21,9 +21,9 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
     if [[ -e "$path" ]]; then
         echo "[entrypoint] Fixing ownership under: $path"
         #chown if uid/gid does not match host
-        # find "$path" \( -not -uid "$HOST_UID" -o -not -gid "$HOST_GID" \) -print0 \
-        # | xargs -0 --no-run-if-empty chown -h "$HOST_UID:$HOST_GID"
-        find /home/dev -print0 | xargs -0 chown -h $HOST_UID:$HOST_GID
+        find "$path" \( -not -uid "$HOST_UID" -o -not -gid "$HOST_GID" \) -print0 \
+        | xargs -0 --no-run-if-empty chown -h "$HOST_UID:$HOST_GID"
+        # find /home/dev -print0 | xargs -0 chown -h $HOST_UID:$HOST_GID
 
     fi
      # Create new group with same GID as original dev
