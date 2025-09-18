@@ -15,7 +15,6 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
     # Update the user ID and group ID for $USER_NAME
     groupmod -g $HOST_GID $USER_NAME
     usermod -u $HOST_UID $USER_NAME
-    usermod -g $HOST_GID $USER_NAME
     echo "Changing /home/dev ownership"
     #chown home directory to new IDs
     path="/home/$USER_NAME/"
@@ -33,4 +32,4 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
 fi
 
 echo "[entrypoint] READY - dev IDS: (uid=$(id -u dev), gid=$(id -g dev))"
-sudo -u dev bash
+# sudo -u dev bash
