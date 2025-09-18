@@ -29,7 +29,7 @@ echo; echo "CREATING NETRC"
 bash /home/dev/tools/build_netrc.sh
 
 #PATCH AND SYNCHRONISE REPOS
-tar -xf /home/dev/Qualcomm/patches.tar.gz -C /Qualcomm/
+tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/
 # ls /Qualcomm/
 echo; echo "PATCHING"
 PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 

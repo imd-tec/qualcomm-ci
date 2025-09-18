@@ -86,8 +86,18 @@ docker run -d --rm \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
+echo "[workflow] waiting for container to be ready…"
+timeout 120 bash -c '
+  until docker logs "$0" 2>&1 | grep -q "READY (dev uid="; do
+    sleep 2
+  done
+' "$container_name"
 
-# execute build as host
+echo "[workflow] entrypoint logs:"
+docker logs "$container_name"
+
+
+# execute build
 docker exec -u dev "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
 
 # # Copy the /output directory from the container to the local working_directory
