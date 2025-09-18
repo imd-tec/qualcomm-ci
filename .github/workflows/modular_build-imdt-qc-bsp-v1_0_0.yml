@@ -73,7 +73,7 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-          # wait for entrypoint script to execute - temporary solution
+          #wait to allow for entry script to fully execute
           until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
 
           ls -la
@@ -119,10 +119,9 @@ jobs:
             rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
           fi
           
-      - name: Kill container if it's still alive
+      - name: Clean up container and image
         if: always()
         run: |
-          cd ${{ github.workspace }}
           chmod +x ./stop-container.sh
-          ./stop-container.sh $CONTAINER_NAME 
+          ./stop-container.sh $CONTAINER_NAME $DOCKER_VER
       

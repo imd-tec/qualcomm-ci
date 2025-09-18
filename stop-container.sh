@@ -1,4 +1,8 @@
 container_name=$1
+DOCKER_VER=$2
+
+#remove image
+docker rmi -f "imdt-qualcomm-ci:${DOCKER_VER}" 2>/dev/null || true
 
 # Check if container is running
 echo "Checking status of container '${container_name}'..."
