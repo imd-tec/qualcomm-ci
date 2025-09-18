@@ -86,16 +86,15 @@ docker run -d --rm \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
-# echo "[workflow] waiting for container to be ready…"
-timeout 180 bash -c '
-  docker logs -f "$1" 2>&1 \
-  | tee /dev/stderr \
-  | grep -m1 -q "READY (uid="
-' _ "$container_name"
 
-# echo "[workflow] entrypoint logs:"
-# docker logs "$container_name"
+echo "[workflow] entrypoint logs:"
+docker logs "$container_name"
 
+#VERIFY THAT ENTRY POINT WORKED
+DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev' 2>/dev/null || echo -1)"
+if [ $DEV_UID != $HOST_UID ]; then
+    echo "ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
+    docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh"
 
 # execute build
 docker exec -u dev "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
