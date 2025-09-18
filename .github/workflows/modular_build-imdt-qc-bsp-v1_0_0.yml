@@ -11,7 +11,7 @@ env:
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   MANI_REPO: "https://github.com/imd-tec/imdt-qcom-manifest.git"
   MANI_BRANCH: "kirkstone"
-  MANI_XML: default.xml 
+  MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
 
 on:
@@ -30,16 +30,18 @@ jobs:
     runs-on: [self-hosted, linux, x64, qcom-ci]
 
     steps:
-      - run: echo "Triggered by ${{ github.event_name }} event."
-      - run: echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Show trigger info
+        run: |
+          echo "Triggered by ${{ github.event_name }} event."
+          echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
 
       - name: Extract clean source files
         run: |
           cd ${{ github.workspace }}
-          cat /mnt/nvme1/qcom_ci/builds 
+          ls /mnt/nvme1/qcom_ci/builds 
 
       # - name: Run & intialize Qualcomm container (Container, permissions, netrc)
       #   run: |
