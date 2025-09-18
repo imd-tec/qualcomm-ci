@@ -4,7 +4,7 @@ run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 defaults:
   run:
     #fail on any error
-    shell: bash
+    shell: set -euo pipefail
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_VER: "0.5.1"
@@ -13,7 +13,9 @@ env:
   MANI_BRANCH: "kirkstone"
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
-  BUILD_DIR: "/mnt/nvme1/qcom_ci/builds"
+  BUILD_DIR: "/mnt/nvme1/qcom_ci/"
+  BUILD_SDK: 1
+  BUILD_CDT: 0
 
 on:
   push:
@@ -39,15 +41,36 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Extract clean source files
+      - name: Extract fresh source files
         run: |
+          set -x
           cd ${{ github.workspace }}
-          tar -xf "${BUILD_DIR}/qcs8550-le-1-0_amss_standard_oem_apqgps.tar.gz" -C . 
+          tar -xf "${BUILD_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
+          tar -xf "${BUILD_DIR}/builds/patches.tar.gz" -C .
           
 
-      # - name: Run & intialize Qualcomm container (Container, permissions, netrc)
-      #   run: |
-      #     cd ${{ github.workspace }}
+      - name: Run & intialize Qualcomm container (Container, permissions, netrc)
+        run: |
+          set -euo pipefail
+          cd ${{ github.workspace }}
+          export HOST_UID=$(id -u)
+          export HOST_GID=$(id -g)
+
+          docker build -f "$CI_DIR/docker/qc_ci_docker" \
+          -t imdt-qualcomm-ci:"$DOCKER_VER" \
+          "$CI_DIR/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
+
+          docker run --rm -d \
+          --name "$CONTAINER_NAME" \
+          -e SRC_REPO="$SRC_REPO" \
+          -e MANI_REPO="$MANI_REPO"\
+          -e MANI_BRANCH="$MANI_BRANCH" \
+          -e MANI_XML="$MANI_XML" \
+          -v "$PWD/for_docker:/workflows"\
+          -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
+          -v "$CI_DIR/scripts/:/home/dev/tools/" \
+          imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID\
+          sleep infinity
 
       # - name: Patch and synchronize repos
       #   run: |
@@ -76,13 +99,14 @@ jobs:
       # - name: Generate CDT
       #   run: |
 
-      - name: Clean up sources
-        run: |
-          set -euo pipefail
-          [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-          rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
-          [ -d "/mnt/nvme1/qcom_ci/builds/patches" ] && \
-            rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
+      # - name: Clean up sources
+      #   run: |
+      #     set -euo pipefail -x
+      #     [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+      #     rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
+      #     [ -d "/mnt/nvme1/qcom_ci/builds/patches" ] && \
+      #       rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
+          
 
 
       # - name: Kill container if it's still alive
