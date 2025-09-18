@@ -75,8 +75,8 @@ docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
         "$CI_DIR/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
 
-#Removed --rm
-docker run -d \
+#Removed --rm -d
+docker run \
     --name "$container_name" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
