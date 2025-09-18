@@ -86,8 +86,8 @@ docker run -d --rm \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
-echo "[workflow] waiting for container to be ready…"
-timeout 120 bash -c 'until docker logs "$container_name" 2>&1 | grep -q "READY (uid="; do sleep 2; done'
+# echo "[workflow] waiting for container to be ready…"
+# timeout 120 bash -c 'until docker logs "$container_name" 2>&1 | grep -q "READY (uid="; do sleep 2; done'
 
 echo "[workflow] entrypoint logs:"
 docker logs "$container_name"
