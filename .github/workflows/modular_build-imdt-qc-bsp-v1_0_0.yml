@@ -1,10 +1,9 @@
 name: Build qc bsp v1.0.0 public (modular)
-run-name: echo "${{ github.actor }} is building qc bsp v1.0.0 bsp"
 
 defaults:
   run:
-    #fail on any error
     shell: bash -eo pipefail {0}
+
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_VER: "0.5.1"
@@ -13,9 +12,9 @@ env:
   MANI_BRANCH: "kirkstone"
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
-  BUILD_DIR: "/mnt/nvme1/qcom_ci/"
-  BUILD_SDK: 1
-  BUILD_CDT: 0
+  CI_DIR: "/mnt/nvme1/qcom_ci/"
+  BUILD_SDK: "1"
+  BUILD_CDT: "0"
 
 on:
   push:
@@ -45,8 +44,9 @@ jobs:
         run: |
           set -x
           cd ${{ github.workspace }}
-          tar -xf "${BUILD_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
-          tar -xf "${BUILD_DIR}/builds/patches.tar.gz" -C .
+          tar -xf "${CI_DIR}/builds/patches.tar.gz" -C .
+          tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
+          
           
 
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
