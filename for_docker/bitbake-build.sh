@@ -1,6 +1,6 @@
 #!/bin/bash
 #Commands
-set -euo pipefail
+set -euo pipefail -x
 
 echo "====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
@@ -31,16 +31,18 @@ PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch"
 TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
 patch --batch "$TARGET" "$PATCHFILE" 
 
-echo "SYNCHRONISING REPOS"
-bash /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+echo "============================================================================="
+echo "=============================SYNCHRONISING REPOS============================="
+echo "============================================================================="
+bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
 #CONFIGURE KERNEL DIRECTORIES
 echo "CONFIGURING KERNEL DIRECTORIES"
-bash /home/dev/build_scripts/setup_kernel.sh
+bash -x /home/dev/build_scripts/setup_kernel.sh
 
-#APPLY IMDT PATCHES TO QC SOURCE
-echo "APPLY IMDT PATCHES TO QC SOURCE"
+#APPLYING IMDT PATCHES TO QC SOURCE
+echo "APPLYING IMDT PATCHES TO QC SOURCE"
 cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
-bash /home/dev/imdt-patch-qcs8550-build.sh
+bash -x /imdt-patch-qcs8550-build.sh
 
 
