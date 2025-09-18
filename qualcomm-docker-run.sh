@@ -75,6 +75,10 @@ docker run --rm -d \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
 
+#WAIT FOR ENTRY SCRIPT TO CONCLUDE
+timeout 300 bash -c '
+  docker logs -f "$1" 2>&1 | { tee /dev/stderr | grep -m1 -q -F "[entrypoint] READY"; }
+' _ "$container_name"
 
 #VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
