@@ -50,8 +50,6 @@ jobs:
           tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
           fi
           
-          
-
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         run: |
           set -euo pipefail
@@ -65,7 +63,7 @@ jobs:
           docker run --rm -d \
           --name "$CONTAINER_NAME" \
           -e SRC_REPO="$SRC_REPO" \
-          -e MANI_REPO="$MANI_REPO"\
+          -e MANI_REPO="$MANI_REPO" \
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
           -v "$PWD/for_docker:/workflows"\
@@ -74,9 +72,9 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-      - name: Patch and synchronize repos
-        run: |
-          docker exec 
+      # - name: Patch and synchronize repos
+      #   run: |
+      #     # docker exec 
 
       # - name: Configure kernel directories
       #   run: |
@@ -94,14 +92,14 @@ jobs:
       #   run: |
 
       # - name: Generate Yocto SDK
-      #   env.BUILD_SDK == '1'
+      #   env.BUILD_SDK == '0'
       #   run: |
 
       # - name: Build non-HLOS components
       #   run: |
 
       # - name: Generate CDT
-      #   env.BUILD_CDT == '1'
+      #   env.BUILD_CDT == '0'
       #   run: |
 
       - name: Clean up sources
@@ -114,8 +112,6 @@ jobs:
             rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
           fi
           
-
-
       # - name: Kill container if it's still alive
       #   if: always()
       #   run: |
