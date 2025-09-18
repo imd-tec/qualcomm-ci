@@ -2,7 +2,7 @@
 
 #some arguments are from Lewis' ver that will probably not be needed...
 usage() {
-    echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --docker-version <setup_version_num> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
+    echo "Usage: $0 --container-name <name> [--sdk] [--cdt] --source-repo <repo_name> --docker-version <setup_version_num> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
 }
 

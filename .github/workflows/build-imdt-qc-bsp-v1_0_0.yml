@@ -42,8 +42,7 @@ jobs:
           chmod +x ./qualcomm-docker-run.sh
           ./qualcomm-docker-run.sh \
           --sdk \
-          --swu \
-          --v2n \
+          --cdt \
           --container-name $container_name \
           --source-repo qcs8550-le-1-0_amss_standard_oem_apqgps \
           --docker-version 0.5.1 \
