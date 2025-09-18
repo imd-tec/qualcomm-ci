@@ -18,7 +18,7 @@ echo "==================================================================="
 # export MANI_REPO="$MANI_REPO" 
 # export MANI_BRANCH="$MANI_BRANCH" 
 # export MANI_XML="$MANI_XML" 
-export QCOM_ROOT_DIR="/Qualcomm/${SRC_REPO}"
+export QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}"
 
 #VERIFY THAT FILES OWNERSHIP WAS CHANGED CORRECTLY
 ls -la
@@ -29,10 +29,10 @@ echo; echo "CREATING NETRC"
 bash /home/dev/tools/build_netrc.sh
 
 #PATCH AND SYNCHRONISE REPOS
-tar -xf /Qualcomm/patches.tar.gz -C /Qualcomm/
+tar -xf /home/dev/Qualcomm/patches.tar.gz -C /Qualcomm/
 # ls /Qualcomm/
 echo; echo "PATCHING"
-PATCHFILE="/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
 TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
 patch --batch "$TARGET" "$PATCHFILE" 
 

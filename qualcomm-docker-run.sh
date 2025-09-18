@@ -81,7 +81,7 @@ docker run -d --rm \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
     -v "$PWD/for_docker:/workflows"\
-     -v "$CI_DIR/builds/:/Qualcomm" \
+     -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \
     imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
     sleep infinity
