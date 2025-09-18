@@ -52,7 +52,7 @@ echo "Manifest XML: $manifest_xml"
 #     fi
 # fi
 
-set -euo pipefail -x
+set -euo pipefail
 
 
 
