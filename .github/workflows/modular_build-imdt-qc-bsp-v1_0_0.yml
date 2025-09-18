@@ -72,6 +72,8 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
+          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "bash "~/tools/build_netrc.sh"
+
       # - name: Patch and synchronize repos
       #   run: |
       #     # docker exec 
@@ -104,7 +106,7 @@ jobs:
 
       - name: Clean up sources
         run: |
-          if [ $FRESH_BUILD == true]; then
+          if [ "$FRESH_BUILD" == "true" ]; then
           set -euo pipefail -x
           [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
           rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
