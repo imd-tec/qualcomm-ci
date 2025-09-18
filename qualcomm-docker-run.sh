@@ -87,11 +87,11 @@ docker run -d --rm \
     sleep infinity
 
 
-#VERIFY THAT ENTRY POINT WORKED
+#VERIFY THAT ENTRY POINT SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev' 2>/dev/null || echo -1)"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
-    docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh"
+    docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
 fi
 
 # execute build
