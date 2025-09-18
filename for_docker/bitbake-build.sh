@@ -43,6 +43,6 @@ bash -x /home/dev/build_scripts/setup_kernel.sh
 #APPLYING IMDT PATCHES TO QC SOURCE
 echo "APPLYING IMDT PATCHES TO QC SOURCE"
 cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
-bash -x /imdt-patch-qcs8550-build.sh
+bash -x ./imdt-patch-qcs8550-build.sh
 
 
