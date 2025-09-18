@@ -69,15 +69,13 @@ if [[ -z "$(ls -A "$CI_DIR/builds/" 2>/dev/null)" ]]; then
 fi
 
 #CREATE THE CONTAINER
-#Mount sources and netrc script from host machine. Mount build script from repo 
 #include user intialization in docker build process
 #ensure that image is based on my recent build ver
 docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
         "$CI_DIR/docker"
 
-#No detached
-docker run --rm \
+docker run -d --rm \
     --name "$container_name" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
@@ -89,8 +87,7 @@ docker run --rm \
 
 
 #VERIFY THAT ENTRY POINT SCRIPT EXECUTED
-DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev' 2>/dev/null || echo -1)"
-echo $DEV_UID
+DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
     docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
