@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#soem arguments are from Lewis' ver that will probably not be needed...
+#some arguments are from Lewis' ver that will probably not be needed...
 usage() {
     echo "Usage: $0 --container-name <name> [--usessh] [--sdk] [--swu] --source-repo <repo_name> --docker-version <setup_version_num> --manifest-repo <repo_url> --manifest-branch <branch_name> --manifest-xml <filename>"
     exit 1
@@ -41,20 +41,7 @@ echo "Manifest Repo: $manifest_repo"
 echo "Manifest Branch: $manifest_branch"
 echo "Manifest XML: $manifest_xml"
 
-# # Set SSH_DIR if usessh is enabled
-# if [[ "$usessh" -eq 1 ]]; then
-#     echo "# Horrid .ssh permissions hack"
-#     echo "# setting SSH_DIR to ~/ssh_1000 if it exists, else ~/.ssh"
-#     if [ -d ~/ssh_1000 ]; then
-#         SSH_DIR=~/ssh_1000
-#     else
-#         SSH_DIR=~/.ssh
-#     fi
-# fi
-
 set -euo pipefail
-
-
 
 #set environment variables for ID and directory
 export CI_DIR="/mnt/nvme1/qcom_ci"
@@ -75,8 +62,10 @@ docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
         "$CI_DIR/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
 
-#Removed --rm -d
-docker run \
+
+#detached does not wait for the entry script to finsih
+#attached completes the script but exits immediately after initial run
+docker run --rm -d \
     --name "$container_name" \
     -e SRC_REPO="$source_repo" -e MANI_REPO="$manifest_repo"\
     -e MANI_BRANCH="$manifest_branch" -e MANI_XML="$manifest_xml" \
@@ -87,7 +76,7 @@ docker run \
     sleep infinity
 
 
-#VERIFY THAT ENTRY POINT SCRIPT EXECUTED
+#VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
@@ -96,7 +85,7 @@ if [ $DEV_UID != $HOST_UID ]; then
     echo "IDs set. Continuing..."
 fi
 
-# execute build
+#EXECUTE BUILD
 docker exec -u dev "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
 
 # # Copy the /output directory from the container to the local working_directory
