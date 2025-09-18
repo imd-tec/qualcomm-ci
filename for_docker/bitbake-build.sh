@@ -1,6 +1,6 @@
 #!/bin/bash
 #Commands
-# set -euo pipefail
+set -e pipefail
 
 echo "¬====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
@@ -67,10 +67,10 @@ echo "¬=============================BUILDING IMAGE=============================
 bitbake -k imdt-image-weston --runall=fetch
 bitbake -k imdt-image-weston
 
-#SDK? 
+#SDK - INCLUDE THIS
 
 #BUILD NON-HLOS COMPONENTS
 echo "¬=============================BUILDING NON-HLOS==============================="
 bash -x /home/build_scripts/build_non_hlos.sh --build all 
 
-#CDT?
+#CDT - NOT AS STRAIGHTFORWARD; IGNORE FOR NOW

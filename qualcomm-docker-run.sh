@@ -52,8 +52,6 @@ if [[ -z "$(ls -A "$CI_DIR/builds/" 2>/dev/null)" ]]; then
 fi
 
 #CREATE THE CONTAINER
-#include user intialization in docker build process
-#ensure that image is based on my recent build ver
 docker build -f "$CI_DIR/docker/qc_ci_docker" \
         -t imdt-qualcomm-ci:"$docker_version" \
         "$CI_DIR/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
@@ -75,31 +73,34 @@ docker run --rm -d \
 timeout=300
 i=0
 
-# while true; do
-#   if docker logs "$container_name" 2>&1 | grep -m1 -q "READY"; then
-#     echo "[workflow] READY seen."
-#     break
-#   fi
-#   i=$((i+1))
-#   if [ "$i" -ge "$timeout" ]; then
-#     echo "[workflow] timed out waiting for READY after ${timeout}s" >&2
-#     break
-#   fi
-#   sleep 1
-# done
+while true; do
+  if docker logs "$container_name" 2>&1 | grep -m1 -q "READY"; then
+    echo "[workflow] READY seen."
+    break
+  fi
+  i=$((i+1))
+  if [ "$i" -ge "$timeout" ]; then
+    echo "[workflow] timed out waiting for READY after ${timeout}s" >&2
+    break
+  fi
+  sleep 1
+done
 
 # docker logs -f --tail 0 "$container_name" 2>&1 \
 #  | awk '!seen[$0]++ { print; if (index($0,"[entrypoint] READY")) exit 0 }'
 # echo "[workflow] READY seen."
 
-#VERIFY THAT ENTRY POINT FULLY EXECUTED SCRIPT
-DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
-if [ $DEV_UID != $HOST_UID ]; then
-    echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
-    docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
-    else
-    echo "IDs set. Continuing..."
-fi
+#ALT WAIT SCRIPT - wait until file appears
+# until docker exec "$container" test -f /tmp/ready; do sleep 2; done
+
+# #VERIFY THAT ENTRY POINT FULLY EXECUTED SCRIPT
+# DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
+# if [ $DEV_UID != $HOST_UID ]; then
+#     echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
+#     docker exec -u root "$container_name" bash -l -c "bash /workflows/docker_entry_point.sh $HOST_UID $HOST_GID"
+#     else
+#     echo "IDs set. Continuing..."
+# fi
 
 #EXECUTE BUILD
 docker exec -t -u dev  "$container_name" bash -l -c "bash /workflows/bitbake-build.sh"
