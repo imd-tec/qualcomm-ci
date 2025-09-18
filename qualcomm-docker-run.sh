@@ -90,8 +90,6 @@ while :; do
   sleep 1
 done
 
-
-
 #VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
 if [ $DEV_UID != $HOST_UID ]; then

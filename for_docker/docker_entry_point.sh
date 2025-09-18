@@ -34,6 +34,6 @@ fi
 echo "[entrypoint] READY - dev IDS: (uid=$(id -u dev), gid=$(id -g dev))"
 
 #create new shell, preserve environment (-E), set $HOME (-H) and run as dev.
-exec sudo -E -H -u dev -- 
+exec sudo -E -H -u dev -- sleep infinity
 # sudo -u dev bash
 
