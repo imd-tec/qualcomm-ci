@@ -60,7 +60,7 @@ set -euo pipefail -x
 export CI_DIR="/mnt/nvme1/qcom_ci"
 export HOST_UID=$(id -u)
 export HOST_GID=$(id -g)
-echo "HOST IDs are ${id}"
+echo "HOST IDs are $(id)"
 
 #verify that (some) build files are present
 if [[ -z "$(ls -A "$CI_DIR/builds/" 2>/dev/null)" ]]; then 
