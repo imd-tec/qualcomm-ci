@@ -2,7 +2,7 @@
 #Commands
 # set -euo pipefail
 
-echo "====================BITBAKE-BUILD COMMANDS========================="
+echo "¬====================BITBAKE-BUILD COMMANDS========================="
 echo "DETAILS"
 echo "CONTAINER PWD: $(pwd)"
 echo "CONTAINER USER IDs: $(id)"
@@ -27,7 +27,7 @@ PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch"
 TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
 patch --batch "$TARGET" "$PATCHFILE" 
 
-echo "=============================SYNCHRONISING REPOS============================="
+echo "¬=============================SYNCHRONISING REPOS============================="
 bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
 #CONFIGURE KERNEL DIRECTORIES
@@ -40,11 +40,11 @@ cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
 bash -x ./imdt-patch-qcs8550-build.sh
 
 #BUILD KERNEL
-echo "=============================BUILDING KERNEL================================="
+echo "¬=============================BUILDING KERNEL================================="
 bash -x /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
 
 #BUILD HLOS
-echo "=============================BUILDING HLOS=================================="
+echo "¬=============================BUILDING HLOS=================================="
 
 #patch bitbake recipe
 cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky
@@ -63,14 +63,14 @@ export DISTRO=imdt-qcom-distro-debug
 source poky/qti-conf/set_bb_env.sh
 
 #BUILD IMAGE
-echo "=============================BUILDING IMAGE=================================="
+echo "¬=============================BUILDING IMAGE=================================="
 bitbake -k imdt-image-weston --runall=fetch
 bitbake -k imdt-image-weston
 
 #SDK? 
 
 #BUILD NON-HLOS COMPONENTS
-echo "=============================BUILDING NON-HLOS==============================="
+echo "¬=============================BUILDING NON-HLOS==============================="
 bash -x /home/build_scripts/build_non_hlos.sh --build all 
 
 #CDT?

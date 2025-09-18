@@ -75,18 +75,18 @@ docker run --rm -d \
 timeout=300
 i=0
 
-while true; do
-  if docker logs "$container_name" 2>&1 | grep -m1 -q "READY"; then
-    echo "[workflow] READY seen."
-    break
-  fi
-  i=$((i+1))
-  if [ "$i" -ge "$timeout" ]; then
-    echo "[workflow] timed out waiting for READY after ${timeout}s" >&2
-    break
-  fi
-  sleep 1
-done
+# while true; do
+#   if docker logs "$container_name" 2>&1 | grep -m1 -q "READY"; then
+#     echo "[workflow] READY seen."
+#     break
+#   fi
+#   i=$((i+1))
+#   if [ "$i" -ge "$timeout" ]; then
+#     echo "[workflow] timed out waiting for READY after ${timeout}s" >&2
+#     break
+#   fi
+#   sleep 1
+# done
 
 # docker logs -f --tail 0 "$container_name" 2>&1 \
 #  | awk '!seen[$0]++ { print; if (index($0,"[entrypoint] READY")) exit 0 }'
