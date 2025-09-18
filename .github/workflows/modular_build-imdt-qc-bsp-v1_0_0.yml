@@ -51,6 +51,7 @@ jobs:
           fi
           
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
+        timeout-minutes: 3
         run: |
           set -euo pipefail
           export HOST_UID=$(id -u)
@@ -72,11 +73,15 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "bash ~/tools/build_netrc.sh"
+          # wait for entrypoint script to execute - temporary solution
+          until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
+
+          ls -la
+      
 
       # - name: Patch and synchronize repos
       #   run: |
-      #     # docker exec 
+      #     bash /home/dev/tools/build_netrc.sh
 
       # - name: Configure kernel directories
       #   run: |
@@ -114,10 +119,10 @@ jobs:
             rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
           fi
           
-      # - name: Kill container if it's still alive
-      #   if: always()
-      #   run: |
-      #     cd ${{ github.workspace }}
-      #     chmod +x ./stop-container.sh
-      #     ./stop-container.sh $CONTAINER_NAME 
+      - name: Kill container if it's still alive
+        if: always()
+        run: |
+          cd ${{ github.workspace }}
+          chmod +x ./stop-container.sh
+          ./stop-container.sh $CONTAINER_NAME 
       
