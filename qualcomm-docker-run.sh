@@ -66,7 +66,7 @@ docker run --rm -d \
     -v "$PWD/for_docker:/workflows"\
      -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
      -v "$CI_DIR/scripts/:/home/dev/tools/" \
-    imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID\
+    imdt-qualcomm-ci:$docker_version $HOST_UID $HOST_GID \
     sleep infinity
 
 #WAIT FOR ENTRY SCRIPT TO CONCLUDE

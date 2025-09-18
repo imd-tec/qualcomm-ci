@@ -15,6 +15,7 @@ env:
   CI_DIR: "/mnt/nvme1/qcom_ci/"
   BUILD_SDK: "1"
   BUILD_CDT: "0"
+  FRESH_BUILD: false
 
 on:
   push:
@@ -44,8 +45,10 @@ jobs:
         run: |
           set -x
           cd ${{ github.workspace }}
+          if [ $FRESH_BUILD == true]; then
           tar -xf "${CI_DIR}/builds/patches.tar.gz" -C .
           tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
+          fi
           
           
 
@@ -68,11 +71,12 @@ jobs:
           -v "$PWD/for_docker:/workflows"\
           -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
           -v "$CI_DIR/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID\
+          imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-      # - name: Patch and synchronize repos
-      #   run: |
+      - name: Patch and synchronize repos
+        run: |
+          docker exec 
 
       # - name: Configure kernel directories
       #   run: |
@@ -90,21 +94,25 @@ jobs:
       #   run: |
 
       # - name: Generate Yocto SDK
+      #   env.BUILD_SDK == '1'
       #   run: |
 
       # - name: Build non-HLOS components
       #   run: |
 
       # - name: Generate CDT
+      #   env.BUILD_CDT == '1'
       #   run: |
 
-      # - name: Clean up sources
-      #   run: |
-      #     set -euo pipefail -x
-      #     [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-      #     rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
-      #     [ -d "/mnt/nvme1/qcom_ci/builds/patches" ] && \
-      #       rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
+      - name: Clean up sources
+        run: |
+          if [ $FRESH_BUILD == true]; then
+          set -euo pipefail -x
+          [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+          rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          [ -d "/mnt/nvme1/qcom_ci/builds/patches" ] && \
+            rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
+          fi
           
 
 
