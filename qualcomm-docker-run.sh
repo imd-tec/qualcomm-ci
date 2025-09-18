@@ -8,10 +8,8 @@ usage() {
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --usessh) usessh=1 ;;
         --sdk) sdk=1 ;;
-        --swu) swu=1 ;;
-        --v2n) v2n=1 ;;
+        --cdt) cdt=1 ;;
         --container-name) container_name="$2"; shift ;;
         --docker-version) docker_version="$2"; shift ;;
         --source-repo) source_repo="$2"; shift ;;
@@ -30,10 +28,8 @@ if [[ -z "$container_name" || -z "$source_repo" || -z "$docker_version" || -z "$
 fi
 
 # Display the provided arguments
-echo "Using SSH: $usessh"
 echo "Build SDK: $sdk"
-echo "Build SWU: $swu"
-echo "Build for V2N: $v2n"
+echo "Build CDT: $cdt"
 echo "Container Name: $container_name"
 echo "Build version: $docker_version"
 echo "Source repo: $source_repo"
@@ -80,7 +76,7 @@ timeout=300
 i=0
 
 while true; do
-  if docker logs "$container_name" 2>&1 | tee /dev/stderr | grep -m1 -q "READY"; then
+  if docker logs "$container_name" 2>&1 | grep -m1 -q "READY"; then
     echo "[workflow] READY seen."
     break
   fi
@@ -96,7 +92,7 @@ done
 #  | awk '!seen[$0]++ { print; if (index($0,"[entrypoint] READY")) exit 0 }'
 # echo "[workflow] READY seen."
 
-#VERIFY THAT ENTRY POINT FULLY SCRIPT EXECUTED
+#VERIFY THAT ENTRY POINT FULLY EXECUTED SCRIPT
 DEV_UID="$(docker exec -u root "$container_name" bash -lc 'id -u dev')"
 if [ $DEV_UID != $HOST_UID ]; then
     echo "WARNING: ENTRY POINT FAILED TO SET CONTAINER USER IDs - EXECUTING DIRECTLY INSTEAD"
