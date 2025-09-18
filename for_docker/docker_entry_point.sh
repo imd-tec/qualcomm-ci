@@ -13,7 +13,7 @@ fi
 if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
     echo "Inheriting UIDs/GIDs from the Host"
     # Update the user ID and group ID for $USER_NAME
-    groupmod -g $HOST_GID $USER_NAME
+    groupmod -g $HOST_UID $USER_NAME
     usermod -u $HOST_UID $USER_NAME
     usermod -g $HOST_GID $USER_NAME
     echo "Changing /home/dev ownership"
