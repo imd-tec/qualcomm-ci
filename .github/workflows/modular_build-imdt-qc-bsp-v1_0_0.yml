@@ -47,8 +47,8 @@ jobs:
         run: |
           set -x
           cd ${{ github.workspace }}
-          tar -xf "${CI_DIR}/builds/patches.tar.gz" -C .
-          tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" -C . 
+          tar -xf "${CI_DIR}/builds/patches.tar.gz" 
+          tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" 
           
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         timeout-minutes: 3
@@ -86,18 +86,22 @@ jobs:
           #verify that IDs are correct and ownership has been transferred correctly
           $DOCKER_EXEC 'ls -la; id'
 
-      - name: Patch and synchronize repos
+      - name: Build netrc
         run: |
           $DOCKER_EXEC 
           '
           #build netrc
           bash /home/dev/tools/build_netrc.sh;
-        
           if [ ! -f /home/dev/.netrc ]; then
             echo "Error: .netrc not found"
             exit 1
           fi
-
+          '
+        
+      - name: Patch and synchronize repos
+        run: |
+          $DOCKER_EXEC 
+          '
           #extract patches
           tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/;
 
