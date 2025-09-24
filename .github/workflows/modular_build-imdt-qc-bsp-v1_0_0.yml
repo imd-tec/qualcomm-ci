@@ -72,10 +72,10 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
-          #wait to allow for entry script to fully execute
+          #wait for entry script to signal completion
           until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
 
-          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "ls -la"
+          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "ls -la; id"
 
       # - name: Patch and synchronize repos
       #   run: |
