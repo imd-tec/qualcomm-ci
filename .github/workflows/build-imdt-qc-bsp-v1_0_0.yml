@@ -5,6 +5,7 @@ defaults:
     shell: bash -eo pipefail {0}
 
 env:
+  #Build variables
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_VER: "0.5.1"
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
@@ -13,6 +14,8 @@ env:
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
   CI_DIR: "/mnt/nvme1/qcom_ci"
+
+  #Development variables
   BUILD_SDK: "1"
   BUILD_CDT: "0"
   FRESH_BUILD: "1"
@@ -182,7 +185,7 @@ jobs:
           "/mnt/nvme1/qcom_ci/builds/1.0.0/completed_build/${SRC_REPO}"
 
       - name: Clean up source files
-        if:  ${{ always() && cancelled() && env.FRESH_BUILD == '1' && env.CLEAN_UP == '1' }}
+        if:  ${{ always() && env.FRESH_BUILD == '1' }}
         run: |
           set -euo pipefail -x
           [ -d "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
@@ -191,7 +194,7 @@ jobs:
             rm -rf "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/patches"
           
       - name: Clean up container and image
-        if: ${{ always() && cancelled() }}
+        if: ${{ always()}}
         run: |
           chmod +x ./stop-container.sh
           ./stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
