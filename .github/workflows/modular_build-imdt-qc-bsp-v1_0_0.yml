@@ -46,16 +46,14 @@ jobs:
       - name: Extract fresh source files
         if: env.FRESH_BUILD == 'true'
         run: |
-          set -ex
           cd ${CI_DIR}/builds
           tar -xf patches.tar.gz
           tar -xf "${SRC_REPO}.tar.gz"
-          test -f "${SRC_REPO}"" && test -f patches
+          test -f "${SRC_REPO}" && test -f patches
           
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         timeout-minutes: 3
         run: |
-          set -ex
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
