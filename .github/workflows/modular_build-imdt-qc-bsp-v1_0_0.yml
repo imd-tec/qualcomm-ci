@@ -45,10 +45,10 @@ jobs:
       - name: Extract fresh source files
         if: env.FRESH_BUILD == 'true'
         run: |
-          set -x
-          cd ${{ github.workspace }}
-          tar -xf "${CI_DIR}/builds/patches.tar.gz" 
-          tar -xf "${CI_DIR}/builds/${SRC_REPO}.tar.gz" 
+          set -euxo pipefail
+          cd ${CI_DIR}
+          tar -xf patches.tar.gz
+          tar -xf "${SRC_REPO}.tar.gz"
           
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         timeout-minutes: 3
