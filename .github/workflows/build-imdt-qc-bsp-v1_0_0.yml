@@ -99,7 +99,7 @@ jobs:
           kill $LOG_PID || true
 
           #verify that IDs are correct and ownership has been transferred correctly
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'ls -la; id'
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'ls -la; id; env'
 
       - name: Build netrc
         run: |
