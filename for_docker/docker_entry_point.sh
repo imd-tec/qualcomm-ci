@@ -24,7 +24,6 @@ if [[ "$HOST_UID" != "$PREV_ID" || "$HOST_GID" != "$PREV_GID" ]]; then
         find "$path" \( -not -uid "$HOST_UID" -o -not -gid "$HOST_GID" \) -print0 \
         | xargs -0 --no-run-if-empty chown -h "$HOST_UID:$HOST_GID"
         # find /home/dev -print0 | xargs -0 chown -h $HOST_UID:$HOST_GID
-
     fi
      #create new group with same GID as original dev
     groupadd -g ${PREV_GID} dev2
