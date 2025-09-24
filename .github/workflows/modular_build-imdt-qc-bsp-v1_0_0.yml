@@ -70,9 +70,8 @@ jobs:
           -v "$PWD/for_docker:/workflows" \
           -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
           -v "$CI_DIR/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
-
+          #imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           #wait to allow for entry script to fully execute
           until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
 
