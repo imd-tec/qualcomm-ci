@@ -1,4 +1,4 @@
-name: Build qc bsp v1.0.0 public (modular)
+name: Build qc bsp v1.0.0 public
 
 defaults:
   run:
@@ -7,17 +7,24 @@ defaults:
 env:
   #Build variables
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
+  CI_DIR: "/mnt/nvme1/qcom_ci"
   DOCKER_VER: "0.5.1"
+
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   MANI_REPO: "https://github.com/imd-tec/imdt-qcom-manifest.git"
   MANI_BRANCH: "kirkstone"
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
-  CI_DIR: "/mnt/nvme1/qcom_ci"
-
-  #Development variables
+  
   BUILD_SDK: "1"
   BUILD_CDT: "0"
+
+  PYENV: "3.8.16"
+  MACHINE: "imdt-qcs8550-sbc"
+  DISTRO: "imdt-qcom-distro-debug"
+
+  
+  #Development variables
   FRESH_BUILD: "1"
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
@@ -56,7 +63,7 @@ jobs:
           tar -xf "sources/${SRC_REPO}.tar.gz" -C ${CI_DIR}/builds/${BUILD_VER}
           test -d "${SRC_REPO}" && test -d patches
           
-      - name: Build container and initialize permissions
+      - name: Build container and initialize user permissions/ownership
         timeout-minutes: 3
         run: |
           set +x
@@ -74,6 +81,7 @@ jobs:
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
+          -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
           -v "${PWD}/for_docker:/workflows" \
           -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/:/home/dev/tools/" \
@@ -152,9 +160,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           #setup yocto env
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          pyenv global 3.8.16
-          export MACHINE=imdt-qcs8550-sbc
-          export DISTRO=imdt-qcom-distro-debug 
+          pyenv global $PYENV
           source poky/qti-conf/set_bb_env.sh
           #build image
           bitbake -k imdt-image-weston --runall=fetch
@@ -165,6 +171,7 @@ jobs:
         if: env.BUILD_SDK == '1'
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          source poky/qti-conf/set_bb_env.sh
           bitbake imdt-image-weston -c populate_sdk
           '
 
@@ -179,13 +186,13 @@ jobs:
       #   run: |
 
       - name: Store completed build
-        if: env.KEEP_BUILD == '1'
+        if: ${{ env.KEEP_BUILD == '1' }}
         run: |
-          mv "/mnt/nvme1/qcom_ci/builds/1.0.0/${SRC_REPO}" \
-          "/mnt/nvme1/qcom_ci/builds/1.0.0/completed_build/${SRC_REPO}"
+            cd "${CI_DIR}/builds/1.0.0/${SRC_REPO}"
+            python3 create_release.py -r ""${CI_DIR}/builds/1.0.0/completed_build/" -x ./contents.xml  -b .
 
       - name: Clean up source files
-        if:  ${{ always() && env.FRESH_BUILD == '1' }}
+        if:  ${{ always() && env.CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
           [ -d "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
