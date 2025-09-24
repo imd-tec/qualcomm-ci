@@ -188,8 +188,10 @@ jobs:
       - name: Store completed build
         if: ${{ env.KEEP_BUILD == '1' }}
         run: |
-            cd "${CI_DIR}/builds/1.0.0/${SRC_REPO}"
-            python3 create_release.py -r ""${CI_DIR}/builds/1.0.0/completed_build/" -x ./contents.xml  -b .
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          cd /home/dev/build_scripts
+          python3 create_release.py -r "/home/dev/Qualcomm/${BUILD_VER}/RELEASE/" -x "/home/dev/Qualcomm/${BUILD_VER}/${SRC_REPO}/contents.xml" -b "/home/dev/Qualcomm/${BUILD_VER}/${SRC_REPO}/"
+          '
 
       - name: Clean up source files
         if:  ${{ always() && env.CLEAN_UP == '1' }}
