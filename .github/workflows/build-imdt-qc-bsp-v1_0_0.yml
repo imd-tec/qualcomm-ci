@@ -171,6 +171,9 @@ jobs:
         if: env.BUILD_SDK == '1'
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          #setup yocto env
+          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+          pyenv global $PYENV
           source poky/qti-conf/set_bb_env.sh
           bitbake imdt-image-weston -c populate_sdk
           '
@@ -185,7 +188,7 @@ jobs:
       #   if: env.BUILD_CDT == '1'
       #   run: |
 
-      - name: Store completed build
+      - name: Create release image
         if: ${{ env.KEEP_BUILD == '1' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
