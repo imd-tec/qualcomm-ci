@@ -16,6 +16,7 @@ env:
   BUILD_SDK: "1"
   BUILD_CDT: "0"
   FRESH_BUILD: "true"
+  CLEAN_UP: "false"
   DOCKER_EXEC: docker exec -t -u dev $CONTAINER_NAME bash -lc
 
 on:
@@ -45,15 +46,16 @@ jobs:
       - name: Extract fresh source files
         if: env.FRESH_BUILD == 'true'
         run: |
-          set -euxo pipefail
+          set -ex
           cd ${CI_DIR}/builds
           tar -xf patches.tar.gz
           tar -xf "${SRC_REPO}.tar.gz"
+          test -f "${SRC_REPO}"" && test -f patches
           
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         timeout-minutes: 3
         run: |
-          set -euo pipefail
+          set -ex
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
@@ -88,20 +90,17 @@ jobs:
 
       - name: Build netrc
         run: |
-          $DOCKER_EXEC 
-          '
+          $DOCKER_EXEC '
+          set -ex
           #build netrc
           bash /home/dev/tools/build_netrc.sh;
-          if [ ! -f /home/dev/.netrc ]; then
-            echo "Error: .netrc not found"
-            exit 1
-          fi
+          test -f /home/dev/.netrc
           '
         
       - name: Patch and synchronize repos
         run: |
-          $DOCKER_EXEC 
-          '
+          $DOCKER_EXEC '
+          set -ex
           #extract patches
           tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/;
 
@@ -116,15 +115,15 @@ jobs:
 
       - name: Configure kernel directories
         run: |
-          $DOCKER_EXEC  
-          '
+          $DOCKER_EXEC '
+          set -ex
           bash -x /home/dev/build_scripts/setup_kernel.sh
           '
 
       - name: Apply IMDT patches to Qualcomm source
         run: | 
-          $DOCKER_EXEC  
-          '
+          $DOCKER_EXEC '
+          set -ex
           #applying IMDT patches to QC source
           cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
           bash -x ./imdt-patch-qcs8550-build.sh
@@ -151,15 +150,13 @@ jobs:
       #   run: |
 
       - name: Clean up sources
-        if: env.FRESH_BUILD == 'true'
+        if: env.FRESH_BUILD == 'true' && env.CLEAN_UP == 'true'
         run: |
-          if [ "$FRESH_BUILD" == "true" ]; then
           set -euo pipefail -x
           [ -d "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
           rm -rf "/mnt/nvme1/qcom_ci/builds/qcs8550-le-1-0_amss_standard_oem_apqgps"
           [ -d "/mnt/nvme1/qcom_ci/builds/patches" ] && \
             rm -rf "/mnt/nvme1/qcom_ci/builds/patches"
-          fi
           
       - name: Clean up container and image
         if: always()
