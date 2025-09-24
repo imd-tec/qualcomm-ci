@@ -8,9 +8,9 @@ env:
   TEST_PLAN: "qc_bsp_v1.0.0_test_case.yml"
 
 on:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
 
   workflow_dispatch:
   
