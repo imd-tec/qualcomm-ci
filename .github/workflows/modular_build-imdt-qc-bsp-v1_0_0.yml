@@ -70,7 +70,7 @@ jobs:
           -v "$PWD/for_docker:/workflows" \
           -v "$CI_DIR/builds/:/home/dev/Qualcomm" \
           -v "$CI_DIR/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:$DOCKER_VER \
+          imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
           #wait to allow for entry script to fully execute
