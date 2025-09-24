@@ -72,8 +72,15 @@ jobs:
           imdt-qualcomm-ci:$DOCKER_VER $HOST_UID $HOST_GID \
           sleep infinity
 
+          #stream entry point script logs
+          docker logs -f "$CONTAINER_NAME" &
+          LOG_PID=$!
+
           #wait for entry script to signal completion
           until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
+
+          #kill log stream
+          kill $LOG_PID || true
 
           docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "ls -la; id"
 
