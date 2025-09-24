@@ -12,7 +12,7 @@ env:
   MANI_BRANCH: "kirkstone"
   MANI_XML: "default.xml" 
   BUILD_VER: "1.0.0"
-  CI_DIR: "/mnt/nvme1/qcom_ci/"
+  CI_DIR: "/mnt/nvme1/qcom_ci"
   BUILD_SDK: "1"
   BUILD_CDT: "0"
   FRESH_BUILD: "false"
@@ -89,7 +89,11 @@ jobs:
         run: |
           #build netrc
           bash /home/dev/tools/build_netrc.sh
-          tail -n 5 /home/dev/.netrc
+        
+          if [ ! -f /home/dev/.netrc ]; then
+            echo "Error: .netrc not found"
+            exit 1
+          fi
 
           #extract patches
           tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/
@@ -103,11 +107,15 @@ jobs:
           bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
 
 
-      # - name: Configure kernel directories
-      #   run: |
+      - name: Configure kernel directories
+        run: |
+          bash -x /home/dev/build_scripts/setup_kernel.sh
 
-      # - name: Apply IMDT patches to Qualcomm source
-      #   run: |
+      - name: Apply IMDT patches to Qualcomm source
+        run: |
+          #applying IMDT patches to QC source
+          cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
+          bash -x ./imdt-patch-qcs8550-build.sh
 
       # - name: Build kernel
       #   run: |
