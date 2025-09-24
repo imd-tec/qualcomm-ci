@@ -46,7 +46,7 @@ jobs:
         if: env.FRESH_BUILD == 'true'
         run: |
           set -euxo pipefail
-          cd ${CI_DIR}
+          cd ${CI_DIR}/builds
           tar -xf patches.tar.gz
           tar -xf "${SRC_REPO}.tar.gz"
           
