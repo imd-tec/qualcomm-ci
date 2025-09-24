@@ -17,7 +17,7 @@ env:
   BUILD_CDT: "0"
   FRESH_BUILD: "false"
   CLEAN_UP: "false"
-  DOCKER_EXEC: docker exec -t -u dev $CONTAINER_NAME bash -lc
+  DOCKER_EXEC: docker exec -t -u dev 
 
 on:
   push:
@@ -54,6 +54,7 @@ jobs:
       - name: Run & intialize Qualcomm container (Container, permissions, netrc)
         timeout-minutes: 3
         run: |
+          set +x
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
@@ -84,11 +85,11 @@ jobs:
           kill $LOG_PID || true
 
           #verify that IDs are correct and ownership has been transferred correctly
-          $DOCKER_EXEC 'ls -la; id'
+          $DOCKER_EXEC $CONTAINER_NAME bash -lc 'ls -la; id'
 
       - name: Build netrc
         run: |
-          $DOCKER_EXEC '
+          $DOCKER_EXEC $CONTAINER_NAME bash -lc '
           set -ex
           #build netrc
           bash /home/dev/tools/build_netrc.sh;
@@ -97,7 +98,7 @@ jobs:
         
       - name: Patch and synchronize repos
         run: |
-          $DOCKER_EXEC '
+          $DOCKER_EXEC $CONTAINER_NAME bash -lc '
           set -ex
           #extract patches
           tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/;
@@ -113,14 +114,14 @@ jobs:
 
       - name: Configure kernel directories
         run: |
-          $DOCKER_EXEC '
+          $DOCKER_EXEC $CONTAINER_NAME bash -lc '
           set -ex
           bash -x /home/dev/build_scripts/setup_kernel.sh
           '
 
       - name: Apply IMDT patches to Qualcomm source
         run: | 
-          $DOCKER_EXEC '
+          $DOCKER_EXEC $CONTAINER_NAME bash -lc '
           set -ex
           #applying IMDT patches to QC source
           cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
