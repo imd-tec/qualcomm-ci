@@ -15,7 +15,8 @@ env:
   CI_DIR: "/mnt/nvme1/qcom_ci"
   BUILD_SDK: "1"
   BUILD_CDT: "0"
-  FRESH_BUILD: "false"
+  FRESH_BUILD: "true"
+  DOCKER_EXEC: docker exec -t -u dev $CONTAINER_NAME bash -lc
 
 on:
   push:
@@ -83,12 +84,14 @@ jobs:
           kill $LOG_PID || true
 
           #verify that IDs are correct and ownership has been transferred correctly
-          docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "ls -la; id"
+          $DOCKER_EXEC 'ls -la; id'
 
       - name: Patch and synchronize repos
         run: |
+          $DOCKER_EXEC 
+          '
           #build netrc
-          bash /home/dev/tools/build_netrc.sh
+          bash /home/dev/tools/build_netrc.sh;
         
           if [ ! -f /home/dev/.netrc ]; then
             echo "Error: .netrc not found"
@@ -96,26 +99,32 @@ jobs:
           fi
 
           #extract patches
-          tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/
+          tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/;
 
           #apply patches to target
-          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
-          TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
-          patch --batch "$TARGET" "$PATCHFILE" 
+          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" ;
+          TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh";
+          patch --batch "$TARGET" "$PATCHFILE" ;
 
           #sync repos
-          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
-
+          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML ;
+          '
 
       - name: Configure kernel directories
         run: |
+          $DOCKER_EXEC  
+          '
           bash -x /home/dev/build_scripts/setup_kernel.sh
+          '
 
       - name: Apply IMDT patches to Qualcomm source
-        run: |
+        run: | 
+          $DOCKER_EXEC  
+          '
           #applying IMDT patches to QC source
           cd ${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc
           bash -x ./imdt-patch-qcs8550-build.sh
+          '
 
       # - name: Build kernel
       #   run: |
