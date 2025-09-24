@@ -82,11 +82,26 @@ jobs:
           #kill log stream
           kill $LOG_PID || true
 
+          #verify that IDs are correct and ownership has been transferred correctly
           docker exec -t -u dev  "$CONTAINER_NAME" bash -l -c "ls -la; id"
 
-      # - name: Patch and synchronize repos
-      #   run: |
-      #     bash /home/dev/tools/build_netrc.sh
+      - name: Patch and synchronize repos
+        run: |
+          #build netrc
+          bash /home/dev/tools/build_netrc.sh
+          tail -n 5 /home/dev/.netrc
+
+          #extract patches
+          tar -xf /home/dev/Qualcomm/patches.tar.gz -C /home/dev/Qualcomm/
+
+          #apply patches to target
+          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+          TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
+          patch --batch "$TARGET" "$PATCHFILE" 
+
+          #sync repos
+          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+
 
       # - name: Configure kernel directories
       #   run: |
