@@ -15,7 +15,7 @@ env:
   CI_DIR: "/mnt/nvme1/qcom_ci"
   BUILD_SDK: "1"
   BUILD_CDT: "0"
-  FRESH_BUILD: "true"
+  FRESH_BUILD: "false"
   CLEAN_UP: "false"
   DOCKER_EXEC: docker exec -t -u dev $CONTAINER_NAME bash -lc
 
