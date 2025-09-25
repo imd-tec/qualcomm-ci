@@ -13,7 +13,7 @@ env:
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   MANI_REPO: "https://github.com/imd-tec/imdt-qcom-manifest.git"
   MANI_BRANCH: "kirkstone"
-  MANI_XML: "default.xml" 
+  MANI_XML: "imdt-qcom-bsp-v1.0.0.xml" 
   BUILD_VER: "1.0.0"
   
   BUILD_SDK: "1"
@@ -58,6 +58,7 @@ jobs:
         if: env.FRESH_BUILD == '1'
         run: |
           set -ex
+          mkdir -p "${CI_DIR}/builds/${BUILD_VER}"
           cd "${CI_DIR}/builds/${BUILD_VER}"
           tar -xf "sources/patches.tar.gz" -C .
           tar -xf "sources/${SRC_REPO}.tar.gz" -C .
