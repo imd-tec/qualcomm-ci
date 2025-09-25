@@ -1,4 +1,4 @@
-name: Build qc bsp v1.0.0
+name: Build qc bsp v1.1.0
 
 defaults:
   run:
@@ -13,8 +13,8 @@ env:
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   MANI_REPO: "https://github.com/imd-tec/imdt-qcom-manifest.git"
   MANI_BRANCH: "kirkstone"
-  MANI_XML: "imdt-qcom-bsp-v1.0.0.xml" 
-  BUILD_VER: "1.0.0"
+  MANI_XML: "imdt-qcom-bsp-v1.1.0.xml" 
+  BUILD_VER: "1.1.0"
   
   BUILD_SDK: "1"
   BUILD_CDT: "0"
