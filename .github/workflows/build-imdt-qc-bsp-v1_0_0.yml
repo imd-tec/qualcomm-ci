@@ -58,10 +58,11 @@ jobs:
         if: env.FRESH_BUILD == '1'
         run: |
           set -ex
-          cd ${CI_DIR}/builds/${BUILD_VER}
-          tar -xf sources/patches.tar.gz -C ${CI_DIR}/builds/${BUILD_VER}
-          tar -xf "sources/${SRC_REPO}.tar.gz" -C ${CI_DIR}/builds/${BUILD_VER}
+          cd "${CI_DIR}/builds/${BUILD_VER}"
+          tar -xf "sources/patches.tar.gz" -C .
+          tar -xf "sources/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
+          echo $?
           
       - name: Build container and initialize user permissions/ownership
         timeout-minutes: 3
@@ -80,7 +81,7 @@ jobs:
           -e MANI_REPO="$MANI_REPO" \
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
-          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${BUILD_VER}/${SRC_REPO}" \
+          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
           -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
           -v "${PWD}/for_docker:/workflows" \
           -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
@@ -115,7 +116,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -ex
           #apply patches to target
-          PATCHFILE="/home/dev/Qualcomm/${BUILD_VER}/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
           TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
           #batch to bypass user prompts
           patch --batch "$TARGET" "$PATCHFILE" 
@@ -193,7 +194,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           cd /home/dev/build_scripts
-          python3 create_release.py -r "/home/dev/Qualcomm/${BUILD_VER}/RELEASE/" -x "${QCOM_ROOT_DIR}/contents.xml" -b "${QCOM_ROOT_DIR}"
+          python3 create_release.py -r "/home/dev/Qualcomm/RELEASE/" -x "${QCOM_ROOT_DIR}/contents.xml" -b "${QCOM_ROOT_DIR}"
           '
 
       - name: Clean up source files
