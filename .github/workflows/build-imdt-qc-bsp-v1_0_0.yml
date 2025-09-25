@@ -61,7 +61,7 @@ jobs:
           mkdir -p "${CI_DIR}/builds/${BUILD_VER}"
           cd "${CI_DIR}/builds/${BUILD_VER}"
           tar -xf "sources/patches.tar.gz" -C .
-          tar -xf "sources/${SRC_REPO}.tar.gz" -C .
+          tar -xf "../shared_sources/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
           echo $?
           
