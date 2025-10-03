@@ -31,9 +31,9 @@ env:
   DOCKER_EXEC: docker exec -t -u dev 
 
 on:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
 
   #workflow is executed every night at 9
   workflow_dispatch:

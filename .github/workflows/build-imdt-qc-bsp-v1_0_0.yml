@@ -31,9 +31,9 @@ env:
   DOCKER_EXEC: docker exec -t -u dev 
 
 on:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
 
   #workflow is executed every night at 9
   workflow_dispatch:
@@ -68,7 +68,6 @@ jobs:
       - name: Build container and initialize user permissions/ownership
         timeout-minutes: 3
         run: |
-          set +x
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
