@@ -1,4 +1,4 @@
-#build process using reusable workflow via workflow_call
+#Reusable workflow triggerd by workflow_call from external manifest repo
 name: Build qcom BSP (reusable)
 
 defaults:
@@ -20,13 +20,12 @@ on:
 
     workflow_dispatch:
 
-
 env:
   #Build variables
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   CI_DIR: "/mnt/nvme1/qcom_ci"
  
-  #Eventually will be passed from manifest via workflow_call
+  #Eventually these will be passed from manifest via workflow_call
   DOCKER_VER: "0.5.1"
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   PYENV: "3.8.16"
@@ -46,7 +45,7 @@ env:
 jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
-    runs-on: [self-hosted, linux, x64, qcom-ci]
+    runs-on: [self-hosted, Linux, X64, qcom-ci]
 
     steps:
       - name: Show trigger info
