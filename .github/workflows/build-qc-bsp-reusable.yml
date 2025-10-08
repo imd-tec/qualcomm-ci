@@ -68,14 +68,14 @@ jobs:
           echo "MANI_REPO=${{ inputs.mani_repo}}"
           echo "MANI_BRANCH=${{ inputs.mani_branch }}"
           echo "MANI_XML=${{ inputs.mani_xml }}"
-          echo "MANI_XML=${{ inputs.mani_name }}"
-          echo "MANI_XML=${{ inputs.mani_version }}"
+          echo "MANI_NAME=${{ inputs.mani_name }}"
+          echo "MANI_VERSION=${{ inputs.mani_version }}"
 
           echo "MANI_REPO=${{ inputs.mani_repo}}" >> $GITHUB_ENV
           echo "MANI_BRANCH=${{ inputs.mani_branch }}" >> $GITHUB_ENV
           echo "MANI_XML=${{ inputs.mani_xml }}" >> $GITHUB_ENV
-          echo "MANI_XML=${{ inputs.mani_name }}" >> $GITHUB_ENV 
-          echo "MANI_XML=${{ inputs.mani_version }}" >> $GITHUB_ENV
+          echo "MANI_NAME=${{ inputs.mani_name }}" >> $GITHUB_ENV 
+          echo "MANI_VERSION=${{ inputs.mani_version }}" >> $GITHUB_ENV
           
       - name: Extract fresh source files
         if: env.FRESH_BUILD == '1'
@@ -213,7 +213,7 @@ jobs:
       #   if: env.BUILD_CDT == '1'
       #   run: |
 
-      - name: Create release image
+      - name: Create release artifact
         if: ${{ env.KEEP_BUILD == '1' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
