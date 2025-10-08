@@ -45,7 +45,7 @@ env:
 jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
-    runs-on: [self-hosted, Linux, X64, qcom-ci]
+    runs-on: [self-hosted, qcom-ci]
 
     steps:
       - name: Show trigger info
