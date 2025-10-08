@@ -8,15 +8,22 @@ defaults:
 on:
     workflow_call:
         inputs:
+            mani_repo:
+                type: string
+                required: true
             mani_branch:
                 type: string
                 required: true
             mani_xml:
                 type: string
                 required: true
-            mani_repo:
+            mani_name:
                 type: string
                 required: true
+            mani_version:
+                type: string
+                required: true
+
 
     workflow_dispatch:
 
@@ -61,23 +68,14 @@ jobs:
           echo "MANI_REPO=${{ inputs.mani_repo}}"
           echo "MANI_BRANCH=${{ inputs.mani_branch }}"
           echo "MANI_XML=${{ inputs.mani_xml }}"
+          echo "MANI_XML=${{ inputs.mani_name }}"
+          echo "MANI_XML=${{ inputs.mani_version }}"
 
           echo "MANI_REPO=${{ inputs.mani_repo}}" >> $GITHUB_ENV
           echo "MANI_BRANCH=${{ inputs.mani_branch }}" >> $GITHUB_ENV
           echo "MANI_XML=${{ inputs.mani_xml }}" >> $GITHUB_ENV
-
-          #set build version to version in manifest file name, if applicable
-          file_name="${MANI_XML%.xml}"
-
-          #if xml file name follows v_._._ format, assign to BUILD_VER
-          if [[ "$file_name" =~ -v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "BUILD_VER=${BASH_REMATCH[1]}"
-            echo "BUILD_VER=${BASH_REMATCH[1]}" >> $GITHUB_ENV
-          else
-            echo "BUILD_VER=0.0.0"
-            echo "BUILD_VER=0.0.0" >> $GITHUB_ENV
-          fi
-
+          echo "MANI_XML=${{ inputs.mani_name }}" >> $GITHUB_ENV 
+          echo "MANI_XML=${{ inputs.mani_version }}" >> $GITHUB_ENV
           
     #   - name: Extract fresh source files
     #     if: env.FRESH_BUILD == '1'
