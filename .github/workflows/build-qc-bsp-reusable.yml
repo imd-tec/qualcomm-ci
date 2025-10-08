@@ -45,7 +45,7 @@ env:
 jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, qcom]
 
     steps:
       - name: Show trigger info
@@ -74,6 +74,7 @@ jobs:
             echo "BUILD_VER=${BASH_REMATCH[1]}"
             echo "BUILD_VER=${BASH_REMATCH[1]}" >> $GITHUB_ENV
           else
+            echo "BUILD_VER=0.0.0"
             echo "BUILD_VER=0.0.0" >> $GITHUB_ENV
           fi
 
