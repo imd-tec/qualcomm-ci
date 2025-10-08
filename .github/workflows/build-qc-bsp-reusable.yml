@@ -70,12 +70,14 @@ jobs:
           echo "MANI_XML=${{ inputs.mani_xml }}"
           echo "BUILD_NAME=${{ inputs.mani_name }}"
           echo "BUILD_VER=${{ inputs.mani_version }}"
+          echo "IMAGE_NAME=${MANI_XML%%.*}"
 
           echo "MANI_REPO=${{ inputs.mani_repo}}" >> $GITHUB_ENV
           echo "MANI_BRANCH=${{ inputs.mani_branch }}" >> $GITHUB_ENV
           echo "MANI_XML=${{ inputs.mani_xml }}" >> $GITHUB_ENV
           echo "BUILD_NAME=${{ inputs.mani_name }}" >> $GITHUB_ENV 
           echo "BUILD_VER=${{ inputs.mani_version }}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${MANI_XML%%.*}" >> $GITHUB_ENV
           
       - name: Extract fresh source files
         if: env.FRESH_BUILD == '1'
@@ -105,6 +107,7 @@ jobs:
           -e MANI_REPO="$MANI_REPO" \
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
+          -e IMAGE_NAME="$IMAGE_NAME" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
           -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
           -v "${PWD}/for_docker:/workflows" \
@@ -218,7 +221,10 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           cd /home/dev/build_scripts
-          python3 create_release.py -r "/home/dev/Qualcomm/RELEASE/" -x "${QCOM_ROOT_DIR}/contents.xml" -b "${QCOM_ROOT_DIR}"
+          python3 create_release.py \ 
+           -r "/home/dev/Qualcomm/RELEASE/${IMAGE_NAME}" \
+           -x "${QCOM_ROOT_DIR}/contents.xml" \
+           -b "${QCOM_ROOT_DIR}"
           '
 
       - name: Clean up source files
