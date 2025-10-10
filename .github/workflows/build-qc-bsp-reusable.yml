@@ -59,13 +59,12 @@ jobs:
         run: |
           echo "Triggered by ${{ github.event_name }} event."
           echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-
+      
+      #The CI workspace should be checked-out to avoid hard-coding script paths
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with: 
-          repository: imd-tec/qualcomm-ci  
-          ref: master
-
+          # with: imd-tec/qualcomm-ci
+          # token: ###
       - name: Echo inputs into environment variables
         run: |
           echo "MANI_REPO=${{ inputs.mani_repo}}"
@@ -224,7 +223,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           cd /home/dev/build_scripts
-          python3 create_release.py \ 
+          python3 create_release.py \
            -r "/home/dev/Qualcomm/RELEASE/${IMAGE_NAME}" \
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
@@ -242,6 +241,15 @@ jobs:
       - name: Clean up container and image
         if: ${{ always()}}
         run: |
-          chmod +x ./stop-container.sh
-          ./stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
-      
+          #remove container if present
+          docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+
+          #remove image
+          docker rmi -f "imdt-qualcomm-ci:${DOCKER_VER}" 2>/dev/null || true
+
+          #verify that container status
+          if docker ps -q -f "name=^/${CONTAINER_NAME}$" | grep -q .; then
+            echo "ERROR: container '$CONTAINER_NAME' still running"
+            exit 1
+          fi
+         
