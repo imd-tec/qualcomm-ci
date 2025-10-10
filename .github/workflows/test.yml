@@ -62,14 +62,16 @@ jobs:
 
       - name: Checkout repository code
         uses: actions/checkout@v4
+        with: 
+          repository: imd-tec/qualcomm-ci  
+          ref: master
+
 
       - name: Echo inputs into environment variables
         run: |
-          set -x
           ls -la
           echo $GITHUB_WORKSPACE
           cd ~
-          $GITHUB_WORKSPACE
           echo "MANI_REPO=${{ inputs.mani_repo}}"
           echo "MANI_BRANCH=${{ inputs.mani_branch }}"
           echo "MANI_XML=${{ inputs.mani_xml }}"
