@@ -63,8 +63,9 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Echo inputs into enviroment variables
+      - name: Echo inputs into environment variables
         run: |
+          cd {CI_DIR}
           echo "MANI_REPO=${{ inputs.mani_repo}}"
           echo "MANI_BRANCH=${{ inputs.mani_branch }}"
           echo "MANI_XML=${{ inputs.mani_xml }}"
