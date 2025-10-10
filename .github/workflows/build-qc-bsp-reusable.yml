@@ -24,7 +24,6 @@ on:
                 type: string
                 required: true
 
-
     workflow_dispatch:
 
 env:
@@ -60,27 +59,40 @@ jobs:
           echo "Triggered by ${{ github.event_name }} event."
           echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       
-      #The CI workspace should be checked-out to avoid hard-coding script paths
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-          # with: imd-tec/qualcomm-ci
-          # token: ###
-      - name: Echo inputs into environment variables
-        run: |
-          echo "MANI_REPO=${{ inputs.mani_repo}}"
-          echo "MANI_BRANCH=${{ inputs.mani_branch }}"
-          echo "MANI_XML=${{ inputs.mani_xml }}"
-          echo "BUILD_NAME=${{ inputs.mani_name }}"
-          echo "BUILD_VER=${{ inputs.mani_version }}"
-          echo "IMAGE_NAME=${MANI_XML%%.*}"
+      - name: Set repo workspace
+        uses: actions/checkout@v5
+        with:
+            repository: imd-tec/qualcomm-ci
+            ref: master
+            ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
 
-          echo "MANI_REPO=${{ inputs.mani_repo}}" >> $GITHUB_ENV
-          echo "MANI_BRANCH=${{ inputs.mani_branch }}" >> $GITHUB_ENV
-          echo "MANI_XML=${{ inputs.mani_xml }}" >> $GITHUB_ENV
-          echo "BUILD_NAME=${{ inputs.mani_name }}" >> $GITHUB_ENV 
-          echo "BUILD_VER=${{ inputs.mani_version }}" >> $GITHUB_ENV
-          echo "IMAGE_NAME=${MANI_XML%%.*}" >> $GITHUB_ENV
+      - name: Set environment variables
+        run: |
+          #set inputs to shell vars
+          MANI_REPO='${{ inputs.mani_repo }}'
+          MANI_BRANCH='${{ inputs.mani_branch }}'
+          MANI_XML='${{ inputs.mani_xml }}'
+          BUILD_NAME='${{ inputs.mani_name }}'
+          BUILD_VER='${{ inputs.mani_version }}'
+          IMAGE_NAME="${MANI_XML%%.*}"
           
+          echo "MANI_REPO=$MANI_REPO"
+          echo "MANI_BRANCH=$MANI_BRANCH"
+          echo "MANI_XML=$MANI_XML"
+          echo "BUILD_NAME=$BUILD_NAME"
+          echo "BUILD_VER=$BUILD_VER"
+          echo "IMAGE_NAME=$IMAGE_NAME"
+          
+          #store for later steps
+          {
+            echo "MANI_REPO=$MANI_REPO"
+            echo "MANI_BRANCH=$MANI_BRANCH"
+            echo "MANI_XML=$MANI_XML"
+            echo "BUILD_NAME=$BUILD_NAME"
+            echo "BUILD_VER=$BUILD_VER"
+            echo "IMAGE_NAME=$IMAGE_NAME"
+          } >> "$GITHUB_ENV"
+
       - name: Extract fresh source files
         if: env.FRESH_BUILD == '1'
         run: |
@@ -92,7 +104,7 @@ jobs:
           test -d "${SRC_REPO}" && test -d patches
           echo $?
           
-      - name: Build container and initialize user permissions/ownership
+      - name: Build container and initialize user permissions & ownership
         timeout-minutes: 3
         run: |
           set +x
@@ -101,7 +113,7 @@ jobs:
 
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           -t imdt-qualcomm-ci:"${DOCKER_VER}" \
-          "${CI_DIR}/actions-runner/_work/qualcomm-ci/qualcomm-ci/for_docker"
+          for_docker
 
           docker run --rm -d \
           --name "$CONTAINER_NAME" \
@@ -241,15 +253,9 @@ jobs:
       - name: Clean up container and image
         if: ${{ always()}}
         run: |
-          #remove container if present
-          docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+          chmod +x ./stop-container.sh
+          ./stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
 
-          #remove image
-          docker rmi -f "imdt-qualcomm-ci:${DOCKER_VER}" 2>/dev/null || true
 
-          #verify that container status
-          if docker ps -q -f "name=^/${CONTAINER_NAME}$" | grep -q .; then
-            echo "ERROR: container '$CONTAINER_NAME' still running"
-            exit 1
-          fi
+
          
