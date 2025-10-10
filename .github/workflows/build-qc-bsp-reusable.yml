@@ -62,6 +62,9 @@ jobs:
 
       - name: Checkout repository code
         uses: actions/checkout@v4
+        with: 
+          repository: imd-tec/qualcomm-ci  
+          ref: master
 
       - name: Echo inputs into environment variables
         run: |
