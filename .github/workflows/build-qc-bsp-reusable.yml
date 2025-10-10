@@ -66,7 +66,7 @@ jobs:
             ref: master
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
 
-      - name: Set environment variables
+      - name: Set key build variables
         run: |
           #set inputs to shell vars
           MANI_REPO='${{ inputs.mani_repo }}'
@@ -102,7 +102,6 @@ jobs:
           tar -xf "sources/patches.tar.gz" -C .
           tar -xf "../shared_sources/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
-          echo $?
           
       - name: Build container and initialize user permissions & ownership
         timeout-minutes: 3
@@ -234,9 +233,14 @@ jobs:
         if: ${{ env.KEEP_BUILD == '1' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          release_dir="/home/dev/Qualcomm/RELEASE/${IMAGE_NAME:?}"
+
+          #if release artifact already exists, remove it
+          [ -d "$release_dir" ] && rm -rf "$release_dir"
+  
           cd /home/dev/build_scripts
           python3 create_release.py \
-           -r "/home/dev/Qualcomm/RELEASE/${IMAGE_NAME}" \
+           -r "$release_dir" \
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
           '

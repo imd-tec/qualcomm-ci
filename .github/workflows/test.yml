@@ -1,5 +1,5 @@
 #Reusable workflow triggerd by workflow_call from external manifest repo
-name: Build qcom BSP (reusable)
+name: TEST - Build qcom BSP (reusable)
 
 defaults:
   run:
