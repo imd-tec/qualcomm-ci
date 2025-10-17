@@ -100,7 +100,7 @@ jobs:
           0AUTH: ${{ secrets.OAUTH_CREDENTIALS }}
         run: |
           #get auth credentials secret
-          cat "$0AUTH_CREDENTIALS"
+          cat "$OAUTH"
       # - name: Get patches from Google Drive
       #   run: |
       #     python3 get_patches.py
