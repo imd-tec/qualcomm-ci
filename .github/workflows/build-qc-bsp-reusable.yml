@@ -74,7 +74,7 @@ jobs:
           BUILD_NAME='${{ inputs.mani_name }}'
           BUILD_VER='${{ inputs.mani_version }}'
           IMAGE_NAME="${MANI_XML##*/}"  
-          IMAGE_NAME="${IMAGE_NAME%.*}" 
+          IMAGE_NAM  E="${IMAGE_NAME%.*}" 
 
           echo "MANI_REPO=$MANI_REPO"
           echo "MANI_BRANCH=$MANI_BRANCH"
@@ -83,15 +83,28 @@ jobs:
           echo "BUILD_VER=$BUILD_VER"
           echo "IMAGE_NAME=$IMAGE_NAME"
           
-      #     #store for later steps
-      #     {
-      #       echo "MANI_REPO=$MANI_REPO"
-      #       echo "MANI_BRANCH=$MANI_BRANCH"
-      #       echo "MANI_XML=$MANI_XML"
-      #       echo "BUILD_NAME=$BUILD_NAME"
-      #       echo "BUILD_VER=$BUILD_VER"
-      #       echo "IMAGE_NAME=$IMAGE_NAME"
-      #     } >> "$GITHUB_ENV"
+          #store for later steps
+          {
+            echo "MANI_REPO=$MANI_REPO"
+            echo "MANI_BRANCH=$MANI_BRANCH"
+            echo "MANI_XML=$MANI_XML"
+            echo "BUILD_NAME=$BUILD_NAME"
+            echo "BUILD_VER=$BUILD_VER"
+            echo "IMAGE_NAME=$IMAGE_NAME"
+          } >> "$GITHUB_ENV"
+
+          echo ""
+
+      - name: Create AUTH0 token for Google Drive access
+        env:
+          0AUTH: ${{ secrets.OAUTH_CREDENTIALS }}
+        run: |
+          #get auth credentials secret
+          echo "$0AUTH_CREDENTIALS"
+      # - name: Get patches from Google Drive
+      #   run: |
+      #     python3 get_patches.py
+      #     #fetch correct build patches via Google Drive through string parsing
 
       # - name: Extract fresh source files
       #   if: env.FRESH_BUILD == '1'
@@ -150,7 +163,7 @@ jobs:
       #     bash /home/dev/tools/build_netrc.sh;
       #     test -f /home/dev/.netrc
       #     '
-        
+
       # - name: Patch and synchronize repos
       #   run: |
       #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
