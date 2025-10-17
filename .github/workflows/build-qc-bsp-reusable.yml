@@ -74,7 +74,7 @@ jobs:
           BUILD_NAME='${{ inputs.mani_name }}'
           BUILD_VER='${{ inputs.mani_version }}'
           IMAGE_NAME="${MANI_XML##*/}"  
-          IMAGE_NAM  E="${IMAGE_NAME%.*}" 
+          IMAGE_NAME="${IMAGE_NAME%.*}" 
 
           echo "MANI_REPO=$MANI_REPO"
           echo "MANI_BRANCH=$MANI_BRANCH"
