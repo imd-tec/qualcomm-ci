@@ -99,8 +99,8 @@ jobs:
         if: env.FRESH_BUILD == '1'
         run: |
           set -ex
-          mkdir -p "${CI_DIR}/builds/${BUILD_VER}"
-          cd "${CI_DIR}/builds/${BUILD_VER}"
+          mkdir -p "${CI_DIR}/builds/SBC/${BUILD_VER}"
+          cd "${CI_DIR}/builds/SBC/${BUILD_VER}"
           tar -xf "sources/patches.tar.gz" -C .
           tar -xf "../shared_sources/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
