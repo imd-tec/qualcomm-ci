@@ -8,40 +8,82 @@ defaults:
 on:
     workflow_call:
         inputs:
-            mani_repo:
-                type: string
-                required: true
-            mani_branch:
-                type: string
-                required: true
-            mani_xml:
-                type: string
-                required: true
-            mani_name:
-                type: string
-                required: true
-            mani_version:
-                type: string
-                required: true
+          mani_repo:
+            required: true
+            description: Manifest repository URL
+            type: string            
+
+          mani_branch:
+            required: true
+            description: Branch of manifest repository
+            type: string   
+
+          mani_xml:
+            required: true
+            description: Path to the manifest XML file
+            type: string
+
+          mani_name:
+            required: true
+            description: Name of the build
+            type: string
+
+          mani_version:
+            required: true
+            description: Version of the manifest
+            type: string     
+
+          mani_machine:
+            required: true
+            description: Build machine
+            type: string      
+
+          mani_distro:
+            required: true
+            description: Build distro
+            type: string      
+                  
+          mani_image:
+            required: true
+            description: Build image
+            type: string      
+
+          mani_asset_path:
+            required: true
+            description: Path on runner to build assets (patches, etc.)
+            type: string       
+
+          mani_docker:
+            required: true
+            description: Docker image to use
+            type: string
+
+          mani_cdt:
+            required: true
+            type: string        
+
+          mani_patches:
+            required: true
+            description: Whether the build has patches
+            type: string
+
+          mani_release_name:
+            required: true
+            description: Release artifact name
+            type: string     
 
     workflow_dispatch:
 
 env:
-  #Build variables
+  #Build constants
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   CI_DIR: "/mnt/nvme1/qcom_ci"
- 
-  #Eventually these will be passed from manifest via workflow_call
-  DOCKER_VER: "0.5.1"
   SRC_REPO: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   PYENV: "3.8.16"
-  MACHINE: "imdt-qcs8550-sbc"
-  DISTRO: "imdt-qcom-distro-debug"
-  
+
+  #Workflow development variables  
   BUILD_SDK: "1"
   BUILD_CDT: "0"
-
-  #Development variables
   FRESH_BUILD: "1"
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
@@ -51,14 +93,9 @@ jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
     runs-on: [self-hosted, linux, x64, qcom]
-
-    steps:
-      - name: Show trigger info
-        run: |
-          echo "Triggered by ${{ github.event_name }} event."
-          echo "Branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      
-      - name: Set repo workspace
+    steps:      
+      - name: Set repository workspace
+        #Explicit checkout into repository. Required if triggered from external repo.
         uses: actions/checkout@v5
         with:
             repository: imd-tec/qualcomm-ci
@@ -67,198 +104,233 @@ jobs:
 
       - name: Set key build variables
         run: |
-          #set inputs to shell vars
+          #set workflow_call inputs to shell vars
           MANI_REPO='${{ inputs.mani_repo }}'
           MANI_BRANCH='${{ inputs.mani_branch }}'
           MANI_XML='${{ inputs.mani_xml }}'
           BUILD_NAME='${{ inputs.mani_name }}'
           BUILD_VER='${{ inputs.mani_version }}'
-          IMAGE_NAME="${MANI_XML##*/}"  
-          IMAGE_NAME="${IMAGE_NAME%.*}" 
+          BUILD_MACHINE='${{ inputs.mani_machine }}'
+          BUILD_DISTRO='${{ inputs.mani_distro }}'
+          BUILD_IMAGE='${{ inputs.mani_image }}'
+          BUILD_ASSET_PATH='${{ inputs.mani_asset_path }}'
+          BUILD_DOCKER='${{ inputs.mani_docker }}'
+          BUILD_CDT='${{ inputs.mani_cdt }}'
+          HAS_PATCHES='${{ inputs.mani_patches }}'
+          BUILD_RELEASE_NAME='${{ inputs.mani_release_name }}'
 
-          echo "MANI_REPO=$MANI_REPO"
-          echo "MANI_BRANCH=$MANI_BRANCH"
-          echo "MANI_XML=$MANI_XML"
-          echo "BUILD_NAME=$BUILD_NAME"
-          echo "BUILD_VER=$BUILD_VER"
-          echo "IMAGE_NAME=$IMAGE_NAME"
-          
-          #store for later steps
+          echo "  Build Manifest:"
+          echo "  Repository: $MANI_REPO"
+          echo "  Branch: $MANI_BRANCH" 
+          echo "  Manifest: $MANI_XML"
+          echo "  Name: $BUILD_NAME"
+          echo "  Version: $BUILD_VER"
+          echo "  Machine: $BUILD_MACHINE"
+          echo "  Distro: $BUILD_DISTRO"
+          echo "  Image: $BUILD_IMAGE"
+          echo "  Asset Path: $BUILD_ASSET_PATH"
+          echo "  Docker: $BUILD_DOCKER"
+          echo "  CDT: $BUILD_CDT"
+          echo "  Has Patches: $HAS_PATCHES"
+          echo "  Release Name: $BUILD_RELEASE_NAME"
+          echo ""
+
+          #store to Github environmentfor later steps
           {
             echo "MANI_REPO=$MANI_REPO"
             echo "MANI_BRANCH=$MANI_BRANCH"
             echo "MANI_XML=$MANI_XML"
             echo "BUILD_NAME=$BUILD_NAME"
             echo "BUILD_VER=$BUILD_VER"
-            echo "IMAGE_NAME=$IMAGE_NAME"
+            echo "BUILD_MACHINE=$BUILD_MACHINE"
+            echo "BUILD_DISTRO=$BUILD_DISTRO"
+            echo "BUILD_IMAGE=$BUILD_IMAGE"
+            echo "BUILD_ASSET_PATH=$BUILD_ASSET_PATH"
+            echo "BUILD_DOCKER=$BUILD_DOCKER"
+            echo "BUILD_CDT=$BUILD_CDT"
+            echo "HAS_PATCHES=$HAS_PATCHES"
+            echo "BUILD_RELEASE_NAME=$BUILD_RELEASE_NAME"
           } >> "$GITHUB_ENV"
 
-          echo ""
-
-      - name: Extract fresh source files
+      - name: Extract build sources files
         if: env.FRESH_BUILD == '1'
         run: |
           set -ex
-          mkdir -p "${CI_DIR}/builds/SBC/${BUILD_VER}"
-          cd "${CI_DIR}/builds/SBC/${BUILD_VER}"
-          tar -xf "sources/patches.tar.gz" -C .
-          tar -xf "../shared_sources/${SRC_REPO}.tar.gz" -C .
+
+          #ensure that CI_DIR is included in asset path to avoid invalid paths
+          if grep -q "${CI_DIR}" <<< "${BUILD_ASSET_PATH}"; then
+            echo "Using asset path: ${BUILD_ASSET_PATH}"
+          else
+            echo "ERROR: Asset path ${BUILD_ASSET_PATH} is invalid. It must be under ${CI_DIR}."
+            exit 1
+          fi
+
+          #create build version directory irrespective of it already existing
+          mkdir -p "${BUILD_ASSET_PATH}/${BUILD_VER}/SOURCES"
+          cd "${BUILD_ASSET_PATH}/${BUILD_VER}"
+
+          #extract patches and source files
+          if [ $HAS_PATCHES == 1 ]; then
+              tar -xf "sources/patches/patches.tar.gz" -C .
+          fi
+
+          tar -xf "${CI_DIR}/shared_sources/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
           
-      - name: Build container and initialize user permissions & ownership
-        timeout-minutes: 10
-        run: |
-          set +x
-          export HOST_UID=$(id -u)
-          export HOST_GID=$(id -g)
-
-          docker build -f "${CI_DIR}/docker/qc_ci_docker" \
-          -t imdt-qualcomm-ci:"${DOCKER_VER}" \
-          for_docker
-
-          docker run --rm -d \
-          --name "$CONTAINER_NAME" \
-          -e SRC_REPO="$SRC_REPO" \
-          -e MANI_REPO="$MANI_REPO" \
-          -e MANI_BRANCH="$MANI_BRANCH" \
-          -e MANI_XML="$MANI_XML" \
-          -e IMAGE_NAME="$IMAGE_NAME" \
-          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
-          -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
-          -v "${PWD}/for_docker:/workflows" \
-          -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
-          -v "${CI_DIR}/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
-          sleep infinity
-
-          #stream entry point script logs
-          docker logs -f "${CONTAINER_NAME}" &
-          LOG_PID     
-
-          #wait for entry script to signal completion
-          until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
-
-          #kill log stream
-          kill $LOG_PID || true
-
-          #verify that IDs are correct and ownership has been transferred correctly
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'ls -la; id'
-
-      - name: Build netrc
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
-          #build netrc
-          bash /home/dev/tools/build_netrc.sh;
-          test -f /home/dev/.netrc
-          '
-
-      - name: Patch and synchronize repos
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
-          #apply patches to target
-          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
-          TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
-          #batch to bypass user prompts
-          patch --batch "$TARGET" "$PATCHFILE" 
-          #sync repos
-          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
-          '
-
-      - name: Configure kernel directories
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
-          bash -x /home/dev/build_scripts/setup_kernel.sh
-          '
-
-      - name: Apply IMDT patches to Qualcomm source
-        run: | 
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
-          #applying IMDT patches to QC source
-          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          bash -x ./imdt-patch-qcs8550-build.sh
-          '
-
-      - name: Build kernel
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          bash -x /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
-          '
-
-      - name: Build HLOS
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
-          patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
-          "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
-          cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
-          cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/"
-          '
-
-      - name: Build image
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          #setup yocto env
-          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          pyenv global $PYENV
-          source poky/qti-conf/set_bb_env.sh
-          #build image
-          bitbake -k imdt-image-weston --runall=fetch
-          bitbake -k imdt-image-weston
-          '
-
-      - name: Generate Yocto SDK
-        if: env.BUILD_SDK == '1'
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          #setup yocto env
-          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          pyenv global $PYENV
-          source poky/qti-conf/set_bb_env.sh
-          bitbake imdt-image-weston -c populate_sdk
-          '
-
-      - name: Build non-HLOS components
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all 
-          '
-
-      # - name: Generate CDT
-      #   if: env.BUILD_CDT == '1'
+      # - name: Build container and initialize user permissions & ownership
+      #   timeout-minutes: 10
       #   run: |
+      #     set +x
+      #     export HOST_UID=$(id -u)
+      #     export HOST_GID=$(id -g)
 
-      - name: Create release artifact
-        if: ${{ env.KEEP_BUILD == '1' }}
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          release_dir="/home/dev/Qualcomm/RELEASE/${IMAGE_NAME:?}"
+      #     docker build -f "${CI_DIR}/docker/qc_ci_docker" \
+      #     -t imdt-qualcomm-ci:"${DOCKER_VER}" \
+      #     for_docker
 
-          #if release artifact already exists, remove it
-          [ -d "$release_dir" ] && rm -rf "$release_dir"
+      #     docker run --rm -d \
+      #     --name "$CONTAINER_NAME" \
+      #     -e SRC_REPO="$SRC_REPO" \
+      #     -e MANI_REPO="$MANI_REPO" \
+      #     -e MANI_BRANCH="$MANI_BRANCH" \
+      #     -e MANI_XML="$MANI_XML" \
+      #     -e IMAGE_NAME="$IMAGE_NAME" \
+      #     -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
+      #     -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
+      #     -v "${PWD}/for_docker:/workflows" \
+      #     -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
+      #     -v "${CI_DIR}/scripts/:/home/dev/tools/" \
+      #     imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
+      #     sleep infinity
+
+      #     #stream entry point script logs
+      #     docker logs -f "${CONTAINER_NAME}" &
+      #     LOG_PID     
+
+      #     #wait for entry script to signal completion
+      #     until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
+
+      #     #kill log stream
+      #     kill $LOG_PID || true
+
+      #     #verify that IDs are correct and ownership has been transferred correctly
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'ls -la; id'
+
+      # - name: Build netrc
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     set -ex
+      #     #build netrc
+      #     bash /home/dev/tools/build_netrc.sh;
+      #     test -f /home/dev/.netrc
+      #     '
+
+      # - name: Patch and synchronize repos
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     set -ex
+      #     #apply patches to target
+      #     PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+      #     TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
+      #     #batch to bypass user prompts
+      #     patch --batch "$TARGET" "$PATCHFILE" 
+      #     #sync repos
+      #     bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+      #     '
+
+      # - name: Configure kernel directories
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     set -ex
+      #     bash -x /home/dev/build_scripts/setup_kernel.sh
+      #     '
+
+      # - name: Apply IMDT patches to Qualcomm source
+      #   run: | 
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     set -ex
+      #     #applying IMDT patches to QC source
+      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+      #     bash -x ./imdt-patch-qcs8550-build.sh
+      #     '
+
+      # - name: Build kernel
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     bash -x /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
+      #     '
+
+      # - name: Build HLOS
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
+      #     patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
+      #     "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
+      #     cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
+      #     cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/"
+      #     '
+
+      # - name: Build image
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     #setup yocto env
+      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+      #     pyenv global $PYENV
+      #     source poky/qti-conf/set_bb_env.sh
+      #     #build image
+      #     bitbake -k imdt-image-weston --runall=fetch
+      #     bitbake -k imdt-image-weston
+      #     '
+
+      # - name: Generate Yocto SDK
+      #   if: env.BUILD_SDK == '1'
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     #setup yocto env
+      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+      #     pyenv global $PYENV
+      #     source poky/qti-conf/set_bb_env.sh
+      #     bitbake imdt-image-weston -c populate_sdk
+      #     '
+
+      # - name: Build non-HLOS components
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     bash -x /home/dev/build_scripts/build_non_hlos.sh --build all 
+      #     '
+
+      # # - name: Generate CDT
+      # #   if: env.BUILD_CDT == '1'
+      # #   run: |
+
+      # - name: Create release artifact
+      #   if: ${{ env.KEEP_BUILD == '1' }}
+      #   run: |
+      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+      #     release_dir="/home/dev/Qualcomm/RELEASE/${IMAGE_NAME:?}"
+
+      #     #if release artifact already exists, remove it
+      #     [ -d "$release_dir" ] && rm -rf "$release_dir"
           
-          #create new release artifact
-          cd /home/dev/build_scripts
-          python3 create_release.py \
-           -r "$release_dir" \
-           -x "${QCOM_ROOT_DIR}/contents.xml" \
-           -b "${QCOM_ROOT_DIR}"
-          '
+      #     #create new release artifact
+      #     cd /home/dev/build_scripts
+      #     python3 create_release.py \
+      #      -r "$release_dir" \
+      #      -x "${QCOM_ROOT_DIR}/contents.xml" \
+      #      -b "${QCOM_ROOT_DIR}"
+      #     '
 
       - name: Clean up source files
         if:  ${{ always() && env.CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
-          [ -d "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-          rm -rf "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
-          [ -d "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/patches" ] && \
-            rm -rf "/mnt/nvme1/qcom_ci/builds/${BUILD_VER:?}/patches"
+          [ -d "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+          rm -rf "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          [ -d "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches" ] && \
+            rm -rf "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches"
           
       - name: Clean up container and image
-        if: ${{ always()}}
+        if: ${{ always() }}
         run: |
           chmod +x ./stop-container.sh
           ./stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
