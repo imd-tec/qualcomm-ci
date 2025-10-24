@@ -103,21 +103,25 @@ jobs:
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
 
       - name: Set key build variables
+        env:
+          MANI_REPO: ${{ inputs.mani_repo }}
+          MANI_BRANCH: ${{ inputs.mani_branch }}
+          MANI_XML: ${{ inputs.mani_xml }}
+          MANI_NAME: ${{ inputs.mani_name }}
+          MANI_VERSION: ${{ inputs.mani_version }}
+          MANI_MACHINE: ${{ inputs.mani_machine }}
+          MANI_DISTRO: ${{ inputs.mani_distro }}
+          MANI_IMAGE: ${{ inputs.mani_image }}
+          MANI_ASSET_PATH: ${{ inputs.mani_asset_path }}
+          MANI_DOCKER: ${{ inputs.mani_docker }}
+          MANI_CDT: ${{ inputs.mani_cdt }}
+          MANI_PATCHES: ${{ inputs.mani_patches }}
+          MANI_RELEASE_NAME: ${{ inputs.mani_release_name }}
         run: |
           #set workflow_call inputs to shell vars
-          MANI_REPO='${{ inputs.mani_repo }}'
-          MANI_BRANCH='${{ inputs.mani_branch }}'
-          MANI_XML='${{ inputs.mani_xml }}'
-          BUILD_NAME='${{ inputs.mani_name }}'
-          BUILD_VER='${{ inputs.mani_version }}'
-          BUILD_MACHINE='${{ inputs.mani_machine }}'
-          BUILD_DISTRO='${{ inputs.mani_distro }}'
-          BUILD_IMAGE='${{ inputs.mani_image }}'
-          BUILD_ASSET_PATH='${{ inputs.mani_asset_path }}'
-          BUILD_DOCKER='${{ inputs.mani_docker }}'
-          BUILD_CDT='${{ inputs.mani_cdt }}'
-          HAS_PATCHES='${{ inputs.mani_patches }}'
-          BUILD_RELEASE_NAME='${{ inputs.mani_release_name }}'
+          echo "MANI_REPO='${{ inputs.mani_repo }}'"
+          echo "MANI_BRANCH='${{ inputs.mani_branch }}'"
+          echo "MANI_XML='${{ inputs.mani_xml }}'"
 
           echo "  Build Manifest:"
           echo "  Repository: $MANI_REPO"
@@ -153,7 +157,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Extract build sources files
-        if: env.FRESH_BUILD == '1'
+        if: ${{ env.FRESH_BUILD == '1' && inputs.mani_name != 'development' }}
         run: |
           set -ex
 
