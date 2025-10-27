@@ -136,7 +136,7 @@ jobs:
           echo "Release Name: $BUILD_RELEASE_NAME"
           echo ""
 
-          #store to Github environmentfor later steps
+          #export variables to environment for use in subsequent steps
           {
             echo "MANI_REPO=$MANI_REPO"
             echo "MANI_BRANCH=$MANI_BRANCH"
@@ -172,10 +172,10 @@ jobs:
 
           #extract patches and source files
           if [ $HAS_PATCHES == 1 ]; then
-              tar -xf "sources/patches/patches.tar.gz" -C .
+              tar -xf "SOURCES/patches/patches.tar.gz" -C .
           fi
 
-          tar -xf "${CI_DIR}/builds/shared_sources/${SRC_REPO}.tar.gz" -C .
+          tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
           
       # - name: Build container and initialize user permissions & ownership
