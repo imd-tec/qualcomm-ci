@@ -156,7 +156,7 @@ jobs:
       - name: Extract build sources files
         if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}
         run: |
-          set -ex
+          set -x
 
           #verify that CI_DIR is included in project path
           if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
@@ -165,65 +165,68 @@ jobs:
             echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
             exit 1
           fi
-          
+
           #create build project directory
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
 
-          #extract patches if applicable
+          #extract patches if applicable, warn if not present
           if [ $HAS_PATCHES == 1 ]; then
-              tar -xf "SOURCES/patches/patches.tar.gz" -C .
+            echo "Applying patches for build..."
+            if [ ! -f "SOURCES/patches/patches.tar.gz" ]; then
+              echo "::warning expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
+            else tar -xf "SOURCES/patches/patches.tar.gz" -C .
+            fi
           fi
           
           #extract Qualcomm source files
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
           
-      # - name: Build container and initialize user permissions & ownership
-      #   timeout-minutes: 10
-      #   run: |
-      #     set +x
-      #     #get host user and group IDs to pass to container
-      #     export HOST_UID=$(id -u)
-      #     export HOST_GID=$(id -g)
+      - name: Build container and initialize user permissions & ownership
+        timeout-minutes: 10
+        run: |
+          set +x
+          #get host user and group IDs to pass to container
+          export HOST_UID=$(id -u)
+          export HOST_GID=$(id -g)
           
-      #     #build container
-      #     docker build -f "${CI_DIR}/docker/qc_ci_docker" \
-      #     -t imdt-qualcomm-ci:"${DOCKER_VER}" \
-      #     for_docker
+          #build container
+          docker build -f "${CI_DIR}/docker/qc_ci_docker" \
+          -t imdt-qualcomm-ci:"${DOCKER_VER}" \
+          for_docker
 
-      #     #run container
-      #     #pass ID's to entry-point script to setup user permissions and ownership
-      #     docker run --rm -d \
-      #     --name "$CONTAINER_NAME" \
-      #     -e MANI_REPO="$MANI_REPO" \
-      #     -e MANI_BRANCH="$MANI_BRANCH" \
-      #     -e MANI_XML="$MANI_XML" \
-      #     -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
-      #     -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
-      #     -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
-      #     -v "${PWD}/for_docker:/workflows" \
-      #     -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
-      #     -v "${CI_DIR}/scripts/:/home/dev/tools/" \
-      #     imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
-      #     sleep infinity
+          #run container
+          #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
+          docker run --rm -d \
+          --name "$CONTAINER_NAME" \
+          -e MANI_REPO="$MANI_REPO" \
+          -e MANI_BRANCH="$MANI_BRANCH" \
+          -e MANI_XML="$MANI_XML" \
+          -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
+          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
+          -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
+          -v "${PWD}/for_docker:/workflows" \
+          -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
+          -v "${CI_DIR}/scripts/:/home/dev/tools/" \
+          imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
+          sleep infinity
 
-      #     #stream entry point script logs
-      #     docker logs -f "${CONTAINER_NAME}" &
-      #     LOG_PID=$!
+          #stream entry point script logs
+          docker logs -f "${CONTAINER_NAME}" &
+          LOG_PID=$!
 
-      #     #wait for entry script to signal completion
-      #     until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
+          #wait for entry script to signal completion
+          until docker exec "${CONTAINER_NAME}" test -f /tmp/ready; do sleep 2; done
 
-      #     #kill log stream
-      #     kill $LOG_PID || true
+          #kill log stream
+          kill $LOG_PID || true
 
-      #     #verify that IDs are correct and ownership has been transferred correctly
-      #     result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'id')
+          #verify that IDs are correct and ownership has been transferred correctly
+          result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'id')
 
-      #     if [[ "$result" =~ "uid=$HOST_UID($HOST_UID) gid=$HOST_GID($HOST_GID)" ]]; then
-      #       echo "ERROR: User IDs do not match"
-      #       exit 1
-      #     fi
-
+          if [[ $result != *"uid=$HOST_UID"* && $result != *"gid=$HOST_GID"* ]]; then
+            echo "ERROR: User IDs do not match"
+            exit 1
+          fi
       # - name: Build netrc
       #   run: |
       #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
