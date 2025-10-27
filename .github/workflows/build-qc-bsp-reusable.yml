@@ -171,27 +171,34 @@ jobs:
 
           #extract patches if applicable, warn if not present
           if [ $HAS_PATCHES == 1 ]; then
+
             echo "Applying patches for build..."
+      
             if [ ! -f "SOURCES/patches/patches.tar.gz" ]; then
               echo "::warning expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
-            else tar -xf "SOURCES/patches/patches.tar.gz" -C .
+            else 
+            tar -xf "SOURCES/patches/patches.tar.gz" -C .
             fi
+
           fi
           
           #extract Qualcomm source files
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
           
       - name: Build container and initialize user permissions & ownership
-        timeout-minutes: 10
         run: |
           set +x
           #get host user and group IDs to pass to container
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
           
-          #build container
+          
+          DOCKER_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
+          
+          #build container from dockerfile
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
-          -t imdt-qualcomm-ci:"${DOCKER_VER}" \
+          --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
+          -t $DOCKER_NAME \
           for_docker
 
           #run container
@@ -207,7 +214,7 @@ jobs:
           -v "${PWD}/for_docker:/workflows" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
+          $DOCKER_NAME $HOST_UID $HOST_GID \
           sleep infinity
 
           #stream entry point script logs
