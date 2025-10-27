@@ -171,15 +171,12 @@ jobs:
 
           #extract patches if applicable, warn if not present
           if [ $HAS_PATCHES == 1 ]; then
-
+            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" ]; then
             echo "Applying patches for build..."
-      
-            if [ ! -f "SOURCES/patches/patches.tar.gz" ]; then
+            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" -C .
+            else
               echo "::warning expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
-            else 
-            tar -xf "SOURCES/patches/patches.tar.gz" -C .
             fi
-
           fi
           
           #extract Qualcomm source files
@@ -194,7 +191,7 @@ jobs:
           
           
           DOCKER_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
-          
+
           #build container from dockerfile
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
