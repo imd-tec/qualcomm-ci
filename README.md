@@ -1,14 +1,14 @@
-QUALCOMM CI
+# QUALCOMM BUILD AUTOMATION
 
 Aims to automate build process for Qualcomm-based builds. Adapted from getting started guides.
 
-How it works:
+**How it works:**
 1. A manifest change push or cron job (for dev builds) triggers a workflow on the given manifest repository.
 2. The calling workflow fetches the corresponding build details for the given manifest/s from the configuration yaml located in the same repository.
 3. These details are passed to the reusable workflow located in the *qualcomm-ci* via the *workflow_call* keyword.
 4. The reusable workflow executes the corresponding build steps, as per the getting started guide manual build process, with the specified build details.
 
-Notes:
+**Notes:**
 - All referenced files are stored under */mnt/nvme1/qcom_ci/* on the qcom desktop.
 - Qualcomm source files are located in */mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/*
   - As it stands, Qualcomm source files will need to be manually added to the *SHARED_SOURCES* directory.
