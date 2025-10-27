@@ -128,7 +128,8 @@ jobs:
           BUILD_CDT='${{ inputs.build_cdt }}'
           HAS_PATCHES='${{ inputs.build_patches }}'
           BUILD_RELEASE_NAME='${{ inputs.build_release_name }}'
-          PYENV='${{ env.PYENV }}'
+          PYENV='${{ inputs.PYENV }}'
+          QCS_SOURCES='${{ inputs.QCS_SOURCES }}'
 
 
           echo "Build Manifest:"
@@ -145,6 +146,8 @@ jobs:
           echo "CDT: $BUILD_CDT"
           echo "Has Patches: $HAS_PATCHES"
           echo "Release Name: $BUILD_RELEASE_NAME"
+          echo "Pyenv: $PYENV"
+          echo "QCS Sources: $QCS_SOURCES"
           echo ""
 
           #export variables to environment for use in subsequent steps
@@ -162,6 +165,8 @@ jobs:
             echo "BUILD_CDT=$BUILD_CDT"
             echo "HAS_PATCHES=$HAS_PATCHES"
             echo "BUILD_RELEASE_NAME=$BUILD_RELEASE_NAME"
+            echo "PYENV=$PYENV"
+            echo "QCS_SOURCES=$QCS_SOURCES"
           } >> "$GITHUB_ENV"
 
       - name: Extract build sources files
