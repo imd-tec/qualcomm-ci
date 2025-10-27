@@ -71,6 +71,18 @@ on:
             required: true
             description: Release artifact name
             type: string     
+          
+          PYENV:
+            required: true
+            description: Python environment version
+            type: string
+            default: "3.8.16"
+
+          QCS_SOURCES:
+            required: true
+            description: Qualcomm source files to use
+            type: string
+            default: "qcs8550-le-1-0_amss_standard_oem_apqgps"
 
     workflow_dispatch:
 
@@ -78,8 +90,6 @@ env:
   #Build constants
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   CI_DIR: "/mnt/nvme1/qcom_ci"
-  QCS_SOURCES: "qcs8550-le-1-0_amss_standard_oem_apqgps"
-  PYENV: "3.8.16"
 
   #Workflow development variables  
   BUILD_SDK: "1"
@@ -118,6 +128,7 @@ jobs:
           BUILD_CDT='${{ inputs.build_cdt }}'
           HAS_PATCHES='${{ inputs.build_patches }}'
           BUILD_RELEASE_NAME='${{ inputs.build_release_name }}'
+          PYENV='${{ env.PYENV }}'
 
 
           echo "Build Manifest:"
