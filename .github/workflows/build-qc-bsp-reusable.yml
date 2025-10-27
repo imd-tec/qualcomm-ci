@@ -178,31 +178,31 @@ jobs:
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${SRC_REPO}.tar.gz" -C .
           test -d "${SRC_REPO}" && test -d patches
           
-      # - name: Build container and initialize user permissions & ownership
-      #   timeout-minutes: 10
-      #   run: |
-      #     set +x
-      #     export HOST_UID=$(id -u)
-      #     export HOST_GID=$(id -g)
+      - name: Build container and initialize user permissions & ownership
+        timeout-minutes: 10
+        run: |
+          set +x
+          export HOST_UID=$(id -u)
+          export HOST_GID=$(id -g)
 
-      #     docker build -f "${CI_DIR}/docker/qc_ci_docker" \
-      #     -t imdt-qualcomm-ci:"${DOCKER_VER}" \
-      #     for_docker
+          docker build -f "${CI_DIR}/docker/qc_ci_docker" \
+          -t imdt-qualcomm-ci:"${DOCKER_VER}" \
+          for_docker
 
-      #     docker run --rm -d \
-      #     --name "$CONTAINER_NAME" \
-      #     -e SRC_REPO="$SRC_REPO" \
-      #     -e MANI_REPO="$MANI_REPO" \
-      #     -e MANI_BRANCH="$MANI_BRANCH" \
-      #     -e MANI_XML="$MANI_XML" \
-      #     -e IMAGE_NAME="$IMAGE_NAME" \
-      #     -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
-      #     -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
-      #     -v "${PWD}/for_docker:/workflows" \
-      #     -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
-      #     -v "${CI_DIR}/scripts/:/home/dev/tools/" \
-      #     imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
-      #     sleep infinity
+          docker run --rm -d \
+          --name "$CONTAINER_NAME" \
+          -e SRC_REPO="$SRC_REPO" \
+          -e MANI_REPO="$MANI_REPO" \
+          -e MANI_BRANCH="$MANI_BRANCH" \
+          -e MANI_XML="$MANI_XML" \
+          -e IMAGE_NAME="$IMAGE_NAME" \
+          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
+          -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
+          -v "${PWD}/for_docker:/workflows" \
+          -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
+          -v "${CI_DIR}/scripts/:/home/dev/tools/" \
+          imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
+          sleep infinity
 
       #     #stream entry point script logs
       #     docker logs -f "${CONTAINER_NAME}" &
@@ -325,10 +325,10 @@ jobs:
         if:  ${{ always() && env.CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
-          [ -d "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-          rm -rf "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
-          [ -d "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches" ] && \
-            rm -rf "/mnt/nvme1/qcom_ci/${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches"
+          [ -d "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+          rm -rf "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          [ -d "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches" ] && \
+            rm -rf "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches"
           
       - name: Clean up container and image
         if: ${{ always() }}
