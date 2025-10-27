@@ -23,51 +23,51 @@ on:
             description: Path to the manifest XML file
             type: string
 
-          mani_name:
+          build_name:
             required: true
             description: Name of the build
             type: string
 
-          mani_version:
+          build_version:
             required: true
             description: Version of the manifest
             type: string     
 
-          mani_machine:
+          build_machine:
             required: true
             description: Build machine
             type: string      
 
-          mani_distro:
+          build_distro:
             required: true
             description: Build distro
             type: string      
                   
-          mani_image:
+          build_image:
             required: true
             description: Build image
             type: string      
 
-          mani_asset_path:
+          build_project_path:
             required: true
-            description: Path on runner to build assets (patches, etc.)
+            description: Local path on runner to project directory
             type: string       
 
-          mani_docker:
+          build_docker:
             required: true
             description: Docker image to use
             type: string
 
-          mani_cdt:
+          build_cdt:
             required: true
             type: string        
 
-          mani_patches:
+          build_patches:
             required: true
             description: Whether the build has patches
             type: string
 
-          mani_release_name:
+          build_release_name:
             required: true
             description: Release artifact name
             type: string     
@@ -108,16 +108,16 @@ jobs:
           MANI_REPO='${{ inputs.mani_repo }}'
           MANI_BRANCH='${{ inputs.mani_branch }}'
           MANI_XML='${{ inputs.mani_xml }}'
-          BUILD_NAME='${{ inputs.mani_name }}'
-          BUILD_VER='${{ inputs.mani_version }}'
-          BUILD_MACHINE='${{ inputs.mani_machine }}'
-          BUILD_DISTRO='${{ inputs.mani_distro }}'
-          BUILD_IMAGE='${{ inputs.mani_image }}'
-          BUILD_ASSET_PATH='${{ inputs.mani_asset_path }}'
-          BUILD_DOCKER='${{ inputs.mani_docker }}'
-          BUILD_CDT='${{ inputs.mani_cdt }}'
-          HAS_PATCHES='${{ inputs.mani_patches }}'
-          BUILD_RELEASE_NAME='${{ inputs.mani_release_name }}'
+          BUILD_NAME='${{ inputs.build_name }}'
+          BUILD_VER='${{ inputs.build_version }}'
+          BUILD_MACHINE='${{ inputs.build_machine }}'
+          BUILD_DISTRO='${{ inputs.build_distro }}'
+          BUILD_IMAGE='${{ inputs.build_image }}'
+          BUILD_PROJECT_PATH='${{ inputs.build_project_path }}/${{ inputs.build_version }}'
+          BUILD_DOCKER='${{ inputs.build_docker }}'
+          BUILD_CDT='${{ inputs.build_cdt }}'
+          HAS_PATCHES='${{ inputs.build_patches }}'
+          BUILD_RELEASE_NAME='${{ inputs.build_release_name }}'
 
 
           echo "Build Manifest:"
@@ -129,7 +129,7 @@ jobs:
           echo "Machine: $BUILD_MACHINE"
           echo "Distro: $BUILD_DISTRO"
           echo "Image: $BUILD_IMAGE"
-          echo "Asset Path: $BUILD_ASSET_PATH"
+          echo "Build Path: $BUILD_PROJECT_PATH"
           echo "Docker: $BUILD_DOCKER"
           echo "CDT: $BUILD_CDT"
           echo "Has Patches: $HAS_PATCHES"
@@ -146,7 +146,7 @@ jobs:
             echo "BUILD_MACHINE=$BUILD_MACHINE"
             echo "BUILD_DISTRO=$BUILD_DISTRO"
             echo "BUILD_IMAGE=$BUILD_IMAGE"
-            echo "BUILD_ASSET_PATH=$BUILD_ASSET_PATH"
+            echo "BUILD_PROJECT_PATH=$BUILD_PROJECT_PATH"
             echo "BUILD_DOCKER=$BUILD_DOCKER"
             echo "BUILD_CDT=$BUILD_CDT"
             echo "HAS_PATCHES=$HAS_PATCHES"
@@ -154,55 +154,53 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Extract build sources files
-        if: ${{ env.FRESH_BUILD == '1' && inputs.mani_name != 'development' }}
+        if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}
         run: |
           set -ex
 
-          #ensure that CI_DIR is included in asset path to avoid invalid paths
-          if grep -q "${CI_DIR}" <<< "${BUILD_ASSET_PATH}"; then
-            echo "Using asset path: ${BUILD_ASSET_PATH}"
+          #verify that CI_DIR is included in project path
+          if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
+            echo "Using project path: ${BUILD_PROJECT_PATH}"
           else
-            echo "ERROR: Asset path ${BUILD_ASSET_PATH} is invalid. It must be under ${CI_DIR}."
+            echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
             exit 1
           fi
 
-          #create build version directory irrespective of it already existing
-          mkdir -p "${BUILD_ASSET_PATH}/${BUILD_VER}/SOURCES"
-          cd "${BUILD_ASSET_PATH}/${BUILD_VER}"
+          cd "${BUILD_PROJECT_PATH}"
 
-          #extract patches and source files
+          #extract patches if present if flagged
           if [ $HAS_PATCHES == 1 ]; then
               tar -xf "SOURCES/patches/patches.tar.gz" -C .
           fi
-
-          tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${SRC_REPO}.tar.gz" -C .
-          test -d "${SRC_REPO}" && test -d patches
           
-      - name: Build container and initialize user permissions & ownership
-        timeout-minutes: 10
-        run: |
-          set +x
-          export HOST_UID=$(id -u)
-          export HOST_GID=$(id -g)
+          #extract source files
+          tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${SRC_REPO}.tar.gz" -C .
+          
+      # - name: Build container and initialize user permissions & ownership
+      #   timeout-minutes: 10
+      #   run: |
+      #     set +x
+      #     export HOST_UID=$(id -u)
+      #     export HOST_GID=$(id -g)
 
-          docker build -f "${CI_DIR}/docker/qc_ci_docker" \
-          -t imdt-qualcomm-ci:"${DOCKER_VER}" \
-          for_docker
+      #     docker build -f "${CI_DIR}/docker/qc_ci_docker" \
+      #     -t imdt-qualcomm-ci:"${DOCKER_VER}" \
+      #     for_docker
 
-          docker run --rm -d \
-          --name "$CONTAINER_NAME" \
-          -e SRC_REPO="$SRC_REPO" \
-          -e MANI_REPO="$MANI_REPO" \
-          -e MANI_BRANCH="$MANI_BRANCH" \
-          -e MANI_XML="$MANI_XML" \
-          -e IMAGE_NAME="$IMAGE_NAME" \
-          -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
-          -e MACHINE="$MACHINE" -e DISTRO="$DISTRO" -e PYENV="$PYENV" \
-          -v "${PWD}/for_docker:/workflows" \
-          -v "${CI_DIR}/builds/${BUILD_VER}:/home/dev/Qualcomm" \
-          -v "${CI_DIR}/scripts/:/home/dev/tools/" \
-          imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
-          sleep infinity
+      #     docker run --rm -d \
+      #     --name "$CONTAINER_NAME" \
+      #     -e SRC_REPO="$SRC_REPO" \
+      #     -e MANI_REPO="$MANI_REPO" \
+      #     -e MANI_BRANCH="$MANI_BRANCH" \
+      #     -e MANI_XML="$MANI_XML" \
+      #     -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
+      #     -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${SRC_REPO}" \
+      #     -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
+      #     -v "${PWD}/for_docker:/workflows" \
+      #     -v "${BUILD_PROJECT_PATH}/home/dev/Qualcomm" \
+      #     -v "${CI_DIR}/scripts/:/home/dev/tools/" \
+      #     imdt-qualcomm-ci:${DOCKER_VER} $HOST_UID $HOST_GID \
+      #     sleep infinity
 
       #     #stream entry point script logs
       #     docker logs -f "${CONTAINER_NAME}" &
@@ -308,7 +306,7 @@ jobs:
       #   if: ${{ env.KEEP_BUILD == '1' }}
       #   run: |
       #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     release_dir="/home/dev/Qualcomm/RELEASE/${IMAGE_NAME:?}"
+      #     release_dir="/home/dev/Qualcomm/RELEASE/${BUILD_RELEASE_NAME:?}"
 
       #     #if release artifact already exists, remove it
       #     [ -d "$release_dir" ] && rm -rf "$release_dir"
@@ -325,10 +323,10 @@ jobs:
         if:  ${{ always() && env.CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
-          [ -d "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-          rm -rf "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
-          [ -d "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches" ] && \
-            rm -rf "${BUILD_ASSET_PATH:?}/${BUILD_VER:?}/patches"
+          [ -d "${BUILD_PROJECT_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
+          rm -rf "${BUILD_PROJECT_PATH:?}/${BUILD_VER:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          [ -d "${BUILD_PROJECT_PATH:?}/${BUILD_VER:?}/patches" ] && \
+            rm -rf "${BUILD_PROJECT_PATH:?}/${BUILD_VER:?}/patches"
           
       - name: Clean up container and image
         if: ${{ always() }}
