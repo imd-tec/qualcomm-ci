@@ -247,6 +247,7 @@ jobs:
             echo "ERROR: User IDs do not match"
             exit 1
           fi
+
       # - name: Build netrc
       #   run: |
       #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
@@ -359,9 +360,10 @@ jobs:
           rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
 
           if [ $HAS_PATCHES == 1 ]; then
-            [ -d "${BUILD_PROJECT_PATH:?}/SOURCES/patches" ] && \
-              rm -rf "${BUILD_PROJECT_PATH:?}/SOURCES/patches"
+            [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
+              rm -rf "${BUILD_PROJECT_PATH:?}/patches"
           fi            
+
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
