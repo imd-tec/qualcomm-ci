@@ -3,7 +3,7 @@ name: Build qcom BSP (reusable)
 
 defaults:
   run:
-    shell: bash -euo pipefail {0}
+    shell: bash -uo pipefail {0}
 
 on:
     workflow_call:
