@@ -242,13 +242,13 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -ex
           
-          #apply patches to target
-          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
-          TARGET="${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/sync_snap_v2.sh"
+          if [ $HAS_PATCHES == 1 ]; then
+            PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+            TARGET="${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/sync_snap_v2.sh"
+            #batch to bypass user prompts
+            patch --batch "$TARGET" "$PATCHFILE" 
+          fi
 
-          #batch to bypass user prompts
-          patch --batch "$TARGET" "$PATCHFILE" 
-          
           #sync repos
           bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
           '
