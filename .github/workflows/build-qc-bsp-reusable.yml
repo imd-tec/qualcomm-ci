@@ -162,21 +162,21 @@ jobs:
 
           #extract patches if applicable, warn if not present
           if [ $HAS_PATCHES == 1 ]; then
-            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" ]; then
+            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz" ]; then
             echo "Extracting patches for build..."
-            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" -C .
+            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz" -C .
             else
-              echo "WARNING: Expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
+              echo "WARNING: Expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz. Continuing..."
             fi
           fi
 
           #extract CDT if applicable
           if [ $BUILD_CDT == 1 ]; then
-            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz" ]; then
+            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz" ]; then
             echo "Extracting CDT for build..."
-            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz" -C .
+            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz" -C .
             else
-              echo "WARNING: Expected CDT not found in ${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz. Continuing..."
+              echo "WARNING: Expected CDT not found in ${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz. Continuing..."
             fi
           fi
 
@@ -192,7 +192,7 @@ jobs:
           
           
           IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
-          echo "$IMAGE_NAME" >> GITHUB_ENV 
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
           #build container from dockerfile
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
@@ -372,6 +372,11 @@ jobs:
           if [ $HAS_PATCHES == 1 ]; then
             [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
               rm -rf "${BUILD_PROJECT_PATH:?}/patches"
+          fi            
+
+          if [ $BUILD_CDT == 1 ]; then
+            [ -d "${BUILD_PROJECT_PATH:?}/CDT" ] && \
+              rm -rf "${BUILD_PROJECT_PATH:?}/CDT"
           fi            
 
       - name: Clean up container and image
