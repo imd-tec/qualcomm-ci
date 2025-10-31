@@ -333,9 +333,8 @@ jobs:
           '
 
       - name: Generate CDT
-        if: ${{ !contains(env.SKIP_STEPS, 'build_cdt') }}
         #temporailly skip CDT for imsu-glasses-poc due to inconsistent process
-        if: ${{ env.BUILD_CDT == '1' && env.BUILD_MACHINE != 'imsu-glasses-poc' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'build_cdt') && env.BUILD_CDT == '1' && env.BUILD_MACHINE != 'imsu-glasses-poc' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc ' 
           # if [ $BUILD_MACHINE == "imsu-glasses-poc" && $BUILD_CDT == "1" ]; then
