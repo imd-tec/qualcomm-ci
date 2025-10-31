@@ -197,7 +197,7 @@ jobs:
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
           -t $DOCKER_NAME \
-          for_docker
+          ${CI_DIR}/scripts/docker_scripts/
 
           #run container
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
@@ -209,7 +209,6 @@ jobs:
           -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
           -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
-          -v "${PWD}/for_docker:/workflows" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
           $DOCKER_NAME $HOST_UID $HOST_GID \
@@ -305,7 +304,7 @@ jobs:
       - name: Build image
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          ./for_docker/setup_yocto_env.sh
+          bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake -k ${BUILD_IMAGE} --runall=fetch
           bitbake -k ${BUILD_IMAGE}
@@ -315,7 +314,7 @@ jobs:
         if : ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          ./for_docker/setup_yocto_env.sh
+          bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${BUILD_IMAGE} -c populate_sdk
           '
@@ -327,9 +326,9 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          ./for_docker/setup_yocto_env.sh
-          
-          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all 
+          bash /home/dev/tools/setup_yocto_env.sh
+
+          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
 
       - name: Generate CDT
@@ -376,8 +375,8 @@ jobs:
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
-          chmod +x /scripts/stop-container.sh
-          bash /scripts/stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
+          chmod +x ${PWD}/scripts/stop-container.sh
+          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
 
 
 
