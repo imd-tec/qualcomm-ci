@@ -132,6 +132,8 @@ jobs:
         if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}
         run: |
           set -x
+          #append version to project path
+          BUILD_PROJECT_PATH="${BUILD_PROJECT_PATH}/v${BUILD_VER}"
 
           #verify that CI_DIR is included in project path
           if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
@@ -150,7 +152,7 @@ jobs:
             echo "Applying patches for build..."
             tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" -C .
             else
-              echo "::warning expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
+              echo "WARNING: Expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
             fi
           fi
           
