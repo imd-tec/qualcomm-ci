@@ -93,6 +93,11 @@ on:
             description: Qualcomm release tag
             type: string
 
+          SKIP_STEPS:
+            required: false
+            description: Steps to skip during the build
+            type: string
+
     workflow_dispatch:
 
 env:
@@ -129,6 +134,7 @@ jobs:
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
       QCS_RELEASE_TAG: ${{ inputs.QCS_RELEASE_TAG }}
+      SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
 
     steps:      
       - name: Set repository workspace
@@ -140,7 +146,6 @@ jobs:
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
 
       - name: Extract build sources files
-        if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}
         run: |
           set -x
 
@@ -238,6 +243,7 @@ jobs:
           '
 
       - name: Patch and synchronize repos
+        if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -ex
@@ -261,6 +267,7 @@ jobs:
           '
 
       - name: Apply IMDT patches to Qualcomm source
+        if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -ex
@@ -276,6 +283,7 @@ jobs:
           '
 
       - name: Build HLOS
+        if: ${{ !contains(env.SKIP_STEPS, 'build_hlos') }}
         run: |
           set -ex
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
@@ -304,6 +312,7 @@ jobs:
           '
 
       - name: Generate Yocto SDK
+        if : ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           ./for_docker/setup_yocto_env.sh
@@ -315,6 +324,7 @@ jobs:
 
       
       - name: Build non-HLOS components
+        if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           ./for_docker/setup_yocto_env.sh
@@ -323,6 +333,7 @@ jobs:
           '
 
       - name: Generate CDT
+        if: ${{ !contains(env.SKIP_STEPS, 'build_cdt') }}
         #temporailly skip CDT for imsu-glasses-poc due to inconsistent process
         if: ${{ env.BUILD_CDT == '1' && env.BUILD_MACHINE != 'imsu-glasses-poc' }}
         run: |
@@ -335,7 +346,7 @@ jobs:
           '
 
       - name: Create release artifact
-        if: ${{ env.KEEP_BUILD == '1' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           RELEASE_DIR="/home/dev/Qualcomm/${BUILD_RELEASE_NAME}_v${BUILD_VER}"
