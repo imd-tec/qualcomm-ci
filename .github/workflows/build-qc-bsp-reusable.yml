@@ -3,7 +3,7 @@ name: Build qcom BSP (reusable)
 
 defaults:
   run:
-    shell: bash -eo pipefail {0}
+    shell: bash -euo pipefail {0}
 
 on:
     workflow_call:
@@ -82,7 +82,6 @@ on:
             required: true
             description: Qualcomm source files to use
             type: string
-            default: "qcs8550-le-1-0_amss_standard_oem_apqgps"
 
     workflow_dispatch:
 
@@ -103,6 +102,23 @@ jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
     runs-on: [self-hosted, linux, x64, qcom]
+    env:
+      MANI_REPO: ${{ inputs.mani_repo }}
+      MANI_BRANCH: ${{ inputs.mani_branch }}
+      MANI_XML: ${{ inputs.mani_xml }}
+      BUILD_NAME: ${{ inputs.build_name }}
+      BUILD_VER: ${{ inputs.build_version }}
+      BUILD_MACHINE: ${{ inputs.build_machine }}
+      BUILD_DISTRO: ${{ inputs.build_distro }}
+      BUILD_IMAGE: ${{ inputs.build_image }}
+      BUILD_PROJECT_PATH: ${{ inputs.build_project_path }}
+      BUILD_DOCKER: ${{ inputs.build_docker }}
+      BUILD_CDT: ${{ inputs.build_cdt }}
+      HAS_PATCHES: ${{ inputs.build_patches }}
+      BUILD_RELEASE_NAME: ${{ inputs.build_release_name }}
+      PYENV: ${{ inputs.PYENV }}
+      QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
+
     steps:      
       - name: Set repository workspace
         #Explicit checkout into repository. Required if triggered from external repo.
@@ -111,63 +127,6 @@ jobs:
             repository: imd-tec/qualcomm-ci
             ref: master
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
-
-      - name: Set key build variables
-        run: |
-          #set workflow_call inputs to shell vars
-          MANI_REPO='${{ inputs.mani_repo }}'
-          MANI_BRANCH='${{ inputs.mani_branch }}'
-          MANI_XML='${{ inputs.mani_xml }}'
-          BUILD_NAME='${{ inputs.build_name }}'
-          BUILD_VER='${{ inputs.build_version }}'
-          BUILD_MACHINE='${{ inputs.build_machine }}'
-          BUILD_DISTRO='${{ inputs.build_distro }}'
-          BUILD_IMAGE='${{ inputs.build_image }}'
-          BUILD_PROJECT_PATH='${{ inputs.build_project_path }}/${{ inputs.build_version }}'
-          BUILD_DOCKER='${{ inputs.build_docker }}'
-          BUILD_CDT='${{ inputs.build_cdt }}'
-          HAS_PATCHES='${{ inputs.build_patches }}'
-          BUILD_RELEASE_NAME='${{ inputs.build_release_name }}'
-          PYENV='${{ inputs.PYENV }}'
-          QCS_SOURCES='${{ inputs.QCS_SOURCES }}'
-
-
-          echo "Build Manifest:"
-          echo "Repository: $MANI_REPO"
-          echo "Branch: $MANI_BRANCH" 
-          echo "Manifest: $MANI_XML"
-          echo "Name: $BUILD_NAME"
-          echo "Version: $BUILD_VER"
-          echo "Machine: $BUILD_MACHINE"
-          echo "Distro: $BUILD_DISTRO"
-          echo "Image: $BUILD_IMAGE"
-          echo "Build Path: $BUILD_PROJECT_PATH"
-          echo "Docker: $BUILD_DOCKER"
-          echo "CDT: $BUILD_CDT"
-          echo "Has Patches: $HAS_PATCHES"
-          echo "Release Name: $BUILD_RELEASE_NAME"
-          echo "Pyenv: $PYENV"
-          echo "QCS Sources: $QCS_SOURCES"
-          echo ""
-
-          #export variables to environment for use in subsequent steps
-          {
-            echo "MANI_REPO=$MANI_REPO"
-            echo "MANI_BRANCH=$MANI_BRANCH"
-            echo "MANI_XML=$MANI_XML"
-            echo "BUILD_NAME=$BUILD_NAME"
-            echo "BUILD_VER=$BUILD_VER"
-            echo "BUILD_MACHINE=$BUILD_MACHINE"
-            echo "BUILD_DISTRO=$BUILD_DISTRO"
-            echo "BUILD_IMAGE=$BUILD_IMAGE"
-            echo "BUILD_PROJECT_PATH=$BUILD_PROJECT_PATH"
-            echo "BUILD_DOCKER=$BUILD_DOCKER"
-            echo "BUILD_CDT=$BUILD_CDT"
-            echo "HAS_PATCHES=$HAS_PATCHES"
-            echo "BUILD_RELEASE_NAME=$BUILD_RELEASE_NAME"
-            echo "PYENV=$PYENV"
-            echo "QCS_SOURCES=$QCS_SOURCES"
-          } >> "$GITHUB_ENV"
 
       - name: Extract build sources files
         if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}

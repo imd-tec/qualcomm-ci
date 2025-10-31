@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# entrypoint script for qualcomm-ci docker container that ensures user ids match host
+# Usage: docker_entry_point.sh <host-uid> <host-gid>
+
 USER_NAME=dev
 PREV_ID=$(id -u $USER_NAME)
 PREV_GID=$(id -g $USER_NAME)

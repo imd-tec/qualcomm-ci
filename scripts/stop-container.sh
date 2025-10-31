@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# Usage: stop-container.sh <container-name> <docker-version>
+# Example: stop-container.sh qualcomm-ci v1.0
+
 CONTAINER_NAME=$1
 DOCKER_VER=$2
 
