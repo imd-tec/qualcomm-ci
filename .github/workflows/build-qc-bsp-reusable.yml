@@ -67,6 +67,11 @@ on:
             description: Whether the build has patches
             type: string
 
+          build_patch_script_path:
+            required: true
+            description: Path to IMDT patch build script
+            type: string
+
           build_release_name:
             required: true
             description: Release artifact name
@@ -81,6 +86,11 @@ on:
           QCS_SOURCES:
             required: true
             description: Qualcomm source files to use
+            type: string
+
+          QCS_RELEASE_TAG:
+            required: true
+            description: Qualcomm release tag
             type: string
 
     workflow_dispatch:
@@ -111,13 +121,16 @@ jobs:
       BUILD_MACHINE: ${{ inputs.build_machine }}
       BUILD_DISTRO: ${{ inputs.build_distro }}
       BUILD_IMAGE: ${{ inputs.build_image }}
-      BUILD_PROJECT_PATH: ${{ inputs.build_project_path }}
+      #This evaluates to [project_path]/[version]
+      BUILD_PROJECT_PATH: ${{ format('{0}/{1}', inputs.build_project_path, inputs.build_version) }}
       BUILD_DOCKER: ${{ inputs.build_docker }}
       BUILD_CDT: ${{ inputs.build_cdt }}
       HAS_PATCHES: ${{ inputs.build_patches }}
+      PATCH_SCRIPT_PATH: ${{ inputs.build_patch_script_path }}
       BUILD_RELEASE_NAME: ${{ inputs.build_release_name }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
+      QCS_RELEASE_TAG: ${{ inputs.QCS_RELEASE_TAG }}
 
     steps:      
       - name: Set repository workspace
@@ -132,8 +145,6 @@ jobs:
         if: ${{ env.FRESH_BUILD == '1' && inputs.build_name != 'development' }}
         run: |
           set -x
-          #append version to project path
-          BUILD_PROJECT_PATH="${BUILD_PROJECT_PATH}/${BUILD_VER}"
 
           #verify that CI_DIR is included in project path
           if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
@@ -187,7 +198,7 @@ jobs:
           -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
           -v "${PWD}/for_docker:/workflows" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
-          -v "${CI_DIR}/scripts/:/home/dev/tools/" \
+          -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
           $DOCKER_NAME $HOST_UID $HOST_GID \
           sleep infinity
 
@@ -209,109 +220,121 @@ jobs:
             exit 1
           fi
 
-      # - name: Build netrc
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     set -ex
-      #     #build netrc
-      #     bash /home/dev/tools/build_netrc.sh;
-      #     test -f /home/dev/.netrc
-      #     '
+      - name: Build netrc
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -ex
 
-      # - name: Patch and synchronize repos
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     set -ex
-      #     #apply patches to target
-      #     PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
-      #     TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
-      #     #batch to bypass user prompts
-      #     patch --batch "$TARGET" "$PATCHFILE" 
-      #     #sync repos
-      #     bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
-      #     '
+          #build netrc
+          bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
+          '
 
-      # - name: Configure kernel directories
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     set -ex
-      #     bash -x /home/dev/build_scripts/setup_kernel.sh
-      #     '
-
-      # - name: Apply IMDT patches to Qualcomm source
-      #   run: | 
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     set -ex
-      #     #applying IMDT patches to QC source
-      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-      #     bash -x ./imdt-patch-qcs8550-build.sh
-      #     '
-
-      # - name: Build kernel
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     bash -x /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
-      #     '
-
-      # - name: Build HLOS
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
-      #     patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
-      #     "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
-      #     cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
-      #     cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/"
-      #     '
-
-      # - name: Build image
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     #setup yocto env
-      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-      #     pyenv global $PYENV
-      #     source poky/qti-conf/set_bb_env.sh
-      #     #build image
-      #     bitbake -k imdt-image-weston --runall=fetch
-      #     bitbake -k imdt-image-weston
-      #     '
-
-      # - name: Generate Yocto SDK
-      #   if: env.BUILD_SDK == '1'
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     #setup yocto env
-      #     cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-      #     pyenv global $PYENV
-      #     source poky/qti-conf/set_bb_env.sh
-      #     bitbake imdt-image-weston -c populate_sdk
-      #     '
-
-      # - name: Build non-HLOS components
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     bash -x /home/dev/build_scripts/build_non_hlos.sh --build all 
-      #     '
-
-      # # - name: Generate CDT
-      # #   if: env.BUILD_CDT == '1'
-      # #   run: |
-
-      # - name: Create release artifact
-      #   if: ${{ env.KEEP_BUILD == '1' }}
-      #   run: |
-      #     $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-      #     release_dir="/home/dev/Qualcomm/RELEASE/${BUILD_RELEASE_NAME:?}"
-
-      #     #if release artifact already exists, remove it
-      #     [ -d "$release_dir" ] && rm -rf "$release_dir"
+      - name: Patch and synchronize repos
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -ex
           
-      #     #create new release artifact
-      #     cd /home/dev/build_scripts
-      #     python3 create_release.py \
-      #      -r "$release_dir" \
-      #      -x "${QCOM_ROOT_DIR}/contents.xml" \
-      #      -b "${QCOM_ROOT_DIR}"
-      #     '
+          #apply patches to target
+          PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
+          TARGET="${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/sync_snap_v2.sh"
+
+          #batch to bypass user prompts
+          patch --batch "$TARGET" "$PATCHFILE" 
+          
+          #sync repos
+          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+          '
+
+      - name: Configure kernel directories
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -ex
+          bash -x /home/dev/build_scripts/setup_kernel.sh
+          '
+
+      - name: Apply IMDT patches to Qualcomm source
+        run: | 
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -ex
+
+          #applying IMDT patches to QC source
+          bash -x "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/${PATCH_SCRIPT_PATH}"
+          '
+
+      - name: Build kernel
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          bash -x /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
+          '
+
+      - name: Build HLOS
+        run: |
+          set -ex
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          cd "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/poky"
+
+          patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
+          "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
+          
+          #How best to handle release specific steps?
+          if [ ${QCS_RELEASE_TAG} == "LE.PRODUCT.2.1.r1" ]; then
+            cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
+                    "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/poky/"
+            cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* \
+                    "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/src/"
+          fi
+
+          '
+
+      - name: Build image
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          ./for_docker/setup_yocto_env.sh
+
+          bitbake -k ${BUILD_IMAGE} --runall=fetch
+          bitbake -k ${BUILD_IMAGE}
+          '
+
+      - name: Generate Yocto SDK
+        if: env.BUILD_SDK == '1'
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          ./for_docker/setup_yocto_env.sh
+
+          bitbake ${BUILD_IMAGE} -c populate_sdk
+          '
+          
+          #rename sdk to [project]-sdk-v[version].sh
+
+      
+      - name: Build non-HLOS components
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          ./for_docker/setup_yocto_env.sh
+          
+          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all 
+          '
+
+      - name: Generate CDT
+        if: env.BUILD_CDT == '1'
+        run: |
+
+      - name: Create release artifact
+        if: ${{ env.KEEP_BUILD == '1' }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          RELEASE_DIR="/home/dev/Qualcomm/${BUILD_RELEASE_NAME}_v${BUILD_VER}"
+
+          #if release artifact already exists, remove it
+          [ -d "$RELEASE_DIR" ] && rm -rf "$RELEASE_DIR"
+          
+          #create new release artifact
+          cd /home/dev/build_scripts
+          python3 create_release.py \
+           -r "$RELEASE_DIR" \
+           -x "${QCOM_ROOT_DIR}/contents.xml" \
+           -b "${QCOM_ROOT_DIR}"
+          '
 
       - name: Clean up source files
         if:  ${{ always() && env.CLEAN_UP == '1' }}
@@ -328,8 +351,8 @@ jobs:
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
-          chmod +x ./stop-container.sh
-          ./stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
+          chmod +x /scripts/stop-container.sh
+          bash /scripts/stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
 
 
 
