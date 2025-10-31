@@ -191,12 +191,13 @@ jobs:
           export HOST_GID=$(id -g)
           
           
-          DOCKER_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
+          IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
+          echo "$IMAGE_NAME" >> GITHUB_ENV 
 
           #build container from dockerfile
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
-          -t $DOCKER_NAME \
+          -t $IMAGE_NAME \
           ${CI_DIR}/scripts/docker_scripts/
 
           #run container
@@ -211,7 +212,7 @@ jobs:
           -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
-          $DOCKER_NAME $HOST_UID $HOST_GID \
+          $IMAGE_NAME $HOST_UID $HOST_GID \
           sleep infinity
 
           #stream entry point script logs
@@ -245,7 +246,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
+          set -x
           
           if [ $HAS_PATCHES == 1 ]; then
             PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
@@ -377,7 +378,7 @@ jobs:
         if: ${{ always() }}
         run: |
           chmod +x ${PWD}/scripts/stop-container.sh
-          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${DOCKER_VER}
+          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
 
 
