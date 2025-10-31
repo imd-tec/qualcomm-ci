@@ -133,7 +133,7 @@ jobs:
         run: |
           set -x
           #append version to project path
-          BUILD_PROJECT_PATH="${BUILD_PROJECT_PATH}/v${BUILD_VER}"
+          BUILD_PROJECT_PATH="${BUILD_PROJECT_PATH}/${BUILD_VER}"
 
           #verify that CI_DIR is included in project path
           if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
