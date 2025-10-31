@@ -235,7 +235,7 @@ jobs:
       - name: Build netrc
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -ex
+          set -x
 
           #build netrc
           bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
@@ -295,6 +295,7 @@ jobs:
           if [ ${QCS_RELEASE_TAG} == "LE.PRODUCT.2.1.r1" ]; then
             cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
                     "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/poky/"
+
             cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* \
                     "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/src/"
           fi
