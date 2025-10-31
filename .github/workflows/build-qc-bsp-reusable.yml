@@ -101,8 +101,6 @@ env:
   CI_DIR: "/mnt/nvme1/qcom_ci"
 
   #Workflow development variables  
-  BUILD_SDK: "1"
-  BUILD_CDT: "0"
   FRESH_BUILD: "1"
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
@@ -160,13 +158,23 @@ jobs:
           #extract patches if applicable, warn if not present
           if [ $HAS_PATCHES == 1 ]; then
             if [ -f "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" ]; then
-            echo "Applying patches for build..."
+            echo "Extracting patches for build..."
             tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz" -C .
             else
               echo "WARNING: Expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches/patches.tar.gz. Continuing..."
             fi
           fi
-          
+
+          #extract CDT if applicable
+          if [ $BUILD_CDT == 1 ]; then
+            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz" ]; then
+            echo "Extracting CDT for build..."
+            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz" -C .
+            else
+              echo "WARNING: Expected CDT not found in ${BUILD_PROJECT_PATH}/SOURCES/$CDT.tar.gz. Continuing..."
+            fi
+          fi
+
           #extract Qualcomm source files
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
           
@@ -296,7 +304,6 @@ jobs:
           '
 
       - name: Generate Yocto SDK
-        if: env.BUILD_SDK == '1'
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           ./for_docker/setup_yocto_env.sh
@@ -316,8 +323,11 @@ jobs:
           '
 
       - name: Generate CDT
-        if: env.BUILD_CDT == '1'
+        if: ${{ env.BUILD_CDT == '1' }}
         run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          bash -x /home/dev/build_scripts/setup_cdt.sh
+          '
 
       - name: Create release artifact
         if: ${{ env.KEEP_BUILD == '1' }}
