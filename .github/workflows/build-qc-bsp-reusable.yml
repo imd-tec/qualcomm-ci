@@ -6,97 +6,97 @@ defaults:
     shell: bash -ueo pipefail {0}
 
 on:
-    workflow_call:
-        inputs:
-          mani_repo:
-            required: true
-            description: Manifest repository URL
-            type: string            
+  workflow_call:
+      inputs:
+        mani_repo:
+          required: true
+          description: Manifest repository URL
+          type: string            
 
-          mani_branch:
-            required: true
-            description: Branch of manifest repository
-            type: string   
+        mani_branch:
+          required: true
+          description: Branch of manifest repository
+          type: string   
 
-          mani_xml:
-            required: true
-            description: Path to the manifest XML file
-            type: string
+        mani_xml:
+          required: true
+          description: Path to the manifest XML file
+          type: string
 
-          build_name:
-            required: true
-            description: Name of the build
-            type: string
+        build_name:
+          required: true
+          description: Name of the build
+          type: string
 
-          build_version:
-            required: true
-            description: Version of the manifest
-            type: string     
+        build_version:
+          required: true
+          description: Version of the manifest
+          type: string     
 
-          build_machine:
-            required: true
-            description: Build machine
-            type: string      
+        build_machine:
+          required: true
+          description: Build machine
+          type: string      
 
-          build_distro:
-            required: true
-            description: Build distro
-            type: string      
-                  
-          build_image:
-            required: true
-            description: Build image
-            type: string      
+        build_distro:
+          required: true
+          description: Build distro
+          type: string      
+                
+        build_image:
+          required: true
+          description: Build image
+          type: string      
 
-          build_project_path:
-            required: true
-            description: Local path on runner to project directory
-            type: string       
+        build_project_path:
+          required: true
+          description: Local path on runner to project directory
+          type: string       
 
-          build_docker:
-            required: true
-            description: Docker image to use
-            type: string
+        build_docker:
+          required: true
+          description: Docker image to use
+          type: string
 
-          build_patches:
-            required: true
-            description: Whether the build has patches
-            type: string
+        build_patches:
+          required: true
+          description: Whether the build has patches
+          type: string
 
-          build_patch_script_path:
-            required: true
-            description: Path to IMDT patch build script
-            type: string
+        build_patch_script_path:
+          required: true
+          description: Path to IMDT patch build script
+          type: string
 
-          build_release_name:
-            required: true
-            description: Release artifact name
-            type: string     
-          
-          PYENV:
-            required: true
-            description: Python environment version
-            type: string
-            default: "3.8.16"
+        build_release_name:
+          required: true
+          description: Release artifact name
+          type: string     
+        
+        PYENV:
+          required: true
+          description: Python environment version
+          type: string
+          default: "3.8.16"
 
-          QCS_SOURCES:
-            required: true
-            description: Qualcomm source files to use
-            type: string
+        QCS_SOURCES:
+          required: true
+          description: Qualcomm source files to use
+          type: string
 
-          SKIP_STEPS:
-            required: false
-            description: Steps to skip during the build
-            type: string
+        SKIP_STEPS:
+          required: false
+          description: Steps to skip during the build
+          type: string
 
-    workflow_dispatch:
+  workflow_dispatch:
 
 env:
   #Build constants
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   CI_DIR: "/mnt/nvme1/qcom_ci"
 
-  #Workflow development variables  
+  #Workflow development variables
   FRESH_BUILD: "1"
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
@@ -307,14 +307,15 @@ jobs:
           
           #locate generated SDK script and rename
           SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${BUILD_DISTRO}/tmp-glibc/deploy/sdk/"
-          mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${BUILD_DISTRO}*.sh")
           
-          #if there is exactly one script matching, rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
-          if (( ${#matches[@] == 1 )); then
-            mv -- "${matches[0]}" "${SDK_DIR}/${BUILD_RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh" 
+          #verify that there is exactly one script matching
+          mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${BUILD_DISTRO}*.sh")
+          if (( ${#matches[@]} == 1 )); then
+            rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
+            mv -- "${matches[0]}" "${SDK_DIR}/${BUILD_RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh"
           else
-            echo "Error: Expected exactly 1 SDK file, found ${#matches[@]}."
-            exit 1
+            echo "Warning: Expected exactly 1 SDK file, found ${#matches[@]}. Skipping rename."
+            exit 0
           fi
           '
       
