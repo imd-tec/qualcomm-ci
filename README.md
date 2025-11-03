@@ -1,6 +1,6 @@
 # QUALCOMM BUILD AUTOMATION WIP
 
-Aims to automate build process for Qualcomm-based builds. Adapted from getting started guides. The build process is executed under /mnt/nvm1/qcom_ci/builds/<project>/<sub-project>/<version>/.
+Aims to automate build process for Qualcomm-based builds. Adapted from getting started guides. The build process is executed under /mnt/nvm1/qcom_ci/builds/[project]/[sub-project]/[version]/.
 
 **Requirements**
 - Qualcomm manifest repository containing trigger-build.yml under *.github/workflows*
