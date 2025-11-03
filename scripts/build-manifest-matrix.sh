@@ -14,14 +14,14 @@ set -euo pipefail
 
 #set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
 MANI_LIST="${RUNNER_TEMP}/manifests.txt"
-MANI_PATH="."
+MANI_REPO_PATH="."
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -m|--manifest_list)
       MANI_LIST="$2"; shift 2 ;;
     -p|--manifest_path)
-      MANI_PATH="$2"; shift 2 ;;
+      MANI_REPO_PATH="$2"; shift 2 ;;
     *)
       echo "Unknown option: $1"; exit 1 ;;
   esac
@@ -47,12 +47,11 @@ echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
 #for each manifest, access the corresponding project config yaml and extract build details
 for manifest in "${MANIFESTS[@]}"; do
   
-    manifest_path="${MANI_PATH}/${manifest}"
-    echo "INPUT MANI_PATH: $MANI_PATH"
-    echo "Looking for manifest config in: $manifest_path"
-    ls -l "$manifest_path"
+    path_to_mani="${MANI_REPO_PATH}/${manifest}"
+    echo "$path_to_mani"
+    echo "Looking for config in same parent..."
     #derive config file path (stored in same directory as manifest) from manifest path
-    mani_dir="$(dirname "$manifest_path")"
+    mani_dir="$(dirname "$path_to_mani")"
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
     #verify that there is no more than one yaml file in the directory
     lines=$(echo "$config_file" | wc -l)
