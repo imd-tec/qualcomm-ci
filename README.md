@@ -1,12 +1,18 @@
-# QUALCOMM BUILD AUTOMATION
+# QUALCOMM BUILD AUTOMATION WIP
 
-Aims to automate build process for Qualcomm-based builds. Adapted from getting started guides.
+Aims to automate build process for Qualcomm-based builds. Adapted from getting started guides. The build process is executed under /mnt/nvm1/qcom_ci/builds/<project>/<sub-project>/<version>/.
 
-**How it works:**
+**Requirements**
+- Qualcomm manifest repository containing trigger-build.yml under *.github/workflows*
+-   There must be a single yml file outlining each manifest's build details. See *config_example.yml*. Each key is required.
+- QCI_DEPLOY_KEY, located in this repository under *Settings/Deploy_keys*, must be assigned as a secret in the calling aforementioned repository.
+  
+- **How it works:**
 1. A manifest change push or cron job (for dev builds) triggers a workflow on the given manifest repository.
 2. The calling workflow fetches the corresponding build details for the given manifest/s from the configuration yaml located in the same repository.
 3. These details are passed to the reusable workflow located in the *qualcomm-ci* via the *workflow_call* keyword.
-4. The reusable workflow executes the corresponding build steps, as per the getting started guide manual build process, with the build details specified in the configuration yaml.
+4. The reusable workflow executes the corresponding build steps, as per the getting started guide manual build process, applying the build details specified in the configuration yaml.
+5. The final build image is located in the corresponding build folder in /mnt/nvme1/qcom_ci/builds/. 
 
 **Notes:**
 - All referenced files are stored under */mnt/nvme1/qcom_ci/* on the qcom desktop.
