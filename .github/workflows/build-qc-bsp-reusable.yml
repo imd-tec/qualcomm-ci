@@ -304,9 +304,19 @@ jobs:
           bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${BUILD_IMAGE} -c populate_sdk
-          '
           
-          #rename sdk to [project]-sdk-v[version].sh
+          #locate generated SDK script and rename
+          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${BUILD_DISTRO}/tmp-glibc/deploy/sdk/"
+          mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${BUILD_DISTRO}*.sh")
+          
+          #if there is exactly one script matching, rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
+          if (( ${#matches[@] == 1 )); then
+            mv -- "${matches[0]}" "${SDK_DIR}/${BUILD_RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh" 
+          else
+            echo "Error: Expected exactly 1 SDK file, found ${#matches[@]}."
+            exit 1
+          fi
+          '
 
       
       - name: Build non-HLOS components
@@ -336,6 +346,13 @@ jobs:
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
           '
+      - name: Clean up container and image
+        if: ${{ always() }}
+        run: |
+        
+          chmod +x ${PWD}/scripts/stop-container.sh
+          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
+
 
       - name: Clean up source files
         if:  ${{ always() && env.CLEAN_UP == '1' }}
@@ -348,13 +365,6 @@ jobs:
             [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
               rm -rf "${BUILD_PROJECT_PATH:?}/patches"
           fi            
-
-      - name: Clean up container and image
-        if: ${{ always() }}
-        run: |
-        
-          chmod +x ${PWD}/scripts/stop-container.sh
-          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
 
 
