@@ -58,10 +58,6 @@ on:
             description: Docker image to use
             type: string
 
-          build_cdt:
-            required: true
-            type: string        
-
           build_patches:
             required: true
             description: Whether the build has patches
@@ -127,7 +123,6 @@ jobs:
       #This evaluates to [project_path]/[version]
       BUILD_PROJECT_PATH: ${{ format('{0}/{1}', inputs.build_project_path, inputs.build_version) }}
       BUILD_DOCKER: ${{ inputs.build_docker }}
-      BUILD_CDT: ${{ inputs.build_cdt }}
       HAS_PATCHES: ${{ inputs.build_patches }}
       PATCH_SCRIPT_PATH: ${{ inputs.build_patch_script_path }}
       BUILD_RELEASE_NAME: ${{ inputs.build_release_name }}
@@ -159,26 +154,22 @@ jobs:
 
           #create build project directory
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
-
-          #extract patches if applicable, warn if not present
-          if [ $HAS_PATCHES == 1 ]; then
-            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz" ]; then
-            echo "Extracting patches for build..."
-            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz" -C .
-            else
-              echo "WARNING: Expected patches not found in ${BUILD_PROJECT_PATH}/SOURCES/patches.tar.gz. Continuing..."
-            fi
+          
+          #extract optional assets (patch, cdt, etc.) if applicable
+          candidates=()
+          if [[ "$HAS_PATCHES" == "1" ]]; then
+            candidates+=("patches.tar.gz")
           fi
 
-          #extract CDT if applicable
-          if [ $BUILD_CDT == 1 ]; then
-            if [ -f "${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz" ]; then
-            echo "Extracting CDT for build..."
-            tar -xf "${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz" -C .
-            else
-              echo "WARNING: Expected CDT not found in ${BUILD_PROJECT_PATH}/SOURCES/CDT.tar.gz. Continuing..."
-            fi
-          fi
+          #extend to handle other assets as required
+          #e.g., if [[ "$BUILD_CDT" == "1" ]]; then ...
+          
+          for asset in "${candidates[@]}"; do
+              if [[ -f "${BUILD_PROJECT_PATH}/SOURCES/$asset" ]]; then
+                echo "Extracting $asset..."
+                tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$asset" -C .
+              fi1
+          done
 
           #extract Qualcomm source files
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
@@ -186,12 +177,13 @@ jobs:
       - name: Build container and initialize user permissions & ownership
         run: |
           set +x
+
           #get host user and group IDs to pass to container
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
           
-          
-          IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
+          #set image name
+          IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}" #append version affix from base image name
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
           #build container from dockerfile
@@ -333,18 +325,6 @@ jobs:
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
 
-      - name: Generate CDT
-        #temporailly skip CDT for imsu-glasses-poc due to inconsistent process
-        if: ${{ !contains(env.SKIP_STEPS, 'build_cdt') && env.BUILD_CDT == '1' && env.BUILD_MACHINE != 'imsu-glasses-poc' }}
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc ' 
-          # if [ $BUILD_MACHINE == "imsu-glasses-poc" && $BUILD_CDT == "1" ]; then
-          # ... 
-          # fi
-
-          bash -x /home/dev/build_scripts/setup_cdt.sh
-          '
-
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
@@ -372,11 +352,6 @@ jobs:
           if [ $HAS_PATCHES == 1 ]; then
             [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
               rm -rf "${BUILD_PROJECT_PATH:?}/patches"
-          fi            
-
-          if [ $BUILD_CDT == 1 ]; then
-            [ -d "${BUILD_PROJECT_PATH:?}/CDT" ] && \
-              rm -rf "${BUILD_PROJECT_PATH:?}/CDT"
           fi            
 
       - name: Clean up container and image
