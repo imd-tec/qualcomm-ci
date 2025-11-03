@@ -13,22 +13,22 @@ set -euo pipefail
 # count: number of manifests processed
 
 #set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
-INPUT_PATH="${RUNNER_TEMP}/manifests.txt"
-ROOT_PATH="."
+MANI_LIST="${RUNNER_TEMP}/manifests.txt"
+MANI_PATH="."
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -m|--manifest_list)
-      INPUT_PATH="$2"; shift 2 ;;
+      MANI_LIST="$2"; shift 2 ;;
     -p|--manifest_path)
-      ROOT_PATH="$2"; shift 2 ;;
+      MANI_PATH="$2"; shift 2 ;;
     *)
       echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 #read in manifests from input file into array
-mapfile -t MANIFESTS < "$INPUT_PATH"
+mapfile -t MANIFESTS < "$MANI_LIST"
 
 #for all manifests, extract relevant attributes and append to output JSON
 JSON='[]'
@@ -47,7 +47,7 @@ echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
 #for each manifest, access the corresponding project config yaml and extract build details
 for manifest in "${MANIFESTS[@]}"; do
 
-    manifest_path="${ROOT_PATH}/${manifest}"
+    manifest_path="${MANI_PATH}/${manifest}"
     #derive config file path (stored in same directory as manifest) from manifest path
     mani_dir="$(dirname "$manifest_path")"
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
