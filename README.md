@@ -4,10 +4,10 @@ Aims to automate build process for Qualcomm-based builds. Adapted from getting s
 
 **Requirements**
 - Qualcomm manifest repository containing trigger-build.yml under *.github/workflows*
--   There must be a single yml file outlining each manifest's build details. See *config_example.yml*. Each key is required.
-- QCI_DEPLOY_KEY, located in this repository under *Settings/Deploy_keys*, must be assigned as a secret in the calling aforementioned repository.
+-   There must be a single yml file located in a manifest directory, outlining the build details for each manifest version. See *config_example.yml* for a template. Each key is strictly required.
+- QCI_DEPLOY_KEY, located in this repository under *Settings/Deploy_keys*, must be assigned as a secret in the aforemnetioned external repository to access scripts located on this repository.
   
-- **How it works:**
+**How it works:**
 1. A manifest change push or cron job (for dev builds) triggers a workflow on the given manifest repository.
 2. The calling workflow fetches the corresponding build details for the given manifest/s from the configuration yaml located in the same repository.
 3. These details are passed to the reusable workflow located in the *qualcomm-ci* via the *workflow_call* keyword.
