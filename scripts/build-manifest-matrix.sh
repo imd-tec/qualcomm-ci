@@ -46,12 +46,14 @@ echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
 
 #for each manifest, access the corresponding project config yaml and extract build details
 for manifest in "${MANIFESTS[@]}"; do
-
+  
     manifest_path="${MANI_PATH}/${manifest}"
+    echo "INPUT MANI_PATH: $MANI_PATH"
+    echo "Looking for manifest config in: $manifest_path"
+    ls -l "$manifest_path"
     #derive config file path (stored in same directory as manifest) from manifest path
     mani_dir="$(dirname "$manifest_path")"
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
-
     #verify that there is no more than one yaml file in the directory
     lines=$(echo "$config_file" | wc -l)
     if [ $lines -gt 1 ]; then
@@ -59,7 +61,7 @@ for manifest in "${MANIFESTS[@]}"; do
     exit 1
     fi
     if [ -z "$config_file" ]; then
-    echo "Error: No YAML config file found for $manifest in $mani_dir"
+    echo "Error: No YAML config file found in directory $manifest in $mani_dir"
     exit 1
     fi
 
