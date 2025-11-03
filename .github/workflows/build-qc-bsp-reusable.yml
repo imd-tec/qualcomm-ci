@@ -349,9 +349,8 @@ jobs:
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
-        
-          chmod +x ${PWD}/scripts/stop-container.sh
-          bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
+          chmod +x $GITHUB_WORKSPACE/scripts/stop-container.sh
+          bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
 
       - name: Clean up source files
