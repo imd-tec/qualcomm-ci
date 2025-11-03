@@ -6,23 +6,25 @@ set -euo pipefail
 #Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
 #Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
 # Usage: 
-# build_manifest_matrix.sh --input <line_separated_list_of_manifests>
+# build_manifest_matrix.sh --input <line_separated_list_of_manifests> --root <path_to_manifest_repo_root>
 
-#set default path to $RUNNER_TEMP/manifests.txt
+#set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
 INPUT_PATH="${RUNNER_TEMP}/manifests.txt"
+ROOT_PATH="."
 
-#take input argument specified by -i
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -i|--input)
-      INPUT_PATH="${2:?missing path after $1}"
-      shift 2
-      ;;
+      INPUT_PATH="$2"; shift 2 ;;
+    -r|--root)
+      ROOT_PATH="$2"; shift 2 ;;
+    *)
+      echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 #read in manifests from input file into array
-mapfile -t MANIFESTS < "$RUNNER_TEMP/manifests.txt"
+mapfile -t MANIFESTS < "$INPUT_PATH"
 
 #for all manifests, extract relevant attributes and append to output JSON
 JSON='[]'
@@ -41,8 +43,9 @@ echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
 #for each manifest, access the corresponding project config yaml and extract build details
 for manifest in "${MANIFESTS[@]}"; do
 
+    manifest_path="${ROOT_PATH}/${manifest}"
     #derive config file path (stored in same directory as manifest) from manifest path
-    mani_dir="$(dirname "$manifest")"
+    mani_dir="$(dirname "$manifest_path")"
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
 
     #verify that there is no more than one yaml file in the directory
