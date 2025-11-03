@@ -84,11 +84,6 @@ on:
             description: Qualcomm source files to use
             type: string
 
-          QCS_RELEASE_TAG:
-            required: true
-            description: Qualcomm release tag
-            type: string
-
           SKIP_STEPS:
             required: false
             description: Steps to skip during the build
@@ -128,7 +123,6 @@ jobs:
       BUILD_RELEASE_NAME: ${{ inputs.build_release_name }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
-      QCS_RELEASE_TAG: ${{ inputs.QCS_RELEASE_TAG }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
 
     steps:      
@@ -242,7 +236,7 @@ jobs:
           
           if [ $HAS_PATCHES == 1 ]; then
             PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch" 
-            TARGET="${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/sync_snap_v2.sh"
+            TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
             #batch to bypass user prompts
             patch --batch "$TARGET" "$PATCHFILE" 
           fi
@@ -265,7 +259,7 @@ jobs:
           set -ex
 
           #applying IMDT patches to QC source
-          bash -x "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/${PATCH_SCRIPT_PATH}"
+          bash -x "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/${PATCH_SCRIPT_PATH}"
           '
 
       - name: Build kernel
@@ -279,20 +273,16 @@ jobs:
         run: |
           set -ex
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          cd "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/poky"
+          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
 
           patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
           "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
           
-          #How best to handle release specific steps?
-          if [ ${QCS_RELEASE_TAG} == "LE.PRODUCT.2.1.r1" ]; then
-            cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
-                    "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/poky/"
+          cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
+                  "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
 
-            cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* \
-                    "${QCOM_ROOT_DIR}/${QCS_RELEASE_TAG}/apps_proc/src/"
-          fi
-
+          cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* \
+                  "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/"
           '
 
       - name: Build image
