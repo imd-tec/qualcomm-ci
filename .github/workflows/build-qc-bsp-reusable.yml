@@ -317,7 +317,6 @@ jobs:
             exit 1
           fi
           '
-
       
       - name: Build non-HLOS components
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
@@ -334,7 +333,8 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -xe
-          RELEASE_DIR="/home/dev/Qualcomm/${BUILD_RELEASE_NAME}_v${BUILD_VER}"
+          FULL_RELEASE_NAME="${BUILD_RELEASE_NAME}_v${BUILD_VER}"
+          RELEASE_DIR="/home/dev/Qualcomm/${FULL_RELEASE_NAME}"
 
           #if release artifact already exists, remove it
           [ -d "$RELEASE_DIR" ] && rm -rf "$RELEASE_DIR"
@@ -345,13 +345,28 @@ jobs:
            -r "$RELEASE_DIR" \
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
+          
+          #create prebuilt tarball 
+          tar -C "/home/dev/Qualcomm/" -czf "${FULL_RELEASE_NAME}.tar.gz" "${FULL_RELEASE_NAME}"
+          
+          #verify tarball creation and non-compresssed directory
+          if [ -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz" ]; then
+            echo "Release artifact created at /home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz"
+            echo "Cleaning up temporary release directory..."
+            if [ -d "$RELEASE_DIR" ]; then
+              rm -rf "$RELEASE_DIR"
+            fi
+          else
+            echo "ERROR: Release artifact creation failed."
+            exit 1
+          fi
           '
+
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
           chmod +x $GITHUB_WORKSPACE/scripts/stop-container.sh
           bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
-
 
       - name: Clean up source files
         if:  ${{ always() && env.CLEAN_UP == '1' }}
