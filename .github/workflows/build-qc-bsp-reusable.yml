@@ -162,7 +162,7 @@ jobs:
               if [[ -f "${BUILD_PROJECT_PATH}/SOURCES/$asset" ]]; then
                 echo "Extracting $asset..."
                 tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$asset" -C .
-              fi1
+              fi
           done
 
           #extract Qualcomm source files
