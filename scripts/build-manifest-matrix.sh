@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 #For use in trigger_build.yml on external manifest repositories, see for more details.
@@ -6,7 +6,11 @@ set -euo pipefail
 #Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
 #Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
 # Usage: 
-# build_manifest_matrix.sh --input <line_separated_list_of_manifests> --root <path_to_manifest_repo_root>
+# build_manifest_matrix.sh --manifest_list <line_separated_list_of_manifests> --manifest_path <path_to_manifest_repo_root>
+# 
+# Outputs:
+# manifest_list: JSON array of manifest build details
+# count: number of manifests processed
 
 #set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
 INPUT_PATH="${RUNNER_TEMP}/manifests.txt"
@@ -14,9 +18,9 @@ ROOT_PATH="."
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -i|--input)
+    -m|--manifest_list)
       INPUT_PATH="$2"; shift 2 ;;
-    -r|--root)
+    -p|--manifest_path)
       ROOT_PATH="$2"; shift 2 ;;
     *)
       echo "Unknown option: $1"; exit 1 ;;
