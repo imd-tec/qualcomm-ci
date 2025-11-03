@@ -3,7 +3,7 @@ name: Build qcom BSP (reusable)
 
 defaults:
   run:
-    shell: bash -uo pipefail {0}
+    shell: bash -ueo pipefail {0}
 
 on:
     workflow_call:
@@ -169,8 +169,9 @@ jobs:
           tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
           
       - name: Build container and initialize user permissions & ownership
+        timeout-minutes: 20
         run: |
-          set +x
+          set -x
 
           #get host user and group IDs to pass to container
           export HOST_UID=$(id -u)
@@ -222,7 +223,7 @@ jobs:
       - name: Build netrc
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -x
+          set -xe
 
           #build netrc
           bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
@@ -232,7 +233,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          set -x
+          set -xe
 
           if [ "$HAS_PATCHES" == "1" ]; then
             PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch"
@@ -289,15 +290,17 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           bash /home/dev/tools/setup_yocto_env.sh
+          set -xe
 
-          bitbake -k ${BUILD_IMAGE} --runall=fetch
-          bitbake -k ${BUILD_IMAGE}
+          bitbake -k "${BUILD_IMAGE}" --runall=fetch
+          bitbake -k "${BUILD_IMAGE}"
           '
 
       - name: Generate Yocto SDK
-        if : ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
+        if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -xe
           bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${BUILD_IMAGE} -c populate_sdk
@@ -310,6 +313,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -xe
           bash /home/dev/tools/setup_yocto_env.sh
 
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
@@ -319,6 +323,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          set -xe
           RELEASE_DIR="/home/dev/Qualcomm/${BUILD_RELEASE_NAME}_v${BUILD_VER}"
 
           #if release artifact already exists, remove it
@@ -347,6 +352,7 @@ jobs:
       - name: Clean up container and image
         if: ${{ always() }}
         run: |
+        
           chmod +x ${PWD}/scripts/stop-container.sh
           bash ${PWD}/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
