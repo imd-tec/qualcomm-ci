@@ -250,7 +250,7 @@ jobs:
           fi
 
           #sync repos
-          bash -x /home/dev/build_scripts/sync_repos.sh -u $MANI_REPO -b $MANI_BRANCH -m $MANI_XML
+          bash -x /home/dev/build_scripts/sync_repos.sh -u "$MANI_REPO" -b "$MANI_BRANCH" -m "$MANI_XML"
           '
 
       - name: Configure kernel directories
@@ -300,7 +300,7 @@ jobs:
 
           #set Yocto environment
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          pyenv global $PYENV
+          pyenv global "$PYENV"
           export MACHINE=$MACHINE
           export DISTRO=$DISTRO
           source poky/qti-conf/set_bb_env.sh
@@ -387,7 +387,7 @@ jobs:
           [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
           rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
 
-          if [ $HAS_PATCHES == 1 ]; then
+          if [ "$HAS_PATCHES" == 1 ]; then
             [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
               rm -rf "${BUILD_PROJECT_PATH:?}/patches"
           fi            
