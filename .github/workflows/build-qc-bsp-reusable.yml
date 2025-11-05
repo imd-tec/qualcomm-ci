@@ -189,11 +189,6 @@ jobs:
           -t "$IMAGE_NAME" \
           "${CI_DIR}"/scripts/docker_scripts/
 
-          echo "=============================="
-          echo -e "\n$IMAGE_NAME"
-          echo -e "$PATCH_SCRIPT_PATH\n"
-          echo "=============================="
-
           #run container
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
           docker run --rm -d \
@@ -306,9 +301,9 @@ jobs:
           #set Yocto environment
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
           pyenv global $PYENV
-
           export MACHINE=$BUILD_MACHINE
           export DISTRO=$BUILD_DISTRO
+          printf "\n========== $BUILD_DISTRO ===========\n ========== $MACHINE ===========\n"
           source poky/qti-conf/set_bb_env.sh
 
           #build image
