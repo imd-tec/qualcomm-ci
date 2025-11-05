@@ -41,20 +41,24 @@ JSON='[]'
     echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
 } >> "$GITHUB_STEP_SUMMARY"
 
-echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
+echo "Processing ${#MANIFESTS[@]} manifest(s)..."
 
 
 #for each manifest, access the corresponding project config yaml and extract build details
 for manifest in "${MANIFESTS[@]}"; do
-  
+
+    #get path to manifest file
     path_to_mani="${MANI_REPO_PATH}/${manifest}"
-    echo "Processing: $manifest ($path_to_mani)"
-    echo "Looking for config in same parent..."
+    echo -e "\nProcessing: $manifest ($path_to_mani)"
+    echo "Looking for config in $path_to_mani."
+    
     #derive config file path (stored in same directory as manifest) from manifest path
     mani_dir="$(dirname "$path_to_mani")"
     echo "Manifest directory: $mani_dir"
+    
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
-    #verify that there is no more than one yaml file in the directory
+
+    #ensure that there is only one config file
     lines=$(echo "$config_file" | wc -l)
     if [ "$lines" -gt 1 ]; then
     echo "Error: More than one YAML config file found in $mani_dir"
