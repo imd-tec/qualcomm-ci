@@ -200,7 +200,7 @@ jobs:
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
           -e PYENV="$PYENV" \
           -e MACHINE="$BUILD_MACHINE" \
-          -e DISTRO="$BUILD_DISTRO" \ 
+          -e DISTRO="$BUILD_DISTRO" \
           -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
