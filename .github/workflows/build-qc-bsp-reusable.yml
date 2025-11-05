@@ -101,7 +101,7 @@ env:
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
   DOCKER_EXEC: docker exec -t -u dev
-  DEBUG_SKIP: "1"
+  DEBUG_SKIP: "0"
 
 jobs:
   build-qualcomm-bsp:
