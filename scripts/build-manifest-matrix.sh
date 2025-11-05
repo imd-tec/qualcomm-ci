@@ -48,14 +48,15 @@ echo "Processing ${#MANIFESTS[@]} changed manifest(s)..."
 for manifest in "${MANIFESTS[@]}"; do
   
     path_to_mani="${MANI_REPO_PATH}/${manifest}"
-    echo "$path_to_mani"
+    echo "Processing: $manifest ($path_to_mani)"
     echo "Looking for config in same parent..."
     #derive config file path (stored in same directory as manifest) from manifest path
     mani_dir="$(dirname "$path_to_mani")"
+    echo "Manifest directory: $mani_dir"
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
     #verify that there is no more than one yaml file in the directory
     lines=$(echo "$config_file" | wc -l)
-    if [ $lines -gt 1 ]; then
+    if [ "$lines" -gt 1 ]; then
     echo "Error: More than one YAML config file found in $mani_dir"
     exit 1
     fi
@@ -64,9 +65,10 @@ for manifest in "${MANIFESTS[@]}"; do
     exit 1
     fi
 
+    echo "Using config file: $config_file"
     #extract manifest name to access config details
     manifest_name=$(basename "$manifest" .xml) 
-
+    echo "Processing manifest: $manifest_name"
     #if manifest key is not found in yaml, skip to next manifest
     if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
     echo "| \`$manifest \` | \`No Key Found: check $config_file\` |" >> "$GITHUB_STEP_SUMMARY"
