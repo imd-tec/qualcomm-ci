@@ -184,8 +184,12 @@ jobs:
           #build container from dockerfile
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
-          -t $IMAGE_NAME \
-          ${CI_DIR}/scripts/docker_scripts/
+          -t "$IMAGE_NAME" \
+          "${CI_DIR}"/scripts/docker_scripts/
+
+          echo -e "\n$IMAGE_NAME"
+          echo -e "$BUILD_PROJECT_PATH\n"
+          
 
           #run container
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
@@ -204,7 +208,7 @@ jobs:
           -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
-          $IMAGE_NAME $HOST_UID $HOST_GID \
+          "$IMAGE_NAME" "$HOST_UID" "$HOST_GID" \
           sleep infinity
 
           #stream entry point script logs
