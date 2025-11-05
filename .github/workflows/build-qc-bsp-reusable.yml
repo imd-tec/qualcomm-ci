@@ -113,15 +113,15 @@ jobs:
       MANI_XML: ${{ inputs.mani_xml }}
       BUILD_NAME: ${{ inputs.build_name }}
       BUILD_VER: ${{ inputs.build_version }}
-      BUILD_MACHINE: ${{ inputs.build_machine }}
-      BUILD_DISTRO: ${{ inputs.build_distro }}
-      BUILD_IMAGE: ${{ inputs.build_image }}
+      MACHINE: ${{ inputs.build_machine }}
+      DISTRO: ${{ inputs.build_distro }}
+      IMAGE: ${{ inputs.build_image }}
       #This evaluates to [project_path]/[version]
       BUILD_PROJECT_PATH: ${{ format('{0}/{1}', inputs.build_project_path, inputs.build_version) }}
       BUILD_DOCKER: ${{ inputs.build_docker }}
       HAS_PATCHES: ${{ inputs.build_patches }}
       PATCH_SCRIPT_PATH: ${{ inputs.build_patch_script_path }}
-      BUILD_RELEASE_NAME: ${{ inputs.build_release_name }}
+      RELEASE_NAME: ${{ inputs.build_release_name }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
@@ -196,13 +196,13 @@ jobs:
           -e MANI_REPO="$MANI_REPO" \
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
-          -e BUILD_IMAGE="$BUILD_IMAGE" \
-          -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
+          -e IMAGE="$IMAGE" \
+          -e RELEASE_NAME="$RELEASE_NAME" \
           -e BUILD_VER="$BUILD_VER" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
           -e PYENV="$PYENV" \
-          -e MACHINE="$BUILD_MACHINE" \
-          -e DISTRO="$BUILD_DISTRO" \
+          -e MACHINE="$MACHINE" \
+          -e DISTRO="$DISTRO" \
           -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
@@ -301,14 +301,13 @@ jobs:
           #set Yocto environment
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
           pyenv global $PYENV
-          export MACHINE=$BUILD_MACHINE
-          export DISTRO=$BUILD_DISTRO
-          printf "\n========== $BUILD_DISTRO ===========\n ========== $MACHINE ===========\n"
+          export MACHINE=$MACHINE
+          export DISTRO=$DISTRO
           source poky/qti-conf/set_bb_env.sh
 
           #build image
-          bitbake -k "${BUILD_IMAGE}" --runall=fetch
-          bitbake -k "${BUILD_IMAGE}"
+          bitbake -k "${IMAGE}" --runall=fetch
+          bitbake -k "${IMAGE}"
           '
 
       - name: Generate Yocto SDK
@@ -317,16 +316,16 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -xe
 
-          bitbake ${BUILD_IMAGE} -c populate_sdk
+          bitbake ${IMAGE} -c populate_sdk
           
           #locate generated SDK script and rename
-          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${BUILD_DISTRO}/tmp-glibc/deploy/sdk/"
+          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO}/tmp-glibc/deploy/sdk/"
           
           #verify that there is exactly one script matching
-          mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${BUILD_DISTRO}*.sh")
+          mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${DISTRO}*.sh")
           if (( ${#matches[@]} == 1 )); then
             rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
-            mv -- "${matches[0]}" "${SDK_DIR}/${BUILD_RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh"
+            mv -- "${matches[0]}" "${SDK_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh"
           else
             echo "Warning: Expected exactly 1 SDK file, found ${#matches[@]}. Skipping rename."
             exit 0
@@ -346,7 +345,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -xe
-          FULL_RELEASE_NAME="${BUILD_RELEASE_NAME}_v${BUILD_VER}"
+          FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VER}"
           RELEASE_DIR="/home/dev/Qualcomm/${FULL_RELEASE_NAME}"
 
           #if release artifact already exists, remove it
