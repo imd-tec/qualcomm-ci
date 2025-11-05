@@ -100,7 +100,8 @@ env:
   FRESH_BUILD: "1"
   CLEAN_UP: "1"
   KEEP_BUILD: "1"
-  DOCKER_EXEC: docker exec -t -u dev 
+  DOCKER_EXEC: docker exec -t -u dev
+  DEBUG_SKIP: "1"
 
 jobs:
   build-qualcomm-bsp:
@@ -135,6 +136,7 @@ jobs:
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
 
       - name: Extract build sources files
+        if: env.DEBUG_SKIP != '1'
         run: |
           set -x
 
@@ -187,9 +189,10 @@ jobs:
           -t "$IMAGE_NAME" \
           "${CI_DIR}"/scripts/docker_scripts/
 
+          echo "=============================="
           echo -e "\n$IMAGE_NAME"
-          echo -e "$BUILD_PROJECT_PATH\n"
-          
+          echo -e "$PATCH_SCRIPT_PATH\n"
+          echo "=============================="
 
           #run container
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
