@@ -198,7 +198,9 @@ jobs:
           -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
           -e BUILD_VER="$BUILD_VER" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
-          -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
+          -e PYENV="$PYENV" \
+          -e MACHINE="$BUILD_MACHINE" \
+          -e DISTRO="$BUILD_DISTRO" \ 
           -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
@@ -296,9 +298,10 @@ jobs:
 
           #set Yocto environment
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+          pyenv global $PYENV
+
           export MACHINE=$BUILD_MACHINE
           export DISTRO=$BUILD_DISTRO
-          pyenv global $PYENV
           source poky/qti-conf/set_bb_env.sh
 
           #build image
