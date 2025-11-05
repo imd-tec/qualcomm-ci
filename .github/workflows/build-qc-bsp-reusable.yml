@@ -194,9 +194,12 @@ jobs:
           -e MANI_REPO="$MANI_REPO" \
           -e MANI_BRANCH="$MANI_BRANCH" \
           -e MANI_XML="$MANI_XML" \
+          -e BUILD_IMAGE="$BUILD_IMAGE" \
           -e BUILD_RELEASE_NAME="$BUILD_RELEASE_NAME" \
+          -e BUILD_VER="$BUILD_VER" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
           -e MACHINE="$BUILD_MACHINE" -e DISTRO="$BUILD_DISTRO" -e PYENV="$PYENV" \
+          -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
           $IMAGE_NAME $HOST_UID $HOST_GID \
@@ -260,7 +263,7 @@ jobs:
           set -ex
 
           #applying IMDT patches to QC source
-          bash -x "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/${PATCH_SCRIPT_PATH}"
+          bash -x "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}"
           '
 
       - name: Build kernel
@@ -289,9 +292,16 @@ jobs:
       - name: Build image
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
-          bash /home/dev/tools/setup_yocto_env.sh
           set -xe
 
+          #set Yocto environment
+          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
+          export MACHINE=$BUILD_MACHINE
+          export DISTRO=$BUILD_DISTRO
+          pyenv global $PYENV
+          source poky/qti-conf/set_bb_env.sh
+
+          #build image
           bitbake -k "${BUILD_IMAGE}" --runall=fetch
           bitbake -k "${BUILD_IMAGE}"
           '
@@ -301,7 +311,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -xe
-          bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${BUILD_IMAGE} -c populate_sdk
           
@@ -324,8 +333,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
           set -xe
-          bash /home/dev/tools/setup_yocto_env.sh
-
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
 
