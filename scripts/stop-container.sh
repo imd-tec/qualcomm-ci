@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Stops and removes specified Docker container and image.
 # Usage: stop-container.sh <container-name> <docker-version>
 # Example: stop-container.sh qualcomm-ci v1.0
 
