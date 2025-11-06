@@ -263,7 +263,6 @@ jobs:
       - name: Build image
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -e
 
           #set Yocto environment
           bash /home/dev/tools/setup_yocto_env.sh
@@ -278,8 +277,7 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -xe
-          
+          set -x
           #set Yocto environment - this required
           bash /home/dev/tools/setup_yocto_env.sh
 
@@ -303,7 +301,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -xe
+          set -x
           bash /home/dev/tools/setup_yocto_env.sh
 
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
