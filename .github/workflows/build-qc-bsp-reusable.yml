@@ -218,7 +218,7 @@ jobs:
           kill $LOG_PID || true
 
           #verify that IDs are correct and ownership has been transferred correctly
-          result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -lc 'id')
+          result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -c 'id')
 
           if [[ $result != *"uid=$HOST_UID"* && $result != *"gid=$HOST_GID"* ]]; then
             echo "ERROR: User IDs do not match"
@@ -227,7 +227,7 @@ jobs:
 
       - name: Build netrc
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
 
           #build netrc
@@ -237,7 +237,7 @@ jobs:
       - name: Patch and synchronize repos
         if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
 
           if [ -d "/home/dev/Qualcomm/patches" ]; then
@@ -253,7 +253,7 @@ jobs:
 
       - name: Configure kernel directories
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           # set -ex
           bash -x /home/dev/build_scripts/setup_kernel.sh
           '
@@ -261,7 +261,7 @@ jobs:
       - name: Apply IMDT patches to Qualcomm source
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
 
           #applying IMDT patches to QC source
@@ -270,7 +270,7 @@ jobs:
 
       - name: Build kernel
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
           '
 
@@ -278,7 +278,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_hlos') }}
         run: |
           set -e
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
 
           patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
@@ -293,7 +293,7 @@ jobs:
 
       - name: Build image
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
 
           #set Yocto environment
@@ -311,7 +311,7 @@ jobs:
       - name: Generate Yocto SDK
         if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
 
           bitbake ${IMAGE} -c populate_sdk
@@ -333,7 +333,7 @@ jobs:
       - name: Build non-HLOS components
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
@@ -341,7 +341,7 @@ jobs:
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -lc '
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
           FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VER}"
           RELEASE_DIR="/home/dev/Qualcomm/${FULL_RELEASE_NAME}"
