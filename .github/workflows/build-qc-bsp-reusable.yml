@@ -95,13 +95,11 @@ env:
   #Build constants
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   CI_DIR: "/mnt/nvme1/qcom_ci"
+  DOCKER_EXEC: docker exec -t -u dev
 
   #Workflow development variables
-  FRESH_BUILD: "1"
   CLEAN_UP: "1"
-  KEEP_BUILD: "1"
-  DOCKER_EXEC: docker exec -t -u dev
-  DEBUG_SKIP: "0"
+  DEBUG_SKIP_SRC: "0"
 
 jobs:
   build-qualcomm-bsp:
@@ -128,47 +126,18 @@ jobs:
 
     steps:      
       - name: Set repository workspace
-        #Explicit checkout into repository. Required if triggered from external repo.
+        #explicitly checkout into repository. Required if triggered from external repo.
         uses: actions/checkout@v5
         with:
             repository: imd-tec/qualcomm-ci
             ref: master
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
+            path: ci_repo
 
       - name: Extract build sources files
-        if: env.DEBUG_SKIP != '1'
-        run: |
-          set -e
-
-          #verify that CI_DIR is included in project path
-          if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
-            echo "Using project path: ${BUILD_PROJECT_PATH}"
-          else
-            echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
-            exit 1
-          fi
-
-          #create build project directory
-          mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
-          
-          #extract optional assets (patch, cdt, etc.) if applicable
-          candidates=()
-          if [[ "$HAS_PATCHES" == "1" ]]; then
-            candidates+=("patches.tar.gz")
-          fi
-
-          #extend to handle other assets as required
-          #e.g., if [[ "$BUILD_CDT" == "1" ]]; then ...
-          
-          for asset in "${candidates[@]}"; do
-              if [[ -f "${BUILD_PROJECT_PATH}/SOURCES/$asset" ]]; then
-                echo "Extracting $asset..."
-                tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$asset" -C .
-              fi
-          done
-
-          #extract Qualcomm source files
-          tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
+        if: env.DEBUG_SKIP_SRC != '1'
+        working-directory: ${{ github.workspace }}/ci_repo/scripts
+        run: bash extract-sources.sh
           
       - name: Build container and initialize user permissions & ownership
         timeout-minutes: 20
@@ -254,7 +223,7 @@ jobs:
       - name: Configure kernel directories
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          # set -ex
+          set -e
           bash -x /home/dev/build_scripts/setup_kernel.sh
           '
 
@@ -282,7 +251,7 @@ jobs:
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
 
           patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
-          "${HOME}/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
+          "/home/dev/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
           
           cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
                   "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
@@ -297,11 +266,7 @@ jobs:
           set -e
 
           #set Yocto environment
-          cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc"
-          pyenv global "$PYENV"
-          export MACHINE=$MACHINE
-          export DISTRO=$DISTRO
-          source poky/qti-conf/set_bb_env.sh
+          bash /home/dev/tools/setup_yocto_env.sh
 
           #build image
           bitbake -k "${IMAGE}" --runall=fetch
@@ -310,9 +275,13 @@ jobs:
 
       - name: Generate Yocto SDK
         if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
+        continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
+          
+          #set Yocto environment - this required
+          bash /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${IMAGE} -c populate_sdk
           
@@ -335,6 +304,8 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
+          bash /home/dev/tools/setup_yocto_env.sh
+
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
 
