@@ -291,7 +291,7 @@ jobs:
           #verify that there is exactly one script matching
           mapfile -t matches < <(find "$SDK_DIR" -maxdepth 1 -type f -name "*${DISTRO}*.sh")
           if (( ${#matches[@]} == 1 )); then
-            rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
+            #rename it to [project_name]-sdk-v[version].sh (e.g., imsu_glasses_sdk-v1.0.0.sh)
             mv -- "${matches[0]}" "${SDK_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VER}.sh"
           else
             echo "Warning: Expected exactly 1 SDK file, found ${#matches[@]}. Skipping rename."
