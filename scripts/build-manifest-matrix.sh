@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-#For use in trigger_build.yml on external manifest repositories, see for more details.
-#Takes in newline separated manifest file names in previously created $RUNNER_TEMP/manifest.txt and extracts the corresponding build details from yaml configuration file.
-#Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
-#Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
+# For use in trigger_build.yml on external manifest repositories, see for more details.
+# Takes in newline separated manifest file names in previously created $RUNNER_TEMP/manifest.txt and extracts the corresponding build details from yaml configuration file.
+# Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
+# Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
 # Usage: 
 # build_manifest_matrix.sh --manifest_list <line_separated_list_of_manifests> --manifest_path <path_to_manifest_repo_root>
 # 
