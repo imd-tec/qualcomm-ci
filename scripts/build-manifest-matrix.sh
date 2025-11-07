@@ -120,8 +120,8 @@ for manifest_path in "${MANIFESTS[@]}"; do
     # e.g., qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps"
     qcs_sources=$(yq '."'"${manifest_name}"'".qcs_sources' "$config_file")
 
-    # e.g., skip_steps: [- sync_repos, - other_step]
-    skip_steps=$(yq '."'"${manifest_name}"'".skip_steps' "$config_file")    
+    # e.g., skip_steps: [- sync_repos, - other_step]. Convert to comma separated string to not break step summary formatting.
+    skip_steps=$(yq '."'"${manifest_name}"'".skip_steps | join(", ")' "$config_file")    
 
     #append manifest and corresponding details to the JSON array
     JSON="$(jq -n \
