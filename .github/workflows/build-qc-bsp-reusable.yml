@@ -233,9 +233,6 @@ jobs:
 
           #sync repos
           bash /home/dev/build_scripts/sync_repos.sh -u "$MANI_REPO" -b "$MANI_BRANCH" -m "$MANI_XML"
-          
-          echo "Debug: Checking if default.xml was created:"
-          ls -la "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/.repo/manifests/" || { echo "No manifests directory found"; exit 1; }
           '
 
       - name: Configure kernel directories
@@ -296,7 +293,6 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -x
           #set Yocto environment - this required
           source /home/dev/tools/setup_yocto_env.sh
 
