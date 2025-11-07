@@ -2,16 +2,8 @@
 # Extracts Qualcomm source files and optional assets into build project directory.
 set -euo pipefail
 
-#verify that CI directory is included in project path
-if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
-echo "Using project path: ${BUILD_PROJECT_PATH}"
-else
-echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
-exit 1
-fi
-
-#create build project directory
-mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
+#set sources path
+SOURCES_PATH=${BUILD_PROJECT_PATH}/SOURCES
 
 #extract optional assets (patch, cdt, etc.) as applicable
 candidates=()
@@ -23,11 +15,20 @@ fi
 #e.g., if [[ "$BUILD_CDT" == "1" ]]; then ...
 
 for asset in "${candidates[@]}"; do
-    if [[ -f "${BUILD_PROJECT_PATH}/SOURCES/$asset" ]]; then
+    if [[ -f "${SOURCES_PATH}/$asset" ]]; then
     echo "Extracting $asset..."
-    tar -xf "${BUILD_PROJECT_PATH}/SOURCES/$asset" -C .
+    tar -xf "${SOURCES_PATH}/$asset" -C "$BUILD_PROJECT_PATH"
+        if [[ -f "$BUILD_PROJECT_PATH/$asset"  ]]; then
+            echo "$asset extracted to ""$BUILD_PROJECT_PATH/$asset"
+        fi
     fi
 done
 
 #extract Qualcomm source files
-tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C .
+tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
+if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
+    echo "Qualcomm sources ${QCS_SOURCES} extracted to "${BUILD_PROJECT_PATH}/"
+else
+    echo "Error: Qualcomm sources "${QCS_SOURCES}" failed to extract to "${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
+    exit 1
+fi
