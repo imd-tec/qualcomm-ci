@@ -257,6 +257,7 @@ jobs:
       - name: Build HLOS
         if: ${{ !contains(env.SKIP_STEPS, 'build_hlos') }}
         run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
 
           patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
