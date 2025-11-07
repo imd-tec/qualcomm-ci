@@ -37,7 +37,7 @@ JSON='[]'
 {
     echo "## Triggered Builds"
     echo ""
-    echo "| Manifest | Name | Version | Distro | Machine | Image |  Project Path | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
+    echo "| Manifest | Name | Version | Distro | Machine | Image | Project Path | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
     echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
 } >> "$GITHUB_STEP_SUMMARY"
 
@@ -45,15 +45,15 @@ echo "Processing ${#MANIFESTS[@]} manifest(s)..."
 
 
 #for each manifest, access the corresponding project config yaml and extract build details
-for manifest in "${MANIFESTS[@]}"; do
+for manifest_path in "${MANIFESTS[@]}"; do
 
     #get path to manifest file
-    path_to_mani="${MANI_REPO_PATH}/${manifest}"
-    echo -e "\nProcessing: $manifest ($path_to_mani)"
-    echo "Looking for config in $path_to_mani."
+    full_path="${MANI_REPO_PATH}/${manifest_path}"
+    echo -e "\nProcessing: $manifest_path ($full_path)"
+    echo "Looking for config in $full_path."
     
     #derive config file path (stored in same directory as manifest) from manifest path
-    mani_dir="$(dirname "$path_to_mani")"
+    mani_dir="$(dirname "$full_path")"
     echo "Manifest directory: $mani_dir"
     
     config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
@@ -65,23 +65,23 @@ for manifest in "${MANIFESTS[@]}"; do
     exit 1
     fi
     if [ -z "$config_file" ]; then
-    echo "Error: No YAML config file found in directory $manifest in $mani_dir"
+    echo "Error: No YAML config file found in directory $manifest_path in $mani_dir"
     exit 1
     fi
 
     echo "Using config file: $config_file"
     #extract manifest name to access config details
-    manifest_name=$(basename "$manifest" .xml) 
+    manifest_name=$(basename "$manifest_path" .xml)
     echo "Processing manifest: $manifest_name"
     #if manifest key is not found in yaml, skip to next manifest
     if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
-    echo "| \`$manifest \` | \`No Key Found: check $config_file\` |" >> "$GITHUB_STEP_SUMMARY"
+    echo "| \`$manifest_path \` | \`No Key Found: check $config_file\` |" >> "$GITHUB_STEP_SUMMARY"
     continue
     fi
 
     #if manifest key is 'development', continue to next manifest
     if [ "$manifest_name" = "development" ]; then
-    echo "| \`$manifest \` | \`Skipped: development manifest\` |" >> "$GITHUB_STEP_SUMMARY"
+    echo "| \`$manifest_path \` | \`Skipped: development manifest\` |" >> "$GITHUB_STEP_SUMMARY"
     continue
     fi
 
@@ -121,7 +121,10 @@ for manifest in "${MANIFESTS[@]}"; do
     qcs_sources=$(yq '."'"${manifest_name}"'".qcs_sources' "$config_file")
 
     # e.g., skip_steps: [- sync_repos, - other_step]
-    skip_steps=$(yq '."'"${manifest_name}"'".skip_steps' "$config_file")
+    skip_steps=$(yq '."'"${manifest_name}"'".skip_steps' "$config_file")    
+
+    #construct manifest file name
+    manifest="${manifest_name}.xml"
 
     #append manifest and corresponding details to the JSON array
     JSON="$(jq -n \
@@ -147,7 +150,7 @@ for manifest in "${MANIFESTS[@]}"; do
     )"
 
     #append results to step summary
-    echo "| \`$manifest\` | \`$manifest_name\` | \'$version\' | \'$distro\' | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
+    echo "| \`$manifest\` | \`$manifest_name\` | \`$version\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
     done
 
 #compact JSON to one line and direct to Github output
