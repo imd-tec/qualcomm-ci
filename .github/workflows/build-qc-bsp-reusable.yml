@@ -145,9 +145,9 @@ jobs:
           #get host user and group IDs to pass to container
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
-          
-          #set image name
-          IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}" #append version affix from base image name
+
+          #Affix base BUILD_DOCKER version to new image name
+          IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
           #build container from dockerfile
