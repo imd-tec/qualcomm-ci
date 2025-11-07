@@ -265,7 +265,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
 
           #set Yocto environment
-          bash /home/dev/tools/setup_yocto_env.sh
+          source /home/dev/tools/setup_yocto_env.sh
 
           #build image
           bitbake -k "${IMAGE}" --runall=fetch
@@ -279,7 +279,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -x
           #set Yocto environment - this required
-          bash /home/dev/tools/setup_yocto_env.sh
+          source /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${IMAGE} -c populate_sdk
           
@@ -302,7 +302,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -x
-          bash /home/dev/tools/setup_yocto_env.sh
+          bash /home/dev/tools/setup_yocto_env_env.sh
 
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
