@@ -27,8 +27,8 @@ done
 #extract Qualcomm source files
 tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
 if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
-    echo "Qualcomm sources ${QCS_SOURCES} extracted to "${BUILD_PROJECT_PATH}/"
+    echo "Qualcomm sources ${QCS_SOURCES} extracted to ${BUILD_PROJECT_PATH}/"
 else
-    echo "Error: Qualcomm sources "${QCS_SOURCES}" failed to extract to "${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
+    echo "Error: Qualcomm sources ${QCS_SOURCES} failed to extract to ${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
     exit 1
 fi
