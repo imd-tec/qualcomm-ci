@@ -134,12 +134,25 @@ jobs:
             ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
             path: ci_repo
 
-      - name: Extract build sources files
+      - name: Validate inputs and create build project directory
+        run: |
+          #verify that CI directory is included in project path
+          if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
+          echo "Using project path: ${BUILD_PROJECT_PATH}"
+          else
+          echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
+          exit 1
+          fi
+
+          #create and change to build project directory
+          mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
+
+      - name: Extract build sources files into build directory
         if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') }} || env.DEBUG_SKIP_SRC != '1'
         working-directory: ${{ github.workspace }}/ci_repo/scripts
         run: bash extract-sources.sh
           
-      - name: Build container and initialize user permissions & ownership
+      - name: Create Docker image, build container and initialize user permissions & ownership
         if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         timeout-minutes: 20
         run: |
@@ -147,17 +160,17 @@ jobs:
           export HOST_UID=$(id -u)
           export HOST_GID=$(id -g)
 
-          #Affix base BUILD_DOCKER version to new image name
+          #affix base BUILD_DOCKER version to new image name
           IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-          #build container from dockerfile
+          #build container image from BASE_IMAGE and set entry point
           docker build -f "${CI_DIR}/docker/qc_ci_docker" \
           --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
           -t "$IMAGE_NAME" \
           "${CI_DIR}"/scripts/docker_scripts/
 
-          #run container
+          #run the container
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
           docker run --rm -d \
           --name "$CONTAINER_NAME" \
@@ -220,6 +233,9 @@ jobs:
 
           #sync repos
           bash /home/dev/build_scripts/sync_repos.sh -u "$MANI_REPO" -b "$MANI_BRANCH" -m "$MANI_XML"
+          
+          echo "Debug: Checking if default.xml was created:"
+          ls -la "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/.repo/manifests/" || { echo "No manifests directory found"; exit 1; }
           '
 
       - name: Configure kernel directories
