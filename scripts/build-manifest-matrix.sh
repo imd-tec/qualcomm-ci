@@ -123,12 +123,9 @@ for manifest_path in "${MANIFESTS[@]}"; do
     # e.g., skip_steps: [- sync_repos, - other_step]
     skip_steps=$(yq '."'"${manifest_name}"'".skip_steps' "$config_file")    
 
-    #construct manifest file name
-    manifest="${manifest_name}.xml"
-
     #append manifest and corresponding details to the JSON array
     JSON="$(jq -n \
-    --arg manifest "$manifest" \
+    --arg manifest "$manifest_path" \
     --arg name "$manifest_name" \
     --arg version "$version" \
     --arg machine "$machine" \
@@ -150,7 +147,7 @@ for manifest_path in "${MANIFESTS[@]}"; do
     )"
 
     #append results to step summary
-    echo "| \`$manifest\` | \`$manifest_name\` | \`$version\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
+    echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
     done
 
 #compact JSON to one line and direct to Github output
