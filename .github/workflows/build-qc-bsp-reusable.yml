@@ -271,6 +271,7 @@ jobs:
           '
 
       - name: Bitbake fetch sources
+        if: ${{ !contains(env.SKIP_STEPS, 'bitbake_fetch') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
@@ -280,6 +281,7 @@ jobs:
           '
 
       - name: Bitbake build image
+        if: ${{ !contains(env.SKIP_STEPS, 'bitbake_build') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
