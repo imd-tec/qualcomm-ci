@@ -15,78 +15,78 @@ on:
 
         mani_branch:
           required: true
-          description: Branch of manifest repository
+          description: Branch of manifest in repository
           type: string   
 
         mani_xml:
           required: true
-          description: Path to the manifest XML file
+          description: Path to the manifest XML file in branch 
           type: string
 
         build_name:
           required: true
-          description: Name of the build
+          description: Name of the build (e.g. imsu_glasses_bsp)
           type: string
 
         build_version:
           required: true
-          description: Version of the manifest
+          description: Version of the manifest (e.g. 1.0.0)
           type: string     
 
         build_machine:
           required: true
-          description: Build machine
+          description: Target hardware machine (e.g. imdt-qcs8550-sbc)
           type: string      
 
         build_distro:
           required: true
-          description: Build distro
+          description: Build distribution (e.g. imdt-distro-debug)
           type: string      
                 
         build_image:
           required: true
-          description: Build image
+          description: Target image to build (e.g. imdt-image-weston)
           type: string      
 
         build_project_path:
           required: true
-          description: Local path on runner to project directory
+          description: Local path on runner to project directory (e.g. /mnt/nvme1/qcom_ci/builds/IMSU/GLASSES)
           type: string       
 
         build_docker:
           required: true
-          description: Docker image to use
+          description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
           type: string
 
         build_patches:
           required: true
-          description: Whether the build has patches
+          description: Whether the build has patches (1 or 0)
           type: string
 
         build_patch_script_path:
           required: true
-          description: Path to IMDT patch build script
+          description: Path to IMDT patch build script (e.g. apps_proc/poky/meta-imsu-glasses/tools/imdt-patch-qcs8550-build.sh)
           type: string
 
         build_release_name:
           required: true
-          description: Release artifact name
+          description: Release artifact name (e.g. imsu_glasses_prebuilt_release)
           type: string     
         
         PYENV:
           required: true
-          description: Python environment version
+          description: Python environment version to use (e.g. 3.8.16)
           type: string
           default: "3.8.16"
 
         QCS_SOURCES:
           required: true
-          description: Qualcomm source files to use
+          description: Qualcomm source files to use (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps)
           type: string
 
         SKIP_STEPS:
           required: false
-          description: Steps to skip during the build
+          description: Build steps to skip, defined by 'contains' conditionals below (e.g. [sync_repos, build_hlos])
           type: string
 
   workflow_dispatch:
@@ -135,11 +135,12 @@ jobs:
             path: ci_repo
 
       - name: Extract build sources files
-        if: env.DEBUG_SKIP_SRC != '1'
+        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') }} || env.DEBUG_SKIP_SRC != '1'
         working-directory: ${{ github.workspace }}/ci_repo/scripts
         run: bash extract-sources.sh
           
       - name: Build container and initialize user permissions & ownership
+        if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         timeout-minutes: 20
         run: |
           #get host user and group IDs to pass to container
@@ -195,6 +196,7 @@ jobs:
           fi
 
       - name: Build netrc
+        if: ${{ !contains(env.SKIP_STEPS, 'build_netrc') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
@@ -221,6 +223,7 @@ jobs:
           '
 
       - name: Configure kernel directories
+        if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -e
