@@ -36,9 +36,7 @@ validate_diff_check () {
     fi
 
     printf '  - %s\n' "${manifest_array[@]}"
-
 }
-
 
 #empty tree fallback if no previous commit https://stackoverflow.com/questions/9765453/is-gits-semi-secret-empty-tree-object-reliable-and-why-is-there-not-a-symbolic
 if [ -z "${BEFORE_SHA:-}" ] ||  [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
@@ -47,14 +45,14 @@ fi
 
 
 #perform diff check to determine XML files that were added (A), modified (M), copied (C) or renamed (R) and output to array
-echo "Checking for changed XML files between $BEFORE_SHA and $CURRENT_SHA..."
+echo "Checking for changed XML files between $BEFORE_SHA and $CURRENT_SHA in manifest repo at path: $MANIFEST_REPO_PATH."
+cd $MANIFEST_REPO_PATH
 git config --get remote.origin.url
 git log -2
 #must specify manifest repo path with -C for diff check
 mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AMCR \
-        "$BEFORE_SHA" "$CURRENT_SHA" -C "$MANIFEST_REPO_PATH" \
-        | grep -E '\.xml$' \
-        | grep -v '^qualcomm-ci/' || true)
+        "$BEFORE_SHA" "$CURRENT_SHA" \
+        | grep -E '\.xml$')
 
 #validate array and exit if no changed manifests found
 validate_diff_check "${MANIFESTS[@]}"
