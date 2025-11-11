@@ -4,9 +4,7 @@ Aims to automate build process for Qualcomm-based builds. Adapted from getting s
 
 **Requirements**
 - Qualcomm manifest repository containing trigger-build.yml under *.github/workflows*
--   There must be a single yml file located in a manifest directory, outlining the build details for each manifest version. See *config_example.yml* for a template. Each key is strictly required.
-- QCI_DEPLOY_KEY, located in this repository under *Settings/Deploy_keys*, must be assigned as a secret in the aforemnetioned external repository to access scripts located on this repository.
--   **UPDATE**: A unique ssh-key key pair must be created per external repo. Must use an org-level service account or GitHub App in the future for scalability. 
+- There must be a single yml file located in a manifest directory, outlining the build details for each manifest version. See *config_example.yml* for a template. Each key is strictly required.
   
 **How it works:**
 1. A manifest change push or cron job (for dev builds) triggers a workflow on the given manifest repository.
@@ -16,6 +14,7 @@ Aims to automate build process for Qualcomm-based builds. Adapted from getting s
 5. The final build image is located in the corresponding build folder in /mnt/nvme1/qcom_ci/builds/. 
 
 **Notes:**
+- This currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.)
 - All referenced files are stored under */mnt/nvme1/qcom_ci/* on the qcom desktop.
 - Qualcomm source files are located in */mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/*
   - As it stands, Qualcomm source files will need to be manually added to the *SHARED_SOURCES* directory.
