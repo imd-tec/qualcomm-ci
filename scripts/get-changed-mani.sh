@@ -1,22 +1,28 @@
 #!/bin/bash
-# Script to identify changed XML manifest files between current and previous commits
+# For use exclusively when callee manifest repository build workflow is triggered by push events
+# This script is used identify changed XML manifest files between current and previous commits for extraction of build details
 
-validate_diff () {
-    #function to validate if any xml files were changed
-    if [ -z "${1:-}" ]; then
-    echo "No XML files changed. Exiting."
-    echo "count=0" >> "$GITHUB_OUTPUT"
-    {
-    echo "## Triggered Builds"
-    echo ""
-    echo "_No XML manifests changed in this push._"
-    } >> "$GITHUB_STEP_SUMMARY"
-    exit 0
+validate_diff_check () {
+    local manifest_array=("$@")
+
+    echo "Found ${#manifest_array[@]} changed XML files:"
+    if [ ${#manifest_array[@]} -eq 0 ]; then
+        echo "No manifests changed. Exiting."
+        echo "count=0" >> "$GITHUB_OUTPUT"
+        {
+        echo "## Triggered Builds"
+        echo "_No manifests changed in this push._"
+        echo "**Note:** Only added, modified, copied or renamed XML files trigger builds."
+        } >> "$GITHUB_STEP_SUMMARY"
+        exit 0
     fi
+
+    printf '  - %s\n' "${manifest_array[@]}"
+
 }
 
-#get current and previous commit sha for comparison
-#if one is missing, such as when manually dispatching, all XML's will be triggered to build
+#get current and previous commit sha for comparison in determining changed files
+#if one is missing, such as when manually dispatching, all XML's will be triggered for build
 BEFORE="${{ github.event.before }}"
 CURRENT="${{ github.sha }}"
 echo "PREVIOUS COMMIT SHA: ${BEFORE:-'N/A - Likely manual dispatch.'}"
@@ -27,13 +33,16 @@ if [ -z "${BEFORE:-}" ] ||  [ "$BEFORE" = "0000000000000000000000000000000000000
     BEFORE=$(git hash-object -t tree /dev/null)
 fi
 
-#grab xml diffs that have either been added (A) or modified (M) between previous and current sha and read to array
-mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AM \
+#get XML files that were added (A), modified (M), copied (C) or renamed (R)
+echo "Checking for changed XML files..."
+mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AMCR \
         "$BEFORE" "$CURRENT" \
-        | grep -E '\.xml$')
+        | grep -E '\.xml$' \
+        | grep -v '^qualcomm-ci/' || true)
 
-#if no matches, terminate early
-validate_diff "${MANIFESTS[*]}"
 
-#save each new-line seperated result in a txt for use in next step
+#validate changes and exit if no changed manifests found
+validate_diff_check "${MANIFESTS[@]}"
+
+#pass to output list as new-line separated result for json-ification in next step
 printf '%s\n' "${MANIFESTS[@]}" > "$RUNNER_TEMP/manifests.txt"
