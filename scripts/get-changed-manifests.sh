@@ -32,7 +32,7 @@ validate_diff_check () {
         echo "_No manifests changed in this push._"
         echo "**Note:** Only added, modified, copied or renamed XML files trigger builds."
         } >> "$GITHUB_STEP_SUMMARY"
-        exit 1
+        exit 0
     fi
 
     printf '  - %s\n' "${manifest_array[@]}"
