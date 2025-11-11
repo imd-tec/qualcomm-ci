@@ -36,13 +36,19 @@ validate_diff_check () {
 
 }
 
+
 #empty tree fallback if no previous commit https://stackoverflow.com/questions/9765453/is-gits-semi-secret-empty-tree-object-reliable-and-why-is-there-not-a-symbolic
 if [ -z "${BEFORE_SHA:-}" ] ||  [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
     BEFORE_SHA=$(git hash-object -t tree /dev/null)
-fi
+fi  
+
 
 #perform diff check to determine XML files that were added (A), modified (M), copied (C) or renamed (R) and output to array
-echo "Checking for changed XML files..."
+echo "Checking for changed XML files between $BEFORE_SHA and $CURRENT_SHA..."
+git config --get remote.origin.url
+git log -2
+ls -l
+ls ..
 mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AMCR \
         "$BEFORE_SHA" "$CURRENT_SHA" \
         | grep -E '\.xml$' \
