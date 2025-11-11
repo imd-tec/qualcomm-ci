@@ -1,6 +1,21 @@
 #!/bin/bash
 # For use exclusively when callee manifest repository build workflow is triggered by push events
-# This script is used identify changed XML manifest files between current and previous commits for extraction of build details
+# This script takes BEFORE_SHA (previous sha) and CURRENT_SHA (latest sha) commit hashes for the given trigger event as arguments
+# It perfomes a diff check between the commits to determine which manifest files have been added, modified, copied or renamed
+# Usage:
+# get-manifest-diff.sh -before_sha <previous_commit_sha> -current_sha <latest_commit_sha>
+# Outputs:
+# A newline separated list of changed manifest files written to $RUNNER_TEMP/manifests.txt
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --before_sha)
+      BEFORE_SHA="$2"; shift 2 ;;
+    --current_sha)
+      CURRENT_SHA="$2"; shift 2 ;;
+    *)
+      echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
 
 validate_diff_check () {
     local manifest_array=("$@")
@@ -21,27 +36,19 @@ validate_diff_check () {
 
 }
 
-#get current and previous commit sha for comparison in determining changed files
-#if one is missing, such as when manually dispatching, all XML's will be triggered for build
-BEFORE="${{ github.event.before }}"
-CURRENT="${{ github.sha }}"
-echo "PREVIOUS COMMIT SHA: ${BEFORE:-'N/A - Likely manual dispatch.'}"
-echo "CURRENT COMMIT SHA: ${CURRENT:-'N/A - Likely manual dispatch.'}"
-
 #empty tree fallback if no previous commit https://stackoverflow.com/questions/9765453/is-gits-semi-secret-empty-tree-object-reliable-and-why-is-there-not-a-symbolic
-if [ -z "${BEFORE:-}" ] ||  [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-    BEFORE=$(git hash-object -t tree /dev/null)
+if [ -z "${BEFORE_SHA:-}" ] ||  [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+    BEFORE_SHA=$(git hash-object -t tree /dev/null)
 fi
 
-#get XML files that were added (A), modified (M), copied (C) or renamed (R)
+#perform diff check to determine XML files that were added (A), modified (M), copied (C) or renamed (R) and output to array
 echo "Checking for changed XML files..."
 mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AMCR \
-        "$BEFORE" "$CURRENT" \
+        "$BEFORE_SHA" "$CURRENT_SHA" \
         | grep -E '\.xml$' \
         | grep -v '^qualcomm-ci/' || true)
 
-
-#validate changes and exit if no changed manifests found
+#validate array and exit if no changed manifests found
 validate_diff_check "${MANIFESTS[@]}"
 
 #pass to output list as new-line separated result for json-ification in next step
