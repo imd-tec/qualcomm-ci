@@ -32,7 +32,7 @@ validate_diff_check () {
         echo "_No manifests changed in this push._"
         echo "**Note:** Only added, modified, copied or renamed XML files trigger builds."
         } >> "$GITHUB_STEP_SUMMARY"
-        exit 0
+        exit 1
     fi
 
     printf '  - %s\n' "${manifest_array[@]}"
@@ -44,12 +44,10 @@ if [ -z "${BEFORE_SHA:-}" ] ||  [ "$BEFORE_SHA" = "00000000000000000000000000000
 fi  
 
 
-#perform diff check to determine XML files that were added (A), modified (M), copied (C) or renamed (R) and output to array
 echo "Checking for changed XML files between $BEFORE_SHA and $CURRENT_SHA in manifest repo at path: $MANIFEST_REPO_PATH."
+#change to manifest repo directory for diff check
 cd $MANIFEST_REPO_PATH
-git config --get remote.origin.url
-git log -2
-#must specify manifest repo path with -C for diff check
+#perform diff check to determine XML files that were added (A), modified (M), copied (C) or renamed (R) and output to array
 mapfile -t MANIFESTS < <(git diff --name-only --diff-filter=AMCR \
         "$BEFORE_SHA" "$CURRENT_SHA" \
         | grep -E '\.xml$')
