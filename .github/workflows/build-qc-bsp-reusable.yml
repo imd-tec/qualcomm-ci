@@ -33,9 +33,9 @@ on:
           description: Version of the manifest (e.g. 1.0.0)
           type: string     
 
-        BUILD_KERNEL:
+        BUILD_KERNEL_VARIANT:
           required: true
-          description: Kernel to use (e.g. gki-kernel)
+          description: Kernel variant to use (e.g. gki-kernel)
           type: string
 
         BUILD_MACHINE:
