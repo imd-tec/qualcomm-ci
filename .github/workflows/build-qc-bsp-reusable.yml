@@ -259,7 +259,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'conf_contents') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/configure_contents_xml.sh \
+          python3 /home/dev/build_scripts/configure_contents_xml.py \
           --distro "${DISTRO}" \
           --machine "${MACHINE}" \
           --images "${IMAGE}"
