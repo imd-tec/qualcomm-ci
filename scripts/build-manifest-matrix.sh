@@ -37,8 +37,8 @@ JSON='[]'
 {
     echo "## Triggered Builds"
     echo ""
-    echo "| Manifest | Name | Version | Distro | Machine | Image | Project Path | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
-    echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+    echo "| Manifest | Name | Version | Kernel | Distro | Machine | Image | Project Path | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
+    echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
 } >> "$GITHUB_STEP_SUMMARY"
 
 echo "Processing ${#MANIFESTS[@]} manifest(s)..."
@@ -93,6 +93,9 @@ for manifest_path in "${MANIFESTS[@]}"; do
     # e.g., version: "1.0.0"
     version=$(yq '."'"${manifest_name}"'".version' "$config_file")
 
+    # e.g., kernel: "gki-kernel"
+    kernel=$(yq '."'"${manifest_name}"'".kernel' "$config_file")
+
     # e.g., distro: "imdt-qcom-distro-perf"
     distro=$(yq '."'"${manifest_name}"'".distro' "$config_file")
 
@@ -128,6 +131,7 @@ for manifest_path in "${MANIFESTS[@]}"; do
     --arg manifest "$manifest_path" \
     --arg name "$manifest_name" \
     --arg version "$version" \
+    --arg kernel "$kernel" \
     --arg machine "$machine" \
     --arg distro "$distro" \
     --arg image "$image" \
@@ -140,14 +144,14 @@ for manifest_path in "${MANIFESTS[@]}"; do
     --arg qcs_sources "$qcs_sources" \
     --arg skip_steps "$skip_steps" \
     --argjson arr "$JSON" \
-    '$arr + [{manifest:$manifest, name:$name, version:$version, distro:$distro, 
+    '$arr + [{manifest:$manifest, name:$name, version:$version, kernel:$kernel, distro:$distro, 
     machine:$machine, image:$image, project_path:$project_path, docker:$docker,
     has_patches:$has_patches, patch_script_path:$patch_script_path,
     release_name:$release_name, pyenv:$pyenv, qcs_sources:$qcs_sources, skip_steps:$skip_steps }]'
     )"
 
     #append results to step summary
-    echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
+    echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$kernel\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
     done
 
 #compact JSON to one line and direct to Github output
