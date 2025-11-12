@@ -116,6 +116,7 @@ jobs:
       MANIFEST_XML: ${{ inputs.MANIFEST_XML }}
       BUILD_NAME: ${{ inputs.BUILD_NAME }}
       BUILD_VERSION: ${{ inputs.BUILD_VERSION }}
+      KERNEL_VARIANT: ${{ inputs.BUILD_KERNEL_VARIANT }}
       MACHINE: ${{ inputs.BUILD_MACHINE }}
       DISTRO: ${{ inputs.BUILD_DISTRO }}
       IMAGE: ${{ inputs.BUILD_IMAGE }}
@@ -185,6 +186,7 @@ jobs:
           -e IMAGE="$IMAGE" \
           -e RELEASE_NAME="$RELEASE_NAME" \
           -e BUILD_VERSION="$BUILD_VERSION" \
+          -e KERNEL_VARIANT="$KERNEL_VARIANT" \
           -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
           -e PYENV="$PYENV" \
           -e MACHINE="$MACHINE" \
@@ -256,7 +258,10 @@ jobs:
       - name: Build kernel
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/build_scripts/build_kernel.sh --lto "thin" --jobs 8
+          bash /home/dev/build_scripts/build_kernel.sh \
+          --lto "thin" --jobs 8 \
+          --build_variant "${KERNEL_VARIANT}" \
+          --build_output_dir "../out/msm-kernel-kalama_le-${KERNEL_VARIANT}"
           '
 
       - name: Build HLOS
