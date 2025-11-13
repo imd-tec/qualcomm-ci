@@ -362,8 +362,13 @@ jobs:
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
           
-          #create prebuilt tarball 
-          tar -C "/home/dev/Qualcomm/" -czf "${FULL_RELEASE_NAME}.tar.gz" "${FULL_RELEASE_NAME}"
+          #remove previous prebuilt tarball
+          if [ -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz" ]; then
+            rm -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz"
+          fi
+
+          #create fresh prebuilt tarball 
+          tar -C /home/dev/Qualcomm -czf "${FULL_RELEASE_NAME}.tar.gz" "${FULL_RELEASE_NAME}"
 
           #verify tarball creation and non-compresssed directory
           if [ -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz" ]; then
