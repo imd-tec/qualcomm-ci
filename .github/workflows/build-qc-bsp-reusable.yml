@@ -237,7 +237,7 @@ jobs:
           fi
 
           #sync repos
-          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"
+          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML" 
           '
 
       - name: Configure kernel directories
@@ -259,10 +259,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'conf_contents') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          python3 /home/dev/build_scripts/configure_contents_xml.py \
-          --distro "${DISTRO}" \
-          --machine "${MACHINE}" \
-          --images "${IMAGE}"
+          python3 /home/dev/build_scripts/configure_contents_xml.py -d "${DISTRO}" -m "${MACHINE}" -i "${IMAGE}" -x "${QCOM_ROOT_DIR}/contents.xml"
           ' 
 
       - name: Build kernel
