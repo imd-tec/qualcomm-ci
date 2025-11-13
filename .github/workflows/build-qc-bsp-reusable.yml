@@ -137,7 +137,8 @@ jobs:
         with:
             repository: imd-tec/qualcomm-ci
             ref: master
-            ssh-key: ${{ secrets.QCI_DEPLOY_KEY }}
+            token: ${{ secrets.QCI_DEPLOY_PAT }}
+            persist-credentials: false
             path: ci_repo
 
       - name: Validate inputs and create build project directory
