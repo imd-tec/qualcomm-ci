@@ -1,0 +1,136 @@
+name: Automate build process on manifest change
+
+on:
+  push:
+    #trigger on any branch upon any .xml modification at any depth
+    paths:
+      - "**/*.xml"
+      #as the CI repo is also checked out in the build process, avoid checking for changes there
+      - "!qualcomm-ci/**"
+
+  #allows for manual workflow execution
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+env:
+  #debug variables for forcing specified builds for testing
+  BUILD_DEBUG: "1"
+  DEBUG_LIST: |
+    IMSU/MICROSCOPE/imsu-microscope-bsp-v1.1.1.xml
+    SBC/imdt-qcom-bsp-v1.1.0.xml
+
+jobs:
+  get_manifests:
+    runs-on: [self-hosted, Linux, X64, qcom]
+    outputs:
+      manifest_list: ${{ steps.build_manifest_matrix.outputs.manifest_list || '[]' }}
+      count: ${{ steps.build_manifest_matrix.outputs.count || 0 }}
+
+    #checkout the current repo under manifest_repo => Access XML manifests
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0 #default is 1; set to 0 ensure that previous commit can be accessed for diff checks
+        path: manifest_repo   
+        
+    #checkout qualcomm-ci repo under ci_repo => Access build matrix script
+    - uses: actions/checkout@v5
+      with:
+          repository: imd-tec/qualcomm-ci
+          ref: master
+          token: ${{ secrets.QCI_DEPLOY_PAT }}
+          persist-credentials: false
+          path: ci_repo
+
+    #create manifests.txt depending on trigger type
+    - name: Get event details
+      run: echo "Triggered by ${{ github.event_name }} event by ${{ github.triggering_actor}} on ${{ github.ref }}."
+
+    #push events get changed xml files only
+    - name: Diff check commits to determine changed manifests
+      id: get_diff_manifests
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG != '1'
+      working-directory: ci_repo
+      run: | 
+        bash ./scripts/get-changed-manifests.sh \
+        --manifest_repo_path "$GITHUB_WORKSPACE/manifest_repo" \
+        --before_sha "${{ github.event.before }}" \
+        --current_sha "${{ github.event.after }}"
+        
+
+    #scheduled dev builds get any development.xml files
+    - name: Get development manifests for scheduled builds
+      id: get_scheduled_manifests
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG != '1'
+      working-directory: manifest_repo
+      run: find . -type f -name 'development.xml' >> "$RUNNER_TEMP/manifests.txt"
+
+    #DEBUG: force builds outlined in DEBUG_LIST
+    - name: Get manifests from debug list
+      id: get_debug_manifests
+      if: github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG == '1' && env.DEBUG_LIST != ''
+      run: |
+        mapfile -t MANIFESTS <<< "$DEBUG_LIST" 
+        for mani in "${MANIFESTS[@]}"; do
+          mani=$(printf '%s' "$mani" | xargs)  #remove any whitespace
+          echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
+        done
+    
+    #check if manifests.txt has been created (for cases in which manifest deletion has triggered a build)
+    - name: Check manifests list
+      id: check_manifests
+      run: |
+        if [ -s "$RUNNER_TEMP/manifests.txt" ]; then
+          echo "has_manifests=1" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_manifests=0" >> "$GITHUB_OUTPUT"
+        fi
+
+    #provided manifests.txt has been created, use it to create a jsonified manifest matrix containing each manifest's build details
+    #build details are fetched from the corresponding project config yaml located in the manifest repository (e.g., imdt-qcom-bsp.yml)
+    - name: Build manifest matrix
+      if: success() && steps.check_manifests.outputs.has_manifests == '1'
+      id: build_manifest_matrix
+      working-directory: ci_repo
+      run: | 
+        bash ./scripts/build-manifest-matrix.sh \
+        --manifest_list "$RUNNER_TEMP/manifests.txt" \
+        --manifest_path "$GITHUB_WORKSPACE/manifest_repo"
+
+  build:
+    #iterates through each manifest and passes build details to reusable workflow.
+    needs: get_manifests
+    if: (${{ needs.get_manifests.outputs.count > 0 }} && ${{ needs.get_manifests.outputs.manifest_list != '' }}) || env.BUILD_DEBUG == '1'
+    strategy:
+      #maximum 2 concurrent jobs, adjust as needed.
+      max-parallel: 2
+      #do not fail the entire job if one manifest fails to build
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJson(needs.get_manifests.outputs.manifest_list) }}
+    uses: imd-tec/qualcomm-ci/.github/workflows/build-qc-bsp-reusable.yml@master
+    secrets: inherit
+    with:
+      MANIFEST_REPOSITORY: ${{ github.event.repository.html_url }}
+      MANIFEST_BRANCH: ${{ github.ref_name }}  
+      MANIFEST_XML: ${{ matrix.manifest }}    
+      BUILD_NAME: ${{ matrix.name }}
+      BUILD_VERSION: ${{ matrix.version }}
+      BUILD_KERNEL_VARIANT: ${{ matrix.kernel_variant }}
+      BUILD_MACHINE: ${{ matrix.machine }}
+      BUILD_DISTRO: ${{ matrix.distro }}
+      BUILD_IMAGE: ${{ matrix.image }}
+      BUILD_PROJECT_PATH: ${{ matrix.project_path }}
+      BUILD_DOCKER: ${{ matrix.docker }}
+      BUILD_HAS_PATCHES: ${{ matrix.has_patches }}
+      BUILD_PATCH_SCRIPT_PATH: ${{ matrix.patch_script_path }}
+      BUILD_RELEASE_NAME: ${{ matrix.release_name }}
+      PYENV: ${{ matrix.pyenv }}
+      QCS_SOURCES: ${{ matrix.qcs_sources }}
+      SKIP_STEPS: ${{ matrix.skip_steps }}
