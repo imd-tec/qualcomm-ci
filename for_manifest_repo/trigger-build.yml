@@ -20,7 +20,7 @@ defaults:
 
 env:
   #debug variables for forcing specified builds for testing
-  BUILD_DEBUG: "1"
+  BUILD_DEBUG: "0"
   DEBUG_LIST: |
     IMSU/MICROSCOPE/imsu-microscope-bsp-v1.1.1.xml
     SBC/imdt-qcom-bsp-v1.1.0.xml
