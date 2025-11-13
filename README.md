@@ -9,12 +9,6 @@ Aims to automate fetching of sources and build process for Qualcomm-based build.
   - Has a single yml configuration file located at the same depth as the *manifest.xml* files, which outlines the build details for each manifest version. See *for-manifest-repo/config_example.yml* for a template.
 - The *imdt-qcom-desktop* self-hosted runner must be shared to the repository.
 
-**Security recommendations**
-- In manifest repository, under Actions/General set:
-  - **Action permissions** - Allow imd-tec actions and reusable workflows
-  - **Approval for running fork pull request workflows from contributors** - Require approval for all external contributors
-  - **Workflow permissions** - Read repository contents and packages permissions
-
 **How it works:**
 1. A push affecting (or creating) a manifest file triggers *trigger-build.yml* on the manifest repository. Alternatively, cron-jobs can trigger scheduled development builds (**WIP**) and manual dispatch (under the *Actions* tab) can trigger specified builds (check DEBUG_LIST, provided BUILD_DEBUG is set to "1" in *trigger-build.yml*).
 2. The triggered workflow fetches the corresponding build details for the given changed manifest/s. These details are extracted from the aforementioned configuration yaml.
