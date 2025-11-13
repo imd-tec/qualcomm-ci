@@ -320,6 +320,7 @@ jobs:
           
           #locate generated SDK script and rename
           SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO}/tmp-glibc/deploy/sdk/"
+
           #output name format: [release_name_without_prebuilt_suffix]-sdk-v[build_version].sh
           OUTPUT_NAME="${SDK_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VERSION}.sh"
           
@@ -351,10 +352,18 @@ jobs:
           set -xe
           FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
           RELEASE_DIR="/home/dev/Qualcomm/${FULL_RELEASE_NAME}"
+          OUTPUT_TAR="${RELEASE_DIR}.tar.gz"
 
           #if release directory already exists, remove it
-          [ -d "$RELEASE_DIR" ] && rm -rf "$RELEASE_DIR"
-          
+          if [ -d "$RELEASE_DIR" ]; then
+            rm -rf "$RELEASE_DIR"
+          fi
+            
+          #if previous prebuilt tarball exists, remove it
+          if [ -f "$OUTPUT_TAR" ]; then
+            rm -f "$OUTPUT_TAR"
+          fi
+
           #create new release artifact
           cd /home/dev/build_scripts
           python3 create_release.py \
@@ -362,23 +371,19 @@ jobs:
            -x "${QCOM_ROOT_DIR}/contents.xml" \
            -b "${QCOM_ROOT_DIR}"
           
-          #remove previous prebuilt tarball
-          if [ -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz" ]; then
-            rm -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz"
-          fi
-
           #create fresh prebuilt tarball 
-          tar -C /home/dev/Qualcomm -czf "${FULL_RELEASE_NAME}.tar.gz" "${FULL_RELEASE_NAME}"
+          ls -la /home/dev/Qualcomm
+          tar -C /home/dev/Qualcomm -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 
           #verify tarball creation and non-compresssed directory
-          if [ -f "/home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz" ]; then
-            echo "Release artifact created at /home/dev/Qualcomm/${FULL_RELEASE_NAME}.tar.gz"
-            echo "Cleaning up temporary release directory..."
+          if [ -f "$OUTPUT_TAR" ]; then
+            echo "Release artifact compressed at $OUTPUT_TAR"
+            echo "Removing uncompressed release directory..."
             if [ -d "$RELEASE_DIR" ]; then
               rm -rf "$RELEASE_DIR"
             fi
           else
-            echo "ERROR: Release artifact creation failed."
+            echo "ERROR: Release artifact creation failed at $OUTPUT_TAR"
             exit 1
           fi
           '
