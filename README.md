@@ -16,7 +16,7 @@ Aims to automate fetching of sources and build process for Qualcomm-based build.
   - **Workflow permissions** - Read repository contents and packages permissions
 
 **How it works:**
-1. A push affecting (or creating) a manifest file triggers *trigger-build.yml* on the manifest repository. Alternatively, cron-jobs can trigger scheduled development builds (**WIP**) and manual dispatch (under the *Actions* tab) can trigger specified builds (check DEBUG_LIST, provided BUILD_DEUG is set to "1" in *trigger-build.yml*).
+1. A push affecting (or creating) a manifest file triggers *trigger-build.yml* on the manifest repository. Alternatively, cron-jobs can trigger scheduled development builds (**WIP**) and manual dispatch (under the *Actions* tab) can trigger specified builds (check DEBUG_LIST, provided BUILD_DEBUG is set to "1" in *trigger-build.yml*).
 2. The triggered workflow fetches the corresponding build details for the given changed manifest/s. These details are extracted from the aforementioned configuration yaml.
 3. Each set of details are then iterated over and passed to the reusable build workflow located in the *qualcomm-ci* via the *workflow_call* keyword.
 4. Upon receiving a set of details, the reusable workflow executes the build steps, broadly following the Getting Started build process. This continues until all triggered builds either complete, fail or are manually cancelled.
