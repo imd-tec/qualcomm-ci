@@ -53,11 +53,6 @@ on:
           description: Target image to build (e.g. imdt-image-weston)
           type: string      
 
-        BUILD_PROJECT_PATH:
-          required: true
-          description: Local path on runner to project directory (e.g. /mnt/nvme1/qcom_ci/builds/IMSU/GLASSES)
-          type: string       
-
         BUILD_DOCKER:
           required: true
           description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
@@ -70,7 +65,7 @@ on:
 
         BUILD_PATCH_SCRIPT_PATH:
           required: true
-          description: Path to IMDT patch build script (e.g. apps_proc/poky/meta-imsu-glasses/tools/imdt-patch-qcs8550-build.sh)
+          description: Path to IMDT patch build script (e.g. apps_proc/imdt-patch-qcs8550-build.sh)
           type: string
 
         BUILD_RELEASE_NAME:
@@ -120,8 +115,6 @@ jobs:
       MACHINE: ${{ inputs.BUILD_MACHINE }}
       DISTRO: ${{ inputs.BUILD_DISTRO }}
       IMAGE: ${{ inputs.BUILD_IMAGE }}
-      #This evaluates to [project_path]/[version]
-      BUILD_PROJECT_PATH: ${{ format('{0}/{1}', inputs.BUILD_PROJECT_PATH, inputs.BUILD_VERSION) }}
       BUILD_DOCKER: ${{ inputs.BUILD_DOCKER }}
       HAS_PATCHES: ${{ inputs.BUILD_HAS_PATCHES }}
       PATCH_SCRIPT_PATH: ${{ inputs.BUILD_PATCH_SCRIPT_PATH }}
@@ -142,9 +135,9 @@ jobs:
             path: ci_repo
 
       - name: Validate inputs and create build project directory
-        run: |
-          #verify that CI directory is included in project path
-          if grep -q "${CI_DIR}" <<< "${BUILD_PROJECT_PATH}"; then
+        run: | 
+          #set build project path to /mnt/nvme1/qcom_ci/BUILDS/[BUILD_NAME]-v[BUILD_VERSION]
+          BUILD_PROJECT_PATH="${CI_DIR}/BUILDS/${BUILD_NAME}-v${BUILD_VERSION}"
           echo "Using project path: ${BUILD_PROJECT_PATH}"
           else
           echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
@@ -181,8 +174,6 @@ jobs:
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
           docker run --rm -d \
           --name "$CONTAINER_NAME" \
-          --cpus="8" \
-          --memory="32g" \
           -e MANIFEST_REPOSITORY="$MANIFEST_REPOSITORY" \
           -e MANIFEST_BRANCH="$MANIFEST_BRANCH" \
           -e MANIFEST_XML="$MANIFEST_XML" \
@@ -196,6 +187,7 @@ jobs:
           -e DISTRO="$DISTRO" \
           -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
           -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
+          -v "${BUILD_PROJECT_PATH}/release:/home/dev/Qualcomm/release" \
           -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
           "$IMAGE_NAME" "$HOST_UID" "$HOST_GID" \
           sleep infinity
@@ -316,13 +308,16 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          #cache distro name as yocto unsets the variable
+          DISTRO_NAME="${DISTRO}"
+
           #set Yocto environment
           source /home/dev/tools/setup_yocto_env.sh
 
           bitbake ${IMAGE} -c populate_sdk
           
           #locate generated SDK script and rename
-          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO}/tmp-glibc/deploy/sdk/"
+          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/sdk/"
 
           #output name format: [release_name_without_prebuilt_suffix]-sdk-v[build_version].sh
           OUTPUT_NAME="${SDK_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VERSION}.sh"
@@ -354,7 +349,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           set -xe
           FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
-          RELEASE_DIR="/home/dev/Qualcomm/${FULL_RELEASE_NAME}"
+          RELEASE_DIR="/home/dev/Qualcomm/release/${FULL_RELEASE_NAME}"
           OUTPUT_TAR="${RELEASE_DIR}.tar.gz"
 
           #if release directory already exists, remove it
@@ -376,7 +371,8 @@ jobs:
           
           #create fresh prebuilt tarball 
           ls -la /home/dev/Qualcomm
-          tar -C /home/dev/Qualcomm -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
+          cd /home/dev/Qualcomm
+          tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 
           #verify tarball creation and non-compresssed directory
           if [ -f "$OUTPUT_TAR" ]; then
