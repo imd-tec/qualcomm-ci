@@ -1,7 +1,10 @@
 #!/bin/bash
-# Stops and removes specified Docker container and image.
-# Usage: stop-container.sh <container-name> <docker-version>
-# Example: stop-container.sh qualcomm-ci v1.0
+#=============================================================================================================================================================================
+#title: stop-container
+#description: Stops and removes specified Docker container and image.
+#usage: stop-container.sh <container-name> <docker-version>
+#=============================================================================================================================================================================
+set -e 
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <container-name> <docker-version>"
@@ -20,6 +23,6 @@ docker rmi -f "$IMAGE_NAME" 2>/dev/null || true
 
 #verify container status
 if docker ps -q -f "name=^/${CONTAINER_NAME}$" | grep -q .; then
-echo "ERROR: container '$CONTAINER_NAME' still running"
-exit 1
+    echo "ERROR: container '$CONTAINER_NAME' still running"
+    exit 1
 fi
