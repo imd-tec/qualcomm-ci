@@ -25,7 +25,7 @@ on:
 
         BUILD_NAME:
           required: true
-          description: Name of the build (e.g. imsu_glasses_bsp)
+          description: Name of the build (e.g. imsu_glasses_bsp-v1.0.0)
           type: string
         
         BUILD_VERSION:
@@ -134,15 +134,11 @@ jobs:
             persist-credentials: false
             path: ci_repo
 
-      - name: Validate inputs and create build project directory
+      - name: Create build project directory
         run: | 
-          #set build project path to /mnt/nvme1/qcom_ci/BUILDS/[BUILD_NAME]-v[BUILD_VERSION]
-          BUILD_PROJECT_PATH="${CI_DIR}/BUILDS/${BUILD_NAME}-v${BUILD_VERSION}"
+          #set build project path to /mnt/nvme1/qcom_ci/builds/[BUILD_NAME]
+          BUILD_PROJECT_PATH="${CI_DIR}/builds/${BUILD_NAME}"
           echo "Using project path: ${BUILD_PROJECT_PATH}"
-          else
-          echo "ERROR: project path ${BUILD_PROJECT_PATH} is invalid. It must be under ${CI_DIR}."
-          exit 1
-          fi
 
           #create and change to build project directory
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
