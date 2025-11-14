@@ -181,6 +181,8 @@ jobs:
           #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
           docker run --rm -d \
           --name "$CONTAINER_NAME" \
+          --cpus="8" \
+          --memory="32g" \
           -e MANIFEST_REPOSITORY="$MANIFEST_REPOSITORY" \
           -e MANIFEST_BRANCH="$MANIFEST_BRANCH" \
           -e MANIFEST_XML="$MANIFEST_XML" \

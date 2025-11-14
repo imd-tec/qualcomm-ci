@@ -6,7 +6,7 @@ on:
     paths:
       - "**/*.xml"
       #as the CI repo is also checked out in the build process, avoid checking for changes there
-      - "!qualcomm-ci/**"
+      - "!ci_repo/**"
 
   #allows for manual workflow execution
   workflow_dispatch:
