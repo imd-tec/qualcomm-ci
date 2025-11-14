@@ -34,7 +34,7 @@ function check_required_vars() {
 
 function extract_sources() {
     #set sources path
-    SOURCES_PATH=${BUILD_PROJECT_PATH}/SOURCES
+    SOURCES_PATH=${BUILD_PROJECT_PATH}/sources
 
     #check if source files are already present in build project path
     if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
