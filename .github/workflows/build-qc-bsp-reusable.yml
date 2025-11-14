@@ -140,6 +140,9 @@ jobs:
           BUILD_PROJECT_PATH="${CI_DIR}/builds/${BUILD_NAME}"
           echo "Using project path: ${BUILD_PROJECT_PATH}"
 
+          #export to GITHUB_ENV for later steps
+          echo "BUILD_PROJECT_PATH=${BUILD_PROJECT_PATH}" >> $GITHUB_ENV
+
           #create and change to build project directory
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
 
