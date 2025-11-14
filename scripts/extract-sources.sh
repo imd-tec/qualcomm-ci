@@ -15,7 +15,7 @@
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
 #=============================================================================================================================================================================
-set -eu
+set -eux
 
 #set sources path
 SOURCES_PATH=${BUILD_PROJECT_PATH}/sources

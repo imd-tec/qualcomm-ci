@@ -55,6 +55,7 @@ function run_container() {
         -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
         -v "${BUILD_PROJECT_PATH}/release:/home/dev/Qualcomm/release" \
         -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
+        -v "${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/" \
         "$IMAGE_NAME" "$HOST_UID" "$HOST_GID" \
         sleep infinity
 
