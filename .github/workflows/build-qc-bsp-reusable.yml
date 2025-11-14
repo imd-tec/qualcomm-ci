@@ -379,6 +379,7 @@ jobs:
             echo "Release artifact compressed at $OUTPUT_TAR"
             echo "Removing uncompressed release directory..."
             if [ -d "$RELEASE_DIR" ]; then
+              echo "Removing $RELEASE_DIR"
               rm -rf "$RELEASE_DIR"
             fi
           else
