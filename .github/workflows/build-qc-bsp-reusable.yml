@@ -98,7 +98,7 @@ env:
   DOCKER_EXEC: docker exec -t -u dev
 
   #Workflow development variables
-  CLEAN_UP: "1"
+  DEBUG_CLEAN_UP: "1"
   DEBUG_SKIP_SRC: "0"
 
 jobs:
@@ -161,8 +161,6 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_netrc') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-
-          #build netrc
           bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
           '
 
@@ -193,7 +191,6 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          #applying IMDT patches to QC source
           bash "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}"
           '
       
@@ -203,7 +200,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           python3 /home/dev/build_scripts/configure_contents_xml.py -d "${DISTRO}" -m "${MACHINE}" -i "${IMAGE}" -x "${QCOM_ROOT_DIR}/contents.xml"
           ' 
-
+          
       - name: Build kernel
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
@@ -255,31 +252,7 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          #cache distro name as yocto unsets the variable
-          DISTRO_NAME="${DISTRO}"
-
-          #set Yocto environment
-          source /home/dev/tools/setup_yocto_env.sh
-
-          bitbake ${IMAGE} -c populate_sdk
-          
-          #locate generated SDK script and rename
-          SDK_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/sdk/"
-
-          #output name format: [release_name_without_prebuilt_suffix]-sdk-v[build_version].sh
-          OUTPUT_NAME="${SDK_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VERSION}.sh"
-          
-          #verify that there is exactly one sh script in SDK_DIR
-          cd "$SDK_DIR"
-          sdk_sh="$(find -maxdepth 1 -type f -name '*.sh')"
-
-          if [[ -z "$sdk_sh" ]]; then
-            echo "ERROR: No SDK files found in ${SDK_DIR}"
-            exit 1
-          fi
-
-          #rename SDK script to output_name
-          mv -- "$sdk_sh" "$OUTPUT_NAME"
+          bash /home/dev/tools/container_scripts/generate_sdk.sh
           '
       
       - name: Build non-HLOS components
@@ -294,55 +267,15 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -xe
-          FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
-          RELEASE_DIR="/home/dev/Qualcomm/release/${FULL_RELEASE_NAME}"
-          OUTPUT_TAR="${RELEASE_DIR}.tar.gz"
-
-          #if release directory already exists, remove it
-          if [ -d "$RELEASE_DIR" ]; then
-            rm -rf "$RELEASE_DIR"
-          fi
-            
-          #if previous prebuilt tarball exists, remove it
-          if [ -f "$OUTPUT_TAR" ]; then
-            rm -f "$OUTPUT_TAR"
-          fi
-
-          #create new release artifact
-          cd /home/dev/build_scripts
-          python3 create_release.py \
-           -r "$RELEASE_DIR" \
-           -x "${QCOM_ROOT_DIR}/contents.xml" \
-           -b "${QCOM_ROOT_DIR}"
-          
-          #create fresh prebuilt tarball 
-          ls -la /home/dev/Qualcomm
-          cd /home/dev/Qualcomm
-          tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
-
-          #verify tarball creation and non-compresssed directory
-          if [ -f "$OUTPUT_TAR" ]; then
-            echo "Release artifact compressed at $OUTPUT_TAR"
-            echo "Removing uncompressed release directory..."
-            if [ -d "$RELEASE_DIR" ]; then
-              echo "Removing $RELEASE_DIR"
-              rm -rf "$RELEASE_DIR"
-            fi
-          else
-            echo "ERROR: Release artifact creation failed at $OUTPUT_TAR"
-            exit 1
-          fi
+          bash /home/dev/tools/container_scripts/create_artifact.sh
           '
 
       - name: Clean up container and image
-        if: ${{ always() && env.CLEAN_UP == '1' }}
-        run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/stop-container.sh
-          bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
+        if: ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
+        run: bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
       - name: Clean up source files
-        if:  ${{ always() && env.CLEAN_UP == '1' }}
+        if:  ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
           [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
