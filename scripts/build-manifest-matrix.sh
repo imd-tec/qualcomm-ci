@@ -37,8 +37,8 @@ function construct_manifest_json() {
   {
       echo "## Triggered Builds"
       echo ""
-      echo "| Manifest | Name | Version | Kernel Variant | Distro | Machine | Image | Project Path | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
-      echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+      echo "| Manifest | Name | Version | Kernel Variant | Distro | Machine | Image | Docker | Has Patches | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
+      echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
   } >> "$GITHUB_STEP_SUMMARY"
 
 
@@ -104,9 +104,6 @@ function construct_manifest_json() {
       # e.g., image: "imdt-glasses-image-weston"
       image=$(yq '."'"${manifest_name}"'".image' "$config_file")
 
-      # e.g., project_path: "/mnt/nvme1/qcom_ci/builds/IMSU/GLASSES/1.0.0/sources"
-      project_path=$(yq '."'"${manifest_name}"'".project_path' "$config_file")
-
       # e.g., docker: "imdtec/imdt-qualcomm-build-setup:0.5.1"
       docker=$(yq '."'"${manifest_name}"'".docker' "$config_file")
 
@@ -137,7 +134,6 @@ function construct_manifest_json() {
       --arg machine "$machine" \
       --arg distro "$distro" \
       --arg image "$image" \
-      --arg project_path "$project_path" \
       --arg docker "$docker" \
       --arg has_patches "$has_patches" \
       --arg patch_script_path "$patch_script_path" \
@@ -147,13 +143,13 @@ function construct_manifest_json() {
       --arg skip_steps "$skip_steps" \
       --argjson arr "$JSON" \
       '$arr + [{manifest:$manifest, name:$name, version:$version, kernel_variant:$kernel_variant, distro:$distro, 
-      machine:$machine, image:$image, project_path:$project_path, docker:$docker,
+      machine:$machine, image:$image, docker:$docker,
       has_patches:$has_patches, patch_script_path:$patch_script_path,
       release_name:$release_name, pyenv:$pyenv, qcs_sources:$qcs_sources, skip_steps:$skip_steps }]'
       )"
 
       #append results to step summary
-      echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$kernel_variant\` | \`$distro\` | \`$machine\` | \`$image\` | \`$project_path\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
+      echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$kernel_variant\` | \`$distro\` | \`$machine\` | \`$image\` | \`$docker\`| \`$has_patches\` | \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
       done
 
   #compact newly created JSON to one line, as GitHub output expects 
