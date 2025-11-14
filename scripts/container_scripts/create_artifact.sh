@@ -26,8 +26,8 @@ python3 create_release.py \
     -b "${QCOM_ROOT_DIR}"
 
 #create fresh prebuilt tarball 
-ls -la /home/dev/Qualcomm
-cd /home/dev/Qualcomm
+ls -la /home/dev/Qualcomm/release
+cd /home/dev/Qualcomm/release
 tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 
 #verify tarball creation and remove non-compresssed release directory
