@@ -42,7 +42,7 @@ function extract_sources() {
         rm -rf "${BUILD_PROJECT_PATH:?}/${QCS_SOURCES:?}"
     fi
 
-    #extract optional assets (patch, cdt, etc.) as applicable
+    #extract build-specific assets (patch, cdt, etc.), as applicable
     candidates=()
     if [[ "$HAS_PATCHES" == "1" ]]; then
     candidates+=("patches.tar.gz")
