@@ -161,6 +161,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_netrc') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          #TODO: replace with copying from a dedicated account's .netrc
           bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
           '
 
@@ -200,7 +201,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           python3 /home/dev/build_scripts/configure_contents_xml.py -d "${DISTRO}" -m "${MACHINE}" -i "${IMAGE}" -x "${QCOM_ROOT_DIR}/contents.xml"
           ' 
-          
+
       - name: Build kernel
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
@@ -231,7 +232,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/setup_yocto_env.sh
+          source /home/dev/tools/container_scripts/setup_yocto_env.sh
 
           bitbake "${IMAGE}" --runall=fetch
           '
@@ -241,7 +242,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/setup_yocto_env.sh
+          source /home/dev/tools/container_scripts/setup_yocto_env.sh
           
           #build image
           bitbake "${IMAGE}"
