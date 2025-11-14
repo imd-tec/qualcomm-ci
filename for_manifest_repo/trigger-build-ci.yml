@@ -1,11 +1,11 @@
-name: Automate build process on manifest change
+name: Automate build process on manifest change or schedule
 
 on:
   push:
     #trigger on any branch upon any .xml modification at any depth
     paths:
       - "**/*.xml"
-      #as the CI repo is also checked out in the build process, avoid checking for changes there
+      #as the CI repo is also checked out in the build process, avoid checking for changes there. This much match the path assigned below.
       - "!ci_repo/**"
 
   #allows for manual workflow execution
@@ -17,14 +17,11 @@ permissions:
 defaults:
   run:
     shell: bash -euo pipefail {0}
-
 env:
   #debug variables for forcing specified builds for testing
-  BUILD_DEBUG: "0"
+  BUILD_DEBUG: "1"
   DEBUG_LIST: |
-    IMSU/MICROSCOPE/imsu-microscope-bsp-v1.1.1.xml
     SBC/imdt-qcom-bsp-v1.1.0.xml
-    IMSU/GLASSES/imsu-glasses-bsp-v3.2.0.xml
 
 jobs:
   get_manifests:
@@ -40,7 +37,7 @@ jobs:
         fetch-depth: 0 #default is 1; set to 0 ensure that previous commit can be accessed for diff checks
         path: manifest_repo   
         
-    #checkout qualcomm-ci repo under ci_repo => Access build matrix script
+    #checkout qualcomm-ci repo under ci_repo => Access build matrix script located there
     - uses: actions/checkout@v5
       with:
           repository: imd-tec/qualcomm-ci
@@ -48,12 +45,14 @@ jobs:
           token: ${{ secrets.QCI_DEPLOY_PAT }}
           persist-credentials: false
           path: ci_repo
-
-    #create manifests.txt depending on trigger type
+    
+    #log event details
     - name: Get event details
       run: echo "Triggered by ${{ github.event_name }} event by ${{ github.triggering_actor}} on ${{ github.ref }}."
 
-    #push events get changed xml files only
+    #CREATE MANIFESTS.TXT BASED ON EVENT TYPE
+
+    #push events get changed manifest.xml files only
     - name: Diff check commits to determine changed manifests
       id: get_diff_manifests
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG != '1'
@@ -64,7 +63,6 @@ jobs:
         --before_sha "${{ github.event.before }}" \
         --current_sha "${{ github.event.after }}"
         
-
     #scheduled dev builds get any development.xml files
     - name: Get development manifests for scheduled builds
       id: get_scheduled_manifests
@@ -72,18 +70,19 @@ jobs:
       working-directory: manifest_repo
       run: find . -type f -name 'development.xml' >> "$RUNNER_TEMP/manifests.txt"
 
-    #DEBUG: force builds outlined in DEBUG_LIST
+    #DEBUG: if BUILD_DEBUG is enabled, force builds outlined in DEBUG_LIST
     - name: Get manifests from debug list
       id: get_debug_manifests
       if: github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG == '1' && env.DEBUG_LIST != ''
       run: |
-        mapfile -t MANIFESTS <<< "$DEBUG_LIST" 
+        #as GitHub Action env variables are strings, we need to read the debug list into an array line-by-line for sanitation
+        mapfile -t MANIFESTS <<< "$DEBUG_LIST"
         for mani in "${MANIFESTS[@]}"; do
-          mani=$(printf '%s' "$mani" | xargs)  #remove any whitespace
+          mani=$(printf '%s' "$mani" | xargs)  #xargs to trim any whitespace
           echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
         done
     
-    #check if manifests.txt has been created (for cases in which manifest deletion has triggered a build)
+    #varify that manifests.txt has been created (for cases in which manifest deletion has triggered a build)
     - name: Check manifests list
       id: check_manifests
       run: |
@@ -93,7 +92,7 @@ jobs:
           echo "has_manifests=0" >> "$GITHUB_OUTPUT"
         fi
 
-    #provided manifests.txt has been created, use it to create a jsonified manifest matrix containing each manifest's build details
+    #provided manifests.txt has been created, use it to create a jsonified array containing each manifest's build details
     #build details are fetched from the corresponding project config yaml located in the manifest repository (e.g., imdt-qcom-bsp.yml)
     - name: Build manifest matrix
       if: success() && steps.check_manifests.outputs.has_manifests == '1'
