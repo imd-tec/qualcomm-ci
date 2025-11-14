@@ -17,62 +17,42 @@
 #=============================================================================================================================================================================
 set -eu
 
-function check_required_vars() {
-    local missing_vars=()
-    required_vars=("BUILD_PROJECT_PATH" "QCS_SOURCES" "CI_DIR" "HAS_PATCHES")
-    for var_name in "${required_vars[@]}"; do
-        if [[ -z "${var_name:-}" ]]; then
-            missing_vars+=("$var_name")
-        fi
-    done
+#set sources path
+SOURCES_PATH=${BUILD_PROJECT_PATH}/sources
 
-    if [[ ${#missing_vars[@]} -gt 0 ]]; then
-        echo "Error: The following required environment variables are not set: ${missing_vars[*]}"
-        exit 1
-    fi
-}
+#check if source files are already present in build project path
+if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
+    echo "Warning: ${BUILD_PROJECT_PATH}/${QCS_SOURCES} already exists. Cleaning up..."
+    rm -rf "${BUILD_PROJECT_PATH:?}/${QCS_SOURCES:?}"
+fi
 
-function extract_sources() {
-    #set sources path
-    SOURCES_PATH=${BUILD_PROJECT_PATH}/sources
-
-    #check if source files are already present in build project path
-    if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
-        echo "Warning: ${BUILD_PROJECT_PATH}/${QCS_SOURCES} already exists. Cleaning up..."
-        rm -rf "${BUILD_PROJECT_PATH:?}/${QCS_SOURCES:?}"
-    fi
-
-    #extract build-specific assets (patch, cdt, etc.), as applicable
-    candidates=()
-    if [[ "$HAS_PATCHES" == "1" ]]; then
+#extract build-specific assets (patch, cdt, etc.), as applicable
+candidates=()
+if [[ "$HAS_PATCHES" == "1" ]]; then
     candidates+=("patches.tar.gz")
-    fi
+fi
 
-    #TODO: Added logic for using previous patch if current patch file is not found
+#TODO: Added logic for using previous patch if current patch file is not found
 
-    #extend to handle other assets as required
-    #e.g., if [[ "$BUILD_CDT" == "1" ]]; then candidates+=("cdt.tar.gz"); fi 
-    
-    for asset in "${candidates[@]}"; do
-        if [[ -f "${SOURCES_PATH}/$asset" ]]; then
-        echo "Extracting $asset..."
-        tar -xf "${SOURCES_PATH}/$asset" -C "$BUILD_PROJECT_PATH"
-            if [[ -f "$BUILD_PROJECT_PATH/$asset"  ]]; then
-                echo "$asset extracted to ""$BUILD_PROJECT_PATH/$asset"
-            fi
+#extend to handle other assets as required
+#e.g., if [[ "$BUILD_CDT" == "1" ]]; then candidates+=("cdt.tar.gz"); fi 
+
+for asset in "${candidates[@]}"; do
+    if [[ -f "${SOURCES_PATH}/$asset" ]]; then
+    echo "Extracting $asset..."
+    tar -xf "${SOURCES_PATH}/$asset" -C "$BUILD_PROJECT_PATH"
+        if [[ -f "$BUILD_PROJECT_PATH/$asset"  ]]; then
+            echo "$asset extracted to ""$BUILD_PROJECT_PATH/$asset"
         fi
-    done
-
-    #extract Qualcomm source files
-    tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
-    if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
-        echo "Qualcomm sources ${QCS_SOURCES} extracted to ${BUILD_PROJECT_PATH}/"
-    else
-        echo "Error: Qualcomm sources ${QCS_SOURCES} failed to extract to ${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
-        exit 1
     fi
-}
+done
 
+#extract Qualcomm source files
+tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
+if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
+    echo " ${QCS_SOURCES} extracted to ${BUILD_PROJECT_PATH}/"
+else
+    echo "Error: ${QCS_SOURCES} failed to extract to ${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
+    exit 1
+fi
 
-check_required_vars
-extract_sources
