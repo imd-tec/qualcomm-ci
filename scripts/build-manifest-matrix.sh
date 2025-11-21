@@ -83,7 +83,7 @@ function construct_manifest_json() {
       fi
 
       #if manifest key is 'development', echo result to step summary and continue to next manifest
-      if [ "$manifest_name" = "development" ]; then
+      if [ "$manifest_name" = "development" ] && [ "$GITHUB_EVENT_NAME" = 'push' ]; then
         echo "| \`$manifest_path \` | \`Skipped: development manifest\` |" >> "$GITHUB_STEP_SUMMARY"
         continue
       fi
