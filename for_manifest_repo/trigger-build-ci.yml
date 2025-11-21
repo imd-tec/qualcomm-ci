@@ -6,7 +6,7 @@ on:
     paths:
       - "**/*.xml"
       #as the CI repo is also checked out in the build process, avoid checking for changes there. This much match the path assigned below.
-      - "!ci_repo/**"
+      - "!qualcomm_ci/**"
 
   #allows for manual workflow execution
   workflow_dispatch:
@@ -21,6 +21,8 @@ env:
   #debug variables for forcing specified builds for testing
   BUILD_DEBUG: "1"
   DEBUG_LIST: |
+    IMSU/MICROSCOPE/imsu-microscope-bsp-v1.1.1.xml
+    IMSU/GLASSES/imsu-glasses-bsp-v3.2.1.xml
     SBC/imdt-qcom-bsp-v1.1.0.xml
 
 jobs:
@@ -30,21 +32,21 @@ jobs:
       manifest_list: ${{ steps.build_manifest_matrix.outputs.manifest_list || '[]' }}
       count: ${{ steps.build_manifest_matrix.outputs.count || 0 }}
 
-    #checkout the current repo under manifest_repo => Access XML manifests
+    #checkout the current repo under 'manifest_repo' => Access XML manifests
     steps:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0 #default is 1; set to 0 ensure that previous commit can be accessed for diff checks
         path: manifest_repo   
         
-    #checkout qualcomm-ci repo under ci_repo => Access build matrix script located there
+    #checkout qualcomm-ci repo under 'qualcomm_ci' => Access build matrix script located there
     - uses: actions/checkout@v5
       with:
           repository: imd-tec/qualcomm-ci
           ref: master
           token: ${{ secrets.QCI_DEPLOY_PAT }}
           persist-credentials: false
-          path: ci_repo
+          path: qualcomm_ci
     
     #log event details
     - name: Get event details
@@ -56,7 +58,7 @@ jobs:
     - name: Diff check commits to determine changed manifests
       id: get_diff_manifests
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG != '1'
-      working-directory: ci_repo
+      working-directory: qualcomm_ci
       run: | 
         bash ./scripts/get-changed-manifests.sh \
         --manifest_repo_path "$GITHUB_WORKSPACE/manifest_repo" \
@@ -97,7 +99,7 @@ jobs:
     - name: Build manifest matrix
       if: success() && steps.check_manifests.outputs.has_manifests == '1'
       id: build_manifest_matrix
-      working-directory: ci_repo
+      working-directory: qualcomm_ci
       run: | 
         bash ./scripts/build-manifest-matrix.sh \
         --manifest_list "$RUNNER_TEMP/manifests.txt" \
@@ -111,7 +113,7 @@ jobs:
       #maximum 2 concurrent jobs, adjust as needed.
       max-parallel: 2
       #do not fail the entire job if one manifest fails to build
-      fail-fast: false
+      fail-fast: true
       matrix: 
         include: ${{ fromJson(needs.get_manifests.outputs.manifest_list) }}
     uses: imd-tec/qualcomm-ci/.github/workflows/build-qc-bsp-reusable.yml@master
@@ -126,7 +128,6 @@ jobs:
       BUILD_MACHINE: ${{ matrix.machine }}
       BUILD_DISTRO: ${{ matrix.distro }}
       BUILD_IMAGE: ${{ matrix.image }}
-      BUILD_PROJECT_PATH: ${{ matrix.project_path }}
       BUILD_DOCKER: ${{ matrix.docker }}
       BUILD_HAS_PATCHES: ${{ matrix.has_patches }}
       BUILD_PATCH_SCRIPT_PATH: ${{ matrix.patch_script_path }}
