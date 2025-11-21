@@ -79,6 +79,11 @@ on:
           description: Qualcomm source files to use (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps)
           type: string
 
+        PATCH_FALLBACK_PATH:
+          required: true
+          description: Fallback path for patches if not found in build (e.g. /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imsu-glasses-bsp)
+          type: string
+
         SKIP_STEPS:
           required: false
           description: Build steps to skip, defined by 'contains' conditionals below (e.g. [sync_repos, build_hlos])
@@ -115,6 +120,7 @@ jobs:
       RELEASE_NAME: ${{ inputs.BUILD_RELEASE_NAME }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
+      PATCH_FALLBACK_PATH: ${{ inputs.PATCH_FALLBACK_PATH }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
 
     steps:      

@@ -119,6 +119,9 @@ function construct_manifest_json() {
       # e.g., qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps"
       qcs_sources=$(yq '."'"${manifest_name}"'".qcs_sources' "$config_file")
 
+      # e.g., patch_fallback_path: "/mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imsu-glasses-bsp"
+      patch_fallback_path=$(yq '."'"${manifest_name}"'".patch_fallback_path' "$config_file")
+
       # e.g., skip_steps: [- sync_repos, - other_step]. Convert to comma separated string to not break step summary formatting.
       skip_steps=$(yq '."'"${manifest_name}"'".skip_steps | join(", ")' "$config_file")    
 
@@ -136,15 +139,16 @@ function construct_manifest_json() {
       --arg release_name "$release_name" \
       --arg pyenv "$pyenv" \
       --arg qcs_sources "$qcs_sources" \
+      --arg patch_fallback_path "$patch_fallback_path" \
       --arg skip_steps "$skip_steps" \
       --argjson arr "$JSON" \
       '$arr + [{manifest:$manifest, name:$name, version:$version, kernel_variant:$kernel_variant, distro:$distro, 
       machine:$machine, image:$image, docker:$docker, patch_script_path:$patch_script_path,
-      release_name:$release_name, pyenv:$pyenv, qcs_sources:$qcs_sources, skip_steps:$skip_steps }]'
+      release_name:$release_name, pyenv:$pyenv, qcs_sources:$qcs_sources, patch_fallback_path:$patch_fallback_path, skip_steps:$skip_steps }]'
       )"
 
       #append results to step summary
-      echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$kernel_variant\` | \`$distro\` | \`$machine\` | \`$image\` | \`$docker\`| \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
+      echo "| \`$manifest_path\` | \`$manifest_name\` | \`$version\` | \`$kernel_variant\` | \`$distro\` | \`$machine\` | \`$image\` | \`$docker\`| \`$release_name\` | \`$pyenv\` | \`$qcs_sources\` | \`$patch_script_path\` | \`$patch_fallback_path\` | \`$skip_steps\` |" >> "$GITHUB_STEP_SUMMARY"
       done
 
   #compact newly created JSON to one line, as GitHub output expects 

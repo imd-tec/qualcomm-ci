@@ -10,9 +10,9 @@
 #   In the event that build patches cannot be located in the specified build folder, the script will default to patches located in:
 #      /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/<project>/ for fallback patch files
 #assumes:
-#   BUILD_NAME is set to the build name (i.e, imdt-qcom-bsp-v1.1.0).
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
+#   PATCH_FALLBACK_PATH is set to the fallback patch directory path..
 #   CI_DIR is set to the root CI directory path.
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
@@ -31,8 +31,6 @@ fi
 #locate and extract build-specific assets arhives(patch, cdt, etc.), as applicable
 assets_to_extract=()
 
-#check for patches.tar.gz, if not found attempt to use fallback patches
-fallback_patch_path="${CI_DIR}/builds/SHARED_SOURCES/fallback_patches/${BUILD_NAME%-v*}/patches.tar.gz" 
 
 if [ -f "${SOURCES_PATH}/patches.tar.gz" ]; then
     assets_to_extract+=("patches.tar.gz")
@@ -40,9 +38,9 @@ else
     echo "Warning: required patches.tar.gz not found in ${SOURCES_PATH}. Please ensure that the correct patch files are present in the build directory. "
     echo "Attempting to locate fallback patches... "
 
-    if [ -f "$fallback_patch_path" ]; then
+    if [ -f "${PATCH_FALLBACK_PATH}/patches.tar.gz" ]; then
         echo "Fallback patches found. Extracting to build sources directory..."
-        tar -xf "$fallback_patch_path" -C "$SOURCES_PATH"
+        tar -xf "${PATCH_FALLBACK_PATH}/patches.tar.gz" -C "$SOURCES_PATH"
     else
         echo "Error: No fallback patches found. Exiting."
         exit 1
