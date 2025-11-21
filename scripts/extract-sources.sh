@@ -29,7 +29,12 @@ fi
 #extract build-specific assets (patch, cdt, etc.), as applicable
 candidates=()
 if [[ "$HAS_PATCHES" == "1" ]]; then
-    candidates+=("patches.tar.gz")
+    if [ -f "${SOURCES_PATH}/patches.tar.gz" ]; then
+        candidates+=("patches.tar.gz")
+    else
+        echo "Error: required patches.tar.gz not found in ${SOURCES_PATH}."
+        exit 1
+    fi
 fi
 
 #TODO: Added logic for using previous patch if current patch file is not found
