@@ -258,7 +258,7 @@ jobs:
           '
 
       - name: Create release artifact
-        if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
+        if: ${{ !contains(env.SKIP_STEPS, 'create_release') && env.BUILD_VERSION != 'development' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/create_artifact.sh
@@ -272,6 +272,11 @@ jobs:
         if:  ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
+          #if development build, delete build directory
+          if [ $BUILD_VERSION == "development" ] && [ -d "${BUILD_PROJECT_PATH}" ]; then
+            rm -rf "${BUILD_PROJECT_PATH}"
+            exit 0
+          fi
 
           if [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ]; then
             rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
