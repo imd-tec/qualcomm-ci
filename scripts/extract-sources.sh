@@ -11,7 +11,6 @@
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
 #   CI_DIR is set to the root CI directory path.
-#   HAS_PATCHES is set to 0 or 1.
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
 #=============================================================================================================================================================================
@@ -28,16 +27,15 @@ fi
 
 #extract build-specific assets (patch, cdt, etc.), as applicable
 candidates=()
-if [[ "$HAS_PATCHES" == "1" ]]; then
-    if [ -f "${SOURCES_PATH}/patches.tar.gz" ]; then
-        candidates+=("patches.tar.gz")
-    else
-        echo "Error: required patches.tar.gz not found in ${SOURCES_PATH}."
-        exit 1
-    fi
+
+if [ -f "${SOURCES_PATH}/patches.tar.gz" ]; then
+    candidates+=("patches.tar.gz")
+else
+    echo "Error: required patches.tar.gz not found in ${SOURCES_PATH}."
+    exit 1
 fi
 
-#TODO: Added logic for using previous patch if current patch file is not found
+#TODO: Add logic for using previous patch if current patch file is not found
 
 #extend to handle other assets as required
 #e.g., if [[ "$BUILD_CDT" == "1" ]]; then candidates+=("cdt.tar.gz"); fi 

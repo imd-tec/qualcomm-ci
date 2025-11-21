@@ -58,11 +58,6 @@ on:
           description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
           type: string
 
-        BUILD_HAS_PATCHES:
-          required: true
-          description: Whether the build has patches (1 or 0)
-          type: string
-
         BUILD_PATCH_SCRIPT_PATH:
           required: true
           description: Path to IMDT patch build script (e.g. apps_proc/imdt-patch-qcs8550-build.sh)
@@ -116,7 +111,6 @@ jobs:
       DISTRO: ${{ inputs.BUILD_DISTRO }}
       IMAGE: ${{ inputs.BUILD_IMAGE }}
       BUILD_DOCKER: ${{ inputs.BUILD_DOCKER }}
-      HAS_PATCHES: ${{ inputs.BUILD_HAS_PATCHES }}
       PATCH_SCRIPT_PATH: ${{ inputs.BUILD_PATCH_SCRIPT_PATH }}
       RELEASE_NAME: ${{ inputs.BUILD_RELEASE_NAME }}
       PYENV: ${{ inputs.PYENV }}
@@ -278,14 +272,14 @@ jobs:
         if:  ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
         run: |
           set -euo pipefail -x
-          [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ] && \
-          rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
 
-          if [ "$HAS_PATCHES" == 1 ]; then
-            [ -d "${BUILD_PROJECT_PATH:?}/patches" ] && \
+          if [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ]; then
+            rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          fi
+
+          if [ -d "${BUILD_PROJECT_PATH:?}/patches" ]; then
               rm -rf "${BUILD_PROJECT_PATH:?}/patches"
-          fi            
-
+          fi
 
 
          
