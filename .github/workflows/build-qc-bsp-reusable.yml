@@ -97,10 +97,6 @@ env:
   CI_DIR: "/mnt/nvme1/qcom_ci"
   DOCKER_EXEC: docker exec -t -u dev
 
-  #cache and sstate directories
-  DL_DIR : "/mnt/nvme1/YoctoQCOMShared/data/bitbake.downloads"
-  SSTATE_DIR : "/mnt/nvme1/YoctoQCOMShared/data/bitbake.sstate"
-
   #Workflow development variables
   DEBUG_CLEAN_UP: "1"
   DEBUG_SKIP_SRC: "0"
@@ -149,7 +145,6 @@ jobs:
 
           #create and change to build project directory
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
-
 
       - name: Extract build sources files into build directory
         if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') }} || env.DEBUG_SKIP_SRC != '1'
@@ -236,9 +231,8 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/container_scripts/setup_cache.sh
           source /home/dev/tools/container_scripts/setup_yocto_env.sh
-          
+
           bitbake "${IMAGE}" --runall=fetch
           '
 
@@ -247,7 +241,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/container_scripts/setup_cache.sh
           source /home/dev/tools/container_scripts/setup_yocto_env.sh
           
           #build image

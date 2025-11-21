@@ -12,7 +12,6 @@
 #     BUILD_PROJECT_PATH is set to the build project directory path.
 #     CONTAINER_NAME is set to 'ci_qualcomm_[unique_id]'.
 #     DOCKER_EXEC is set to 'docker exec -t -u dev'.
-#     DL_DIR and SSTATE_DIR are set to host paths for Yocto shared download and sstate cache directories.
 #     MANIFEST_REPOSITORY, MANIFEST_BRANCH, MANIFEST_XML, IMAGE, RELEASE_NAME, BUILD_VERSION, KERNEL_VARIANT, QCS_SOURCES, PYENV, MACHINE, DISTRO, PATCH_SCRIPT_PATH are set to build parameters.
 #=============================================================================================================================================================================
 
@@ -57,8 +56,6 @@ function run_container() {
         -v "${BUILD_PROJECT_PATH}/release:/home/dev/Qualcomm/release" \
         -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
         -v "${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/" \
-        -v "${DL_DIR}:/home/dev/downloads" \
-        -v "${SSTATE_DIR}:/home/dev/sstate-cache" \
         "$IMAGE_NAME" "$HOST_UID" "$HOST_GID" \
         sleep infinity
 

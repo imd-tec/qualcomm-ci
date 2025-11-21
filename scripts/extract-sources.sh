@@ -40,7 +40,7 @@ else
 
     if [ -f "${PATCH_FALLBACK_PATH}/patches.tar.gz" ]; then
         echo "Fallback patches found. Extracting to build sources directory..."
-        tar -xf "${PATCH_FALLBACK_PATH}/patches.tar.gz" -C "$BUILD_PROJECT_PATH"
+        tar -xf "${PATCH_FALLBACK_PATH}/patches.tar.gz" -C "$SOURCES_PATH"
     else
         echo "Error: No fallback patches found. Exiting."
         exit 1

@@ -37,8 +37,8 @@ function construct_manifest_json() {
   {
       echo "## Triggered Builds"
       echo ""
-      echo "| Manifest | Name | Version | Kernel Variant | Distro | Machine | Image | Docker | Release Name | Pyenv | QCS Sources | Patch Script Path | Patch Fallback Path | Skip Steps |"
-      echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+      echo "| Manifest | Name | Version | Kernel Variant | Distro | Machine | Image | Docker | Release Name | Pyenv | QCS Sources | Patch Script Path | Skip Steps |"
+      echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
   } >> "$GITHUB_STEP_SUMMARY"
 
 
