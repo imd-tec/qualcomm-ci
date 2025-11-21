@@ -10,6 +10,7 @@
 #   In the event that build patches cannot be located in the specified build folder, the script will default to patches located in:
 #      /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/<project>/ for fallback patch files
 #assumes:
+#   BUILD_NAME is set to the build name (i.e, imdt-qcom-bsp-v1.1.0).
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
 #   CI_DIR is set to the root CI directory path.
