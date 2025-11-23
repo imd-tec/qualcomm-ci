@@ -8,7 +8,6 @@
 DISTRO_NAME="${DISTRO}"
 
 #set Yocto environment
-source /home/dev/tools/container_scripts/setup_cache.sh
 source /home/dev/tools/container_scripts/setup_yocto_env.sh
 
 bitbake ${IMAGE} -c populate_sdk
