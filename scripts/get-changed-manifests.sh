@@ -45,7 +45,7 @@ function perform_diff_check() {
           | grep -E '\.xml$')
 }
 
-function validate_diff_check () {
+function validate_diff_check() {
     local manifest_array=("$@")
 
     echo "Found ${#manifest_array[@]} changed XML files:"
