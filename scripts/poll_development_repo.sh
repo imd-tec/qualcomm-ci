@@ -108,14 +108,14 @@ function check_for_differences() {
                 echo "Relevant changes detected:"
                 echo "$include"
                 echo "Continuing build process..."
-                # echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
+                echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
             fi
         fi
 
         #if previous_hash does not exist; it's the first build => continue with build
         if [ -z "$previous_hash" ]; then
             echo -e "\nNo previous state found for $repo_name. Assuming first build. Continuing build process..." 
-            # echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
+            echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
         fi
 
         #echo current_hash hash to state file for scheduled comparison
