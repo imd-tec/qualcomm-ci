@@ -4,7 +4,7 @@
 #description:
 #     For use exclusively within the trigger-build.yml workflow.
 #     This script takes the previous commit SHA (BEFORE_SHA) and the latest commit SHA (CURRENT_SHA) as inputs.
-#     Because this script must be accessed from a seperate checked-out repo (qualcomm-ci), 
+#     This script must be accessed from a seperate checked-out repository (qualcomm-ci), 
 #     the manifest repository path must be provided as an argument to ensure that the diff check is being perfomed in correct location.
 #     The diff check identifies any manifest XML files that were added, modified, copied or renamed between the two commits.
 #usage:
