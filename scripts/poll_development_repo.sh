@@ -4,14 +4,29 @@
 #description
 #     For use exclusively within the trigger-build.yml workflow.
 #     Triggered on scheduled cron job. See top of trigger-build.yml for details.
+#     Script is accessed from the qualcomm-ci repository so takes <path_to_manifest_repo> as an argument to access development manifests. 
 #     As a development manifest refers to a development meta layer branch, as opposed to a revision commit hash, 
 #     this script must clone the meta layer repository and determine if relevant build files have been changed since the previous cron job.
 #     The last checked commit hash is stored in a local file for each project branch being monitored (see /mnt/nvme1/qcom_ci/dev_repo_poll/state/)
 #     If changes are detected, the script outputs the path to the development manifest to $GITHUB_OUTPUT and continues the build process.
+#usage:
+#     poll_development_repo.sh --manifest_repo_path <path_to_manifest_repo>
 #outputs:
 #     A txt file containing the path to the development manifest
 #=============================================================================================================================================================================
 set -eu
+
+function parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -p|--manifest_repo_path)
+        MANIFEST_REPO_PATH="$2"; shift 2 ;;
+      *)
+        echo "Unknown option: $1"; exit 1 ;;
+    esac
+  done
+}
+
 
 DEV_REPO_CACHE_PATH="/mnt/nvme1/qcom_ci/dev_repo_poll/cache"
 DEV_REPO_STATE_PATH="/mnt/nvme1/qcom_ci/dev_repo_poll/state"
@@ -21,6 +36,7 @@ development_branches=""
 
 function get_manifest_path() {
     #find the development manifest file in the repository
+    cd "$MANIFEST_REPO_PATH"
     manifest_path=$(find . -type f -name 'development.xml' | head -n 1)
     if [ -z "$manifest_path" ]; then
         echo "No development manifest found in the repository."
@@ -123,6 +139,7 @@ function check_for_differences() {
     done
 }
 
+parse_args "$@"
 get_manifest_path
 get_development_revisions
 check_for_differences
