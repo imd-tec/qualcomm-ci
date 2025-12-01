@@ -13,7 +13,7 @@
 #     count: number of manifests processed
 #=============================================================================================================================================================================
 
-set -e
+set -ex
 
 #set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
 MANI_LIST="${RUNNER_TEMP}/manifests.txt"

@@ -5,8 +5,8 @@
 #     For use exclusively within the trigger-build.yml workflow.
 #     Triggered on scheduled cron job. See top of trigger-build.yml for details.
 #     Script is accessed from the qualcomm-ci repository so takes <path_to_manifest_repo> as an argument to access development manifests. 
-#     As a development manifest refers to a development meta layer branch, as opposed to a revision commit hash, 
-#     this script must clone the meta layer repository and determine if relevant build files have been changed since the previous cron job.
+#     As a development manifest can refer to a development meta layer branch, as opposed to a revision commit hash, 
+#     this script must clone the given  meta layer repository and determine if relevant build files have been changed since the previous cron job.
 #     The last checked commit hash is stored in a local file for each project branch being monitored (see /mnt/nvme1/qcom_ci/dev_repo_poll/state/)
 #     If changes are detected, the script outputs the path to the development manifest to $GITHUB_OUTPUT and continues the build process.
 #usage:
@@ -116,7 +116,7 @@ function check_for_differences() {
             echo "Comparing files between $previous_hash and $current_hash:"
             files=$(git diff --name-only "$previous_hash" "$current_hash")
             
-            # filter for previously outlined relevant build files
+            #only continue with build if relevant files, as previously outlined, have been changed
             include=$(printf "%s\n" "$files" | grep -E "$RELEVANT_FILES" || true)
             if [ -z "$include" ]; then
                 echo "No relevant files were modified. Skipping build trigger."
