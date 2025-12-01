@@ -261,10 +261,10 @@ jobs:
           '
       
       - name: Build non-HLOS components
+        id: build_hlos
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          set -x
           bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
           '
 
@@ -274,7 +274,7 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/create_artifact.sh
           '
-
+      
       - name: Clean up container and image
         if: ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
         run: bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
