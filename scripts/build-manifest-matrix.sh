@@ -81,7 +81,7 @@ function construct_manifest_json() {
       #if a corresponding manifest key is not found in the config yaml, echo result to step summary and continue to next manifest
       if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
         config_name=$(basename "$config_file")
-        echo "| \`$manifest_path \` | \`No Key Found: check $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| \`$manifest_path \` | \`No key found matching $manifest_name in $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
         continue
       fi
 
