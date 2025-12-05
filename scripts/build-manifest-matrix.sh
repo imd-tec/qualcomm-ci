@@ -75,17 +75,13 @@ function construct_manifest_json() {
       #extract manifest name from project path to access config details
       manifest_name=$(basename "$manifest_path" .xml)
       echo "Processing manifest: $manifest_name"
-
-      #if a corresponding manifest key is not found in the config yaml, echo result tostep summary and continue to next manifest
+      echo -e "-----------------------------------\nPrinting config contents: "
+      cat "$config_file" 
+      echo -e "-----------------------------------\n\n\n"
+      #if a corresponding manifest key is not found in the config yaml, echo result to step summary and continue to next manifest
       if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
         config_name=$(basename "$config_file")
         echo "| \`$manifest_path \` | \`No Key Found: check $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
-        continue
-      fi
-
-      #if manifest key is 'development', echo result to step summary and continue to next manifest
-      if [ "$manifest_name" = "development" ] && [ "$GITHUB_EVENT_NAME" = 'push' ]; then
-        echo "| \`$manifest_path \` | \`Skipped: development manifest\` |" >> "$GITHUB_STEP_SUMMARY"
         continue
       fi
 
