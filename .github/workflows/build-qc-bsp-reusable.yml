@@ -283,15 +283,17 @@ jobs:
       
       - name: Update development build state logs
         if: ${{ always() && env.BUILD_VERSION == 'development' }}
+        working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |
           echo "Build status: ${{ job.status }}"
           echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
-          bash +x update-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          bash -x update-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
 
       - name: Clean up container and image
         if: ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
-        run: bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
+        working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
+        run: bash -x stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
 
       - name: Clean up source files
         if:  ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
