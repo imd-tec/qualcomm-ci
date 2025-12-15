@@ -89,6 +89,11 @@ on:
           description: Build steps to skip, defined by 'contains' conditionals below (e.g. [sync_repos, build_hlos])
           type: string
 
+        DEV_STATE_LOG:
+          required: false
+          description: Development build details for logging purposes (see /mnt/nvme1/qcom_ci/dev_repo_poll/states)
+          type: string
+
   workflow_dispatch:
 
 env:
@@ -126,6 +131,7 @@ jobs:
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
       PATCH_FALLBACK_PATH: ${{ inputs.PATCH_FALLBACK_PATH }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
+      DEV_STATE_LOG: ${{ inputs.DEV_STATE_LOG }}
 
     steps:      
       - name: Set repository workspace
@@ -275,6 +281,14 @@ jobs:
           bash /home/dev/tools/container_scripts/create_artifact.sh
           '
       
+      - name: Update development build state logs
+        if: ${{ always() && env.BUILD_VERSION == 'development' }}
+        run: |
+          echo "Build status: ${{ job.status }}"
+          echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
+          bash +x update-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          
+
       - name: Clean up container and image
         if: ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
         run: bash $GITHUB_WORKSPACE/scripts/stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
