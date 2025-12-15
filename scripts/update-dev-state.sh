@@ -41,3 +41,5 @@ esac
     done <<< "$STATE_LOG"
 
 } > "$state_file"
+
+echo -e "\nUpdated development state file at: $state_file"
