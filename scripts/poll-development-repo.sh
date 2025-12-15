@@ -187,13 +187,12 @@ function check_for_differences() {
     #send accumulated repository details to output for later state file updates in reusable build workflow
     if [ -f "$RUNNER_TEMP/dev_state_log.txt" ]; then
     {
-        echo "repo_states<<EOF"
+        echo "dev_state_log<<EOF"
         cat "$RUNNER_TEMP/dev_state_log.txt"
         echo "EOF"
     } >> "$GITHUB_OUTPUT"
     fi
 }
-
 
 
 function update_output() {
