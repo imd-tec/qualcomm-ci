@@ -61,4 +61,5 @@ Must contain the following source files:
 
 - As it stands, Qualcomm source files will need to be manually added to the *SHARED_SOURCES* directory. 
 - Pushing a manifest that does not currently have a build directory will automatically create one; however, for now, any non-shared assets (i.e., patches, CDT, etc.) will have to be manually fetched and placed in it's respective folder or fallback patch path.
+- Pushing a development change manifest will trigger a build and log the success status as expected. However, currently, triggering a development build this way will omit the hash logging step and thus the next cron-job will trigger another build regardless of success status. 
 
