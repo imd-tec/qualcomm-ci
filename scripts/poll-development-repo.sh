@@ -94,9 +94,9 @@ function check_for_differences() {
         fi
     fi       
 
-    #if FAILURE or CANCELLED -> force rebuild
-    if [ "$last_result" = "FAILURE" ] || [ "$last_result" = "CANCELLED" ]; then
-        echo -e "\nPrevious build failed/cancelled -> forcing rebuild..."
+    #if FAILURE, CANCELLED or UNKNOWN -> force rebuild
+    if [ "$last_result" != "SUCCESS" ]; then
+        echo -e "\nPrevious build not labelled as SUCCESS -> forcing rebuild..."
         trigger_build=true
     fi
 
