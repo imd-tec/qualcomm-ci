@@ -83,7 +83,14 @@ function construct_manifest_json() {
         config_name=$(basename "$config_file")
         echo "| \`$manifest_path \` | \`No key found matching $manifest_name in $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
         continue
-      fi
+      fi  
+
+      #DEBUG - get yaml ver
+      echo -e "\nYAML parser version info:"
+      yq --version
+      which yq
+      echo -e "-----------------------------------\n"
+
 
       #ACCESS YAML CONFIGURATION DETAILS
       # e.g., machine: "imsu-glasses-poc"
