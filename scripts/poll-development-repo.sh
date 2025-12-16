@@ -137,7 +137,7 @@ function check_for_differences() {
             #get last checked hash for this repo from state file
             last_hash=""
             if [ -f "$state_file" ]; then
-                last_hash=$(grep -m1 "^$repo_name *|" "$state_file" | cut -d'|' -f2 | xargs || true)
+                last_hash=$(grep -m1 "^$repo_name *|" "$state_file" | cut -d'|' -f2 | xargs)
             fi
             #STATE FILE FORMAT:
             # PROJECT | RESULT | DATE
@@ -153,7 +153,7 @@ function check_for_differences() {
             fi
 
             #if there is no detected change (i.e., the current hash already exists in the state file) => continue to next candidate
-            current_hash_exists=$(grep  -m1 -c "$current_hash" "$state_file")
+            current_hash_exists=$(grep  -m1 -c -q "$current_hash" "$state_file")
             if [  "$current_hash_exists" -gt 0 ]; then
                 echo -e "\nState file contains most recent hash:\n $repo_url ($branch)\nCurrent hash: $current_hash\n\nUp to date. Skipping build trigger."    
                 continue
@@ -165,7 +165,7 @@ function check_for_differences() {
                 files=$(git diff --name-only "$last_hash" "$current_hash")
                 
                 #only continue with build if relevant files have been changed
-                include=$(printf "%s\n" "$files" | grep -E "$RELEVANT_FILES" || true)
+                include=$(printf "%s\n" "$files" | grep -E -q "$RELEVANT_FILES")
                 if [ -z "$include" ]; then
                     echo "No relevant files were modified. Skipping build trigger."
                     continue
