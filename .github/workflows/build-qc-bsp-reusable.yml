@@ -158,7 +158,7 @@ jobs:
 
 
       - name: Extract build sources files into build directory
-        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') }} || env.DEBUG_SKIP_SRC != '1'
+        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') || env.DEBUG_SKIP_SRC != '1' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash extract-sources.sh
           
