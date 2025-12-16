@@ -14,7 +14,7 @@
 #     Additionally, A monitored repository labelled 'FAILED' or 'CANCELLED' will attempt to build irrespective of if there have been
 #     any changes since the last attempt. Builds labelled as 'SUCCESS' will not build. 
 #usage:
-#     poll_development_repo.sh --manifest_repo_path <path_to_manifest_repo>
+#     poll_development_repo.sh --manifest_repo_path <path_to_manifest_repo> --manifest_repo_name <manifest_repo_name>
 #outputs:
 #     A txt file containing the relevant metalayer repositories and their current commit hashes
 #=============================================================================================================================================================================
