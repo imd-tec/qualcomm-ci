@@ -46,7 +46,7 @@ function get_manifest_path() {
     cd "$MANIFEST_REPO_PATH"
     manifest_path=$(find . -type f -name 'development.xml' | head -n 1)
     if [ -z "$manifest_path" ]; then
-        echo "No development manifest found in the repository."
+        echo "ERROR: No development manifest found in the repository."
         exit 1
     fi
     echo "Found development manifest: $manifest_path"
@@ -94,14 +94,9 @@ function check_for_differences() {
         fi
     fi       
 
-    #if FAILURE, CANCELLED or UNKNOWN -> force rebuild
-    if [ "$last_result" != "SUCCESS" ]; then
-        echo -e "\nPrevious build not labelled as SUCCESS -> forcing rebuild..."
-        trigger_build=true
-    fi
-
     #even if first build, still iterate through all relevant repos and hashes for later state file update
     for branch in $meta_dev_branches; do
+        cd "$MANIFEST_REPO_PATH"
         #get all repos with this branch name
 
         #name="meta-imdt-qcom-dev" name="clo/le/meta-qti-gst" ... => meta-imdt-qcom-dev clo/le/meta-qti-gst ... 
@@ -134,16 +129,18 @@ function check_for_differences() {
             git fetch origin "$branch"
             current_hash=$(git rev-parse origin/"$branch")
             
+            #if not labelled "SUCCESS" -> update output with candidate
+            if [ "$last_result" != "SUCCESS" ]; then
+                update_output "$repo_name" "$current_hash"
+                continue
+            fi
+            
             #get last checked hash for this repo from state file
             last_hash=""
             if [ -f "$state_file" ]; then
+                #after first line: META-LAYER | HASH
                 last_hash=$(grep -m1 "^$repo_name *|" "$state_file" | cut -d'|' -f2 | xargs || true)
             fi
-            #STATE FILE FORMAT:
-            # PROJECT | RESULT | DATE
-            # META-LAYER | LAST_COMMIT
-            # META-LAYER | LAST_COMMIT
-            # ...
 
             #if there is no stored last_hash; it's the first build => continue with build
             if [ -z "$last_hash"  ]; then
@@ -154,7 +151,7 @@ function check_for_differences() {
 
             #if there is no detected change (i.e., the current hash already exists in the state file) => continue to next candidate
             current_hash_exists=$(grep  -m1 -c "$current_hash" "$state_file" || true)
-            if [  "$current_hash_exists" -gt 0 ]; then
+            if [  "$current_hash_exists" -gt 0 ] && [ "$last_result" == "SUCCESS" ]; then
                 echo -e "\nState file contains most recent hash:\n $repo_url ($branch)\nCurrent hash: $current_hash\n\nUp to date. Skipping build trigger."    
                 continue
             fi
@@ -194,17 +191,14 @@ function check_for_differences() {
     fi
 }
 
-
 function update_output() {
         local repo_name="$1"
         local current_hash="$2"
- 
         trigger_build=true
 
         #append details of triggering repository and state file for later logging purposes
         echo "${repo_name}|${current_hash}" >> "$RUNNER_TEMP/dev_state_log.txt"
 }
-
 
 parse_args "$@"
 get_manifest_path
