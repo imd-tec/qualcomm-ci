@@ -105,6 +105,7 @@ function check_for_differences() {
                     | cut -d'"' -f2)
 
         for repo_name in $repo_names; do
+            cd "$MANIFEST_REPO_PATH"
             echo -e "\nChecking for changes in $repo_name($branch)\n"
 
             #get remote from first project with this branch
