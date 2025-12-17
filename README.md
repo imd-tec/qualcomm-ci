@@ -8,7 +8,7 @@ The output artifacts are located in ```/mnt/nvm1/qcom_ci/builds/[project_version
 
 ## Requirements
 **GitHub**
-- A Qualcomm manifest repository that:
+- A private Qualcomm manifest repository that:
   - Contains the ```trigger-build.yml``` workflow under ```.github/workflows```.
     - See [```for-manifest-repo/trigger-build-ci```](https://github.com/imd-tec/qualcomm-ci/blob/master/for_manifest_repo/trigger-build-ci.yml).
   - Has a PAT secret for inter-repo read access.
@@ -39,7 +39,7 @@ Must contain the following source files:
 6. The final build artifacts are located in corresponding build folder under ```/mnt/nvme1/qcom_ci/builds/[project_version]/release```. 
 
 ### Development builds
-1. A cron-jon triggers ```trigger-build.yml``` on the manifest repository.
+1. A cron-job triggers ```trigger-build.yml``` on the manifest repository.
 
 2. All project development build attempts are logged in a corresponding `.last` state file stored in `/mnt/nvme1/qcom_ci/dev_repo_poll/state`. This contains the build statuses and the meta-layer hashes fetched from branch revisions from the previous build attempt.
 3. The [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/development/scripts/poll-development-repo.sh) script locates and accesses the `development.xml` manifest and determines the branch revision meta-layers to poll for changes.
