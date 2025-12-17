@@ -4,7 +4,7 @@
 #description
 #     Take development build job result status (success, failure, cancelled) and update the .last state file for the project.
 #     Format is:
-#       PROJECT | RESULT | DATE
+#       PROJECT | DATE | RESULT
 #       META-LAYER | LAST_COMMIT
 #       META-LAYER | LAST_COMMIT
 #       ...
