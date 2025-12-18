@@ -30,7 +30,7 @@ mkdir -p "$LOCAL_BIN"
 if [ ! -f "$LOCAL_BIN/yq" ]; then
     echo "Downloading local yq ($YQ_VERSION) to avoid Snap dependency..."
     wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_${PLATFORM} -O "$LOCAL_BIN/yq"
-    chmod +x "${LOCAL_BIN}"
+    chmod +x "${LOCAL_BIN}/yq"
     fi
 export PATH="$LOCAL_BIN:$PATH"
 echo "[DEBUG] yq after: $(which -a yq || true)"
