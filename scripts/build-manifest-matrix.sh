@@ -21,11 +21,11 @@ set -ex
 # https://github.com/imd-tec/qualcomm-ci-test-repo/actions/runs/20319976140/job/58373262825
 
 # install local yq binary to avoid snap dependency issues
-echo "[DEBUG] yq before: $(which yq || true)"
+echo "[DEBUG] Whoami: $(whoami)"
+echo "[DEBUG] yq before: $(which -a yq || true)"
 YQ_VERSION="v4.49.2"
 PLATFORM="linux_amd64"
 LOCAL_BIN="${RUNNER_TEMP}/bin"
-whoami 
 mkdir -p "$LOCAL_BIN"
 if [ ! -f "$LOCAL_BIN/yq" ]; then
     echo "Downloading local yq ($YQ_VERSION) to avoid Snap dependency..."
@@ -33,8 +33,7 @@ if [ ! -f "$LOCAL_BIN/yq" ]; then
     chmod +x "${LOCAL_BIN}"
     fi
 export PATH="$LOCAL_BIN:$PATH"
-echo "[DEBUG] yq after: $(which yq || true)"
-
+echo "[DEBUG] yq after: $(which -a yq || true)"
 
 #set default input path to $RUNNER_TEMP/manifests.txt and default root path to current directory
 MANI_LIST="${RUNNER_TEMP}/manifests.txt"
