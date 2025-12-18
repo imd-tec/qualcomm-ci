@@ -78,12 +78,6 @@ function construct_manifest_json() {
       echo -e "-----------------------------------\nPrinting config contents: "
       cat "$config_file" 
       echo -e "-----------------------------------\n\n\n"
-      #if a corresponding manifest key is not found in the config yaml, echo result to step summary and continue to next manifest
-      if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
-        config_name=$(basename "$config_file")
-        echo "| \`$manifest_path \` | \`No key found matching $manifest_name in $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
-        continue
-      fi  
 
       #DEBUG - get yaml ver
       echo -e "\nYAML parser version info:"
@@ -91,6 +85,12 @@ function construct_manifest_json() {
       which yq
       echo -e "-----------------------------------\n"
 
+      #if a corresponding manifest key is not found in the config yaml, echo result to step summary and continue to next manifest
+      if ! yq -e 'has("'"$manifest_name"'")' "$config_file" >/dev/null; then
+        config_name=$(basename "$config_file")
+        echo "| \`$manifest_path \` | \`No key found matching $manifest_name in $config_name\` |" >> "$GITHUB_STEP_SUMMARY"
+        continue
+      fi  
 
       #ACCESS YAML CONFIGURATION DETAILS
       # e.g., machine: "imsu-glasses-poc"
