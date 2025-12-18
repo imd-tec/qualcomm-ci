@@ -122,7 +122,7 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJson(needs.get_manifests.outputs.manifest_list) }}
-    uses: imd-tec/qualcomm-ci/.github/workflows/build-qc-bsp-reusable.yml@development
+    uses: imd-tec/qualcomm-ci/.github/workflows/build-qc-bsp-reusable.yml@master
     secrets: inherit
     with:
       MANIFEST_REPOSITORY: ${{ github.event.repository.html_url }}
