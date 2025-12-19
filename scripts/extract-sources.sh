@@ -1,6 +1,6 @@
 #!/bin/bash
 #=============================================================================================================================================================================
-#title: extract.sources.sh
+#title: extract-sources.sh
 #description:
 #   For use in the build-qc-bsp-reusable reusable workflow.
 #   Extract Qualcomm source files and optional assets into build project directory.
