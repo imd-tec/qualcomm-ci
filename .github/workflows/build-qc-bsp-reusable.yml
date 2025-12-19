@@ -172,13 +172,6 @@ jobs:
         timeout-minutes: 20
         run: bash create-docker-build-env.sh
 
-      - name: Build netrc
-        if: ${{ !contains(env.SKIP_STEPS, 'build_netrc') }}
-        run: |
-            $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-            bash /home/dev/tools/build_netrc.sh && test -f /home/dev/.netrc
-            '
-
       - name: Patch and synchronize repos
         if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
