@@ -238,6 +238,9 @@ jobs:
           #set Yocto environment
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
           
+          #verify DL_DIR and SSTATE_DIR usage
+          bitbake -e | grep -E "^DL_DIR=|^SSTATE_DIR="
+          
           bitbake "${IMAGE}" --runall=fetch
           '
 
