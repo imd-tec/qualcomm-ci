@@ -12,7 +12,7 @@
 #assumes:
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
-#   PATCH_FALLBACK_PATH is set to the fallback patch directory path..
+#   PATCH_FALLBACK_PATH is set to the fallback patch directory path.
 #   CI_DIR is set to the root CI directory path.
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
