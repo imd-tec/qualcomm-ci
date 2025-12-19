@@ -54,7 +54,6 @@ function run_container() {
         -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
         -v "${BUILD_PROJECT_DIR}:/home/dev/Qualcomm" \
         -v "${BUILD_PROJECT_DIR}/release:/home/dev/Qualcomm/release" \
-        -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
         -v "${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/" \
         -v "${DL_DIR}:/home/dev/downloads" \
         -v "${SSTATE_DIR}:/home/dev/sstate-cache" \
@@ -76,6 +75,15 @@ function run_container() {
     result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -c 'id')
     if [[ $result != *"uid=$HOST_UID"* && $result != *"gid=$HOST_GID"* ]]; then
         echo "ERROR: User IDs do not match"
+        exit 1
+    fi
+
+    #copy host .netrc to container to allow repo access
+    if [ -f "${HOME}/.netrc" ]; then
+        echo "Copying host credentials to container..."
+        docker cp "${HOME}/.netrc" "${CONTAINER_NAME}:/home/dev/.netrc"
+    else
+        echo "ERROR: No host .netrc found. Credentials required for authentication."
         exit 1
     fi
 }
