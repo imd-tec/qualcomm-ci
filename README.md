@@ -48,7 +48,7 @@ Must contain the following source files:
     | Case | Build? |
     | -------- | ------- |
     | No state file found  | YES   |
-    | State file labelled not labelled `SUCCESS` | YES     |
+    | State file not labelled `SUCCESS` | YES     |
     | State file labelled `SUCCESS` and revision is up to date | NO |
     | State file labelled `SUCCESS`, revision is not up to date and non-relevant files changed  | NO  |
     | State file labelled `SUCCESS`, revision is not up to date and relevant files changed  | YES    |
