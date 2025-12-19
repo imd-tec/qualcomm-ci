@@ -142,6 +142,8 @@ jobs:
         run: |
           set -x
           echo "CI_DIR: $CI_DIR"
+          echo "CI_DEV_DIR: $CI_DEV_DIR"
+          echo "SHARED_SOURCES_DIR: $SHARED_SOURCES_DIR"
           echo "DL_DIR: $DL_DIR"
           echo "SSTATE_DIR: $SSTATE_DIR"
 
