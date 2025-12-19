@@ -7,7 +7,7 @@
 #     Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
 #     Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
 #usage: 
-#     build_manifest_matrix.sh --manifest_list <line_separated_list_of_manifests> --manifest_path <path_to_manifest_repo_root> 
+#     build-manifest-matrix.sh --manifest_list <line_separated_list_of_manifests> --manifest_path <path_to_manifest_repo_root> 
 #outputs:
 #     manifest_list: single-line JSON array of manifest build details
 #     count: number of manifests processed
