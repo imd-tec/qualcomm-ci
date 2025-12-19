@@ -9,7 +9,7 @@
 #assumes:
 #     BUILD_DOCKER is set to the base docker image to use for the build environment (i.e., imdtec/imdt-qualcomm-build-setup:0.5.1).
 #     CI_DIR is set to the root CI directory path on the runner.
-#     BUILD_PROJECT_PATH is set to the build project directory path.
+#     BUILD_PROJECT_DIR is set to the build project directory path.
 #     CONTAINER_NAME is set to 'ci_qualcomm_[unique_id]'.
 #     DOCKER_EXEC is set to 'docker exec -t -u dev'.
 #     DL_DIR and SSTATE_DIR are set to host paths for Yocto shared download and sstate cache directories.
@@ -52,8 +52,8 @@ function run_container() {
         -e MACHINE="$MACHINE" \
         -e DISTRO="$DISTRO" \
         -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
-        -v "${BUILD_PROJECT_PATH}:/home/dev/Qualcomm" \
-        -v "${BUILD_PROJECT_PATH}/release:/home/dev/Qualcomm/release" \
+        -v "${BUILD_PROJECT_DIR}:/home/dev/Qualcomm" \
+        -v "${BUILD_PROJECT_DIR}/release:/home/dev/Qualcomm/release" \
         -v "${CI_DIR}/scripts/docker_scripts/:/home/dev/tools/" \
         -v "${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/" \
         -v "${DL_DIR}:/home/dev/downloads" \

@@ -149,14 +149,14 @@ jobs:
       - name: Create build project directory
         run: | 
           #set build project path
-          BUILD_PROJECT_PATH="${CI_DIR}/builds/${BUILD_NAME}"
+          BUILD_PROJECT_DIR="${CI_DIR}/builds/${BUILD_NAME}"
 
           #export to GITHUB_ENV for later steps
-          echo "BUILD_PROJECT_PATH=${BUILD_PROJECT_PATH}" >> $GITHUB_ENV
+          echo "BUILD_PROJECT_DIR=${BUILD_PROJECT_DIR}" >> $GITHUB_ENV
 
           #create and change to build project directory
-          echo "Using project path: ${BUILD_PROJECT_PATH}"
-          mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
+          echo "Using project path: ${BUILD_PROJECT_DIR}"
+          mkdir -p "${BUILD_PROJECT_DIR}" && cd "${BUILD_PROJECT_DIR}"
 
 
       - name: Extract build sources files into build directory
@@ -299,17 +299,17 @@ jobs:
         run: |
           set -euo pipefail -x
           #if development build, delete build directory
-          if [ $BUILD_VERSION == "development" ] && [ -d "${BUILD_PROJECT_PATH}" ]; then
-            rm -rf "${BUILD_PROJECT_PATH}"
+          if [ $BUILD_VERSION == "development" ] && [ -d "${BUILD_PROJECT_DIR}" ]; then
+            rm -rf "${BUILD_PROJECT_DIR}"
             exit 0
           fi
 
-          if [ -d "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ]; then
-            rm -rf "${BUILD_PROJECT_PATH:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          if [ -d "${BUILD_PROJECT_DIR:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ]; then
+            rm -rf "${BUILD_PROJECT_DIR:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
           fi
 
-          if [ -d "${BUILD_PROJECT_PATH:?}/patches" ]; then
-              rm -rf "${BUILD_PROJECT_PATH:?}/patches"
+          if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
+              rm -rf "${BUILD_PROJECT_DIR:?}/patches"
           fi
 
 
