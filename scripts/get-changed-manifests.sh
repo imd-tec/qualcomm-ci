@@ -17,12 +17,9 @@ set -e
 function parse_args() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --before_sha)
-      BEFORE_SHA="$2"; shift 2 ;;
-    --current_sha)
-      CURRENT_SHA="$2"; shift 2 ;;
-    --manifest_repo_path)
-      MANIFEST_REPO_PATH="$2"; shift 2 ;;
+    --before_sha)         BEFORE_SHA="$2"; shift 2 ;;
+    --current_sha)        CURRENT_SHA="$2"; shift 2 ;;
+    --manifest_repo_path) MANIFEST_REPO_PATH="$2"; shift 2 ;;
     *)
       echo "Unknown option: $1"; exit 1 ;;
   esac
