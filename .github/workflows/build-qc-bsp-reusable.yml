@@ -81,7 +81,7 @@ on:
 
         PATCH_FALLBACK_PATH:
           required: true
-          description: Fallback path for patches if not found in build (e.g. /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imsu-glasses-bsp)
+          description: Fallback path for patches if not found in build (e.g. $SHARED_SOURCES_DIR/fallback_patches/imsu-glasses-bsp)
           type: string
 
         SKIP_STEPS:
@@ -91,24 +91,18 @@ on:
 
         DEV_STATE_LOG:
           required: false
-          description: Development build details for logging purposes (see /mnt/nvme1/qcom_ci/dev_repo_poll/states)
+          description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
   workflow_dispatch:
 
 env:
-  #Build constants
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
-  CI_DIR: "/mnt/nvme1/qcom_ci"
   DOCKER_EXEC: docker exec -t -u dev
-
-  #cache and sstate directories
-  DL_DIR : "/mnt/nvme1/YoctoQCOMShared/data/bitbake.downloads"
-  SSTATE_DIR : "/mnt/nvme1/YoctoQCOMShared/data/bitbake.sstate"
-
+  
   #Workflow development variables
   DEBUG_CLEAN_UP: "1"
-  DEBUG_SKIP_SRC: "0"
+  DEBUG_SKIP_SOURCE_EXTRACTION: "0"
 
 jobs:
   build-qualcomm-bsp:
@@ -135,7 +129,7 @@ jobs:
 
     steps:      
       - name: Set repository workspace
-        #explicitly checkout into repository. Required if triggered from external repo.
+        #explicitly checkout into the CI repository. Required if triggered from external repo.
         uses: actions/checkout@v5
         with:
             repository: imd-tec/qualcomm-ci
@@ -143,17 +137,22 @@ jobs:
             token: ${{ secrets.QCI_DEPLOY_PAT }}
             persist-credentials: false
             path: qualcomm_ci
+          
+      - name: Verify service variables
+        run: |
+          set -x
+          echo "CI_DIR: $CI_DIR"
+          echo "DL_DIR: $DL_DIR"
+          echo "SSTATE_DIR: $SSTATE_DIR"
+
 
       - name: Create build project directory
         run: | 
           #set build project path
           BUILD_PROJECT_PATH="${CI_DIR}/builds/${BUILD_NAME}"
-          #set shared sources path
-          SHARED_SOURCES_PATH="${CI_DIR}/builds/SHARED_SOURCES"
 
           #export to GITHUB_ENV for later steps
           echo "BUILD_PROJECT_PATH=${BUILD_PROJECT_PATH}" >> $GITHUB_ENV
-          echo "SHARED_SOURCES_PATH=${SHARED_SOURCES_PATH}" >> $GITHUB_ENV
 
           #create and change to build project directory
           echo "Using project path: ${BUILD_PROJECT_PATH}"
@@ -161,7 +160,7 @@ jobs:
 
 
       - name: Extract build sources files into build directory
-        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') || env.DEBUG_SKIP_SRC != '1' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') || env.DEBUG_SKIP_SOURCE_EXTRACTION != '1' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash extract-sources.sh
           
