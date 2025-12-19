@@ -2,7 +2,7 @@
 
 Automates fetching of sources and build processes for Qualcomm-based builds as adapted from the **Qualcomm Getting Started** guides. 
 
-The build process is executed in ```/mnt/nvm1/qcom_ci/builds/[project_version]/``` on **imdt-qcom-desktop**. 
+The build process is executed in ```/mnt/nvme1/qcom_ci/builds/[project_version]/``` on **imdt-qcom-desktop**. 
 
 The output artifacts are located in ```/mnt/nvm1/qcom_ci/builds/[project_version]/release/```.
 
@@ -48,7 +48,7 @@ Must contain the following source files:
     | Case | Build? |
     | -------- | ------- |
     | No state file found  | YES   |
-    | State file labelled not labelled `SUCCESS` | YES     |
+    | State file not labelled `SUCCESS` | YES     |
     | State file labelled `SUCCESS` and revision is up to date | NO |
     | State file labelled `SUCCESS`, revision is not up to date and non-relevant files changed  | NO  |
     | State file labelled `SUCCESS`, revision is not up to date and relevant files changed  | YES    |

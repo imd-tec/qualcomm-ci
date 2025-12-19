@@ -1,6 +1,6 @@
 #!/bin/bash
 #=============================================================================================================================================================================
-#title: extract.sources.sh
+#title: extract-sources.sh
 #description:
 #   For use in the build-qc-bsp-reusable reusable workflow.
 #   Extract Qualcomm source files and optional assets into build project directory.
@@ -12,7 +12,7 @@
 #assumes:
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
-#   PATCH_FALLBACK_PATH is set to the fallback patch directory path..
+#   PATCH_FALLBACK_PATH is set to the fallback patch directory path.
 #   CI_DIR is set to the root CI directory path.
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
@@ -28,7 +28,7 @@ if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
     rm -rf "${BUILD_PROJECT_PATH:?}/${QCS_SOURCES:?}"
 fi
 
-#locate and extract build-specific assets arhives(patch, cdt, etc.), as applicable
+#locate and extract build-specific assets archives(patch, cdt, etc.), as applicable
 assets_to_extract=()
 
 
