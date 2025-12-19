@@ -1,6 +1,6 @@
 #!/bin/bash
 #=============================================================================================================================================================================
-#title: poll_development_repo.sh
+#title: poll-development-repo.sh
 #description
 #     For use exclusively within the trigger-build.yml workflow.
 #     Triggered on scheduled cron job. See top of trigger-build.yml for details.
@@ -14,7 +14,7 @@
 #     Additionally, A monitored repository labelled 'FAILED' or 'CANCELLED' will attempt to build irrespective of if there have been
 #     any changes since the last attempt. Builds labelled as 'SUCCESS' will not build. 
 #usage:
-#     poll_development_repo.sh --manifest_repo_path <path_to_manifest_repo> --manifest_repo_name <manifest_repo_name>
+#     poll-development-repo.sh --manifest_repo_path <path_to_manifest_repo> --manifest_repo_name <manifest_repo_name>
 #outputs:
 #     A txt file containing the relevant metalayer repositories and their current commit hashes
 #=============================================================================================================================================================================
@@ -205,4 +205,3 @@ parse_args "$@"
 get_manifest_path
 get_development_revisions
 check_for_differences
-
