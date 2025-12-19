@@ -5,10 +5,10 @@
 #   For use in the build-qc-bsp-reusable reusable workflow.
 #   Extract Qualcomm source files and optional assets into build project directory.
 #   Tarballs to be extracted should be located under:
-#       /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES for Qualcomm source files
-#       /mnt/nvme1/qcom_ci/builds/<project>/<version>/sources for build specific assets (patches, cdt, etc.)
+#       $SHARED_SOURCES_PATH for Qualcomm source files
+#       $BUILD_PROJECT_PATH/sources for build specific assets (patches, cdt, etc.)
 #   In the event that build patches cannot be located in the specified build folder, the script will default to patches located in:
-#      /mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/<project>/ for fallback patch files
+#       $SHARED_SOURCES_PATH/fallback_patches/<project>/ for fallback patch files
 #assumes:
 #   BUILD_PROJECT_PATH is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name.
@@ -61,11 +61,10 @@ for asset in "${assets_to_extract[@]}"; do
 done
 
 #extract Qualcomm source files
-tar -xf "${CI_DIR}/builds/SHARED_SOURCES/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
+tar -xf "${SHARED_SOURCES_PATH}/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_PATH"
 if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
     echo " ${QCS_SOURCES} extracted to ${BUILD_PROJECT_PATH}/"
 else
     echo "Error: ${QCS_SOURCES} failed to extract to ${BUILD_PROJECT_PATH}/${QCS_SOURCES}"
     exit 1
 fi
-
