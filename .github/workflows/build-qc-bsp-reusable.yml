@@ -259,7 +259,7 @@ jobs:
           '
 
       - name: Generate Yocto SDK
-        if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
+        if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') && env.BUILD_VERSION != 'development' }}
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
