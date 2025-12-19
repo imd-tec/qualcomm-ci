@@ -1,6 +1,6 @@
 #!/bin/bash
 #=============================================================================================================================================================================
-#title: docker_entry_point.sh
+#title: docker-entry-point.sh
 #
 #description: Entry point script for Qualcomm CI Docker container.
 #             Sets up user permissions and ownership inside the container to match the host runner user. 

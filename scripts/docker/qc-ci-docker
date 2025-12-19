@@ -1,25 +1,25 @@
 #=============================================================================================================================================================================
-#title: qc_ci_docker
+#title: qc-ci-docker
 #
 #description: Dockerfile for building the Qualcomm CI Docker image. 
 #             Extends pre-existing build environment image, as defined by BASE_IMAGE.
 #
-#usage: docker build -f <path_to_qc_ci_docker> \
+#usage: docker build -f <path_to_qc-ci-docker> \
 #       --build-arg <BASE_IMAGE> \
 #       -t <IMAGE_NAME> \
 #       <path_to_entry_script>
 #=============================================================================================================================================================================
 
-#default to imdtec/imdt-qualcomm-build-setup:0.5.1 if BASE_IMAGE not provided.
-ARG BASE_IMAGE=imdtec/imdt-qualcomm-build-setup:0.5.1
-FROM ${BASE_IMAGE}
+#default to imdtec/imdt-qualcomm-build-setup:0.5.1 if BASE_DOCKER_IMAGE is not provided.
+ARG BASE_DOCKER_IMAGE=imdtec/imdt-qualcomm-build-setup:0.5.1
+FROM ${BASE_DOCKER_IMAGE}
 
-#copy, set entry point script and ensure access
+#copy docker entry point script for setting user permissions and ownership inside container
 USER root
-#copy docker entry point script into container
-COPY docker_entry_point.sh /usr/local/bin/entry_point.sh
+COPY docker-entry-point.sh /usr/local/bin/entry_point.sh
 RUN chmod +x /usr/local/bin/entry_point.sh
 ENTRYPOINT [ "/usr/local/bin/entry_point.sh" ]
+
 #set working directory
 WORKDIR /home/dev
 CMD ["bash"]
