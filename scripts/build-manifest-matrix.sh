@@ -77,7 +77,7 @@ function construct_manifest_json() {
       
       #derive config file path (stored in same directory as manifest) from manifest path
       mani_dir="$(dirname "$full_path")"
-      echo "Looking for build configuration details in in $mani_dir"
+      echo "Looking for build configuration details in $mani_dir"
       config_file="$(find "$mani_dir" -maxdepth 1 -type f -name '*.yml')"
 
       #ensure that there is only one config file
