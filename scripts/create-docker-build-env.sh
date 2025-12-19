@@ -5,7 +5,7 @@
 #     For use exclusively within the build-qc-bsp-reusable.yml workflow.
 #     Creates a docker image based on the specified BUILD_DOCKER base image and runs a container from that image to provide a reproducible build environment.
 #     Passes necessary build parameters and mounts the build project directory, release directory and relevant scripts into the container.
-#     Entry point script (scripts/docker/docker_entry_point.sh) sets up user permissions and ownership inside the container to match the host runner user.
+#     Entry point script (scripts/docker/docker-entry-point.sh) sets up user permissions and ownership inside the container to match the host runner user.
 #assumes:
 #     BUILD_DOCKER is set to the base docker image to use for the build environment (i.e., imdtec/imdt-qualcomm-build-setup:0.5.1).
 #     CI_DIR is set to the root CI directory path on the runner.
@@ -15,7 +15,6 @@
 #     DL_DIR and SSTATE_DIR are set to host paths for Yocto shared download and sstate cache directories.
 #     MANIFEST_REPOSITORY, MANIFEST_BRANCH, MANIFEST_XML, IMAGE, RELEASE_NAME, BUILD_VERSION, KERNEL_VARIANT, QCS_SOURCES, PYENV, MACHINE, DISTRO, PATCH_SCRIPT_PATH are set to build parameters.
 #=============================================================================================================================================================================
-
 set -e
 
 function create_container_image() {
@@ -30,15 +29,15 @@ function create_container_image() {
     IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
     echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
 
-    #build container image from BASE_IMAGE and set entry point scripts/docker_entry_point.sh (final positional arg) 
-    docker build -f "${path_to_dockerfiles}/qc_ci_docker" \
-    --build-arg BASE_IMAGE="${BUILD_DOCKER}" \
+    #build container image from BASE_DOCKER_IMAGE and set entry point scripts/docker-entry-point.sh (final positional arg) 
+    docker build -f "${path_to_dockerfiles}/qc-ci-docker" \
+    --build-arg BASE_DOCKER_IMAGE="${BUILD_DOCKER}" \
     --tag "$IMAGE_NAME" \
     "$path_to_dockerfiles"
 }
 
 function run_container() {
-    #pass ID's to entry-point script (scripts/for_docker/docker_entry_point.sh) to setup user permissions and ownership
+    #pass ID's to entry-point script (scripts/docker/docker-entry-point.sh) to setup user permissions and ownership
     docker run --rm -d \
         --name "$CONTAINER_NAME" \
         -e MANIFEST_REPOSITORY="$MANIFEST_REPOSITORY" \
