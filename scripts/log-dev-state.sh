@@ -9,7 +9,7 @@
 #       META-LAYER | LAST_COMMIT
 #       ...
 #
-#     State files can be located at /mnt/nvme1/qcom_ci/dev_repo_poll/state/.
+#     State files can be located at ${CI_DEV_DIR}/state/.
 #usage: 
 #     log-dev-state.sh <build_result> <state_log> <manifest_repository>
 #=============================================================================================================================================================================
@@ -19,7 +19,7 @@ BUILD_RESULT=$1
 STATE_LOG=$2
 MANIFEST_REPOSITORY=$3
 project_name=$(basename "$MANIFEST_REPOSITORY") #e.g., imdt-qcom-manifest-dev
-state_file="/mnt/nvme1/qcom_ci/dev_repo_poll/state/${project_name}.last"
+state_file="${CI_DEV_DIR}/state/${project_name}.last"
 
 case "$BUILD_RESULT" in
     success)   result="SUCCESS" ;;

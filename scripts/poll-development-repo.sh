@@ -8,7 +8,7 @@
 #
 #     As a development manifest can refer to a development meta layer branch, as opposed to a static revision commit hash, 
 #     this script must clone the given meta layer repository and determine if relevant build files have been changed since the previous cron job.
-#     The last checked commit hashes and build status are stored in a local state file for each project branch being monitored (see /mnt/nvme1/qcom_ci/dev_repo_poll/state/)
+#     The last checked commit hashes and build status are stored in a local state file for each project branch being monitored (see ${CI_DEV_DIR}/state/)
 #     Detected changes trigger the build process and are passed to output for use in a later logging step (see update-dev-state.sh in /imd-tec/qualcomm-ci).
 #
 #     Additionally, A monitored repository labelled 'FAILED' or 'CANCELLED' will attempt to build irrespective of if there have been
@@ -20,8 +20,8 @@
 #=============================================================================================================================================================================
 set -eu
 
-DEV_REPO_CACHE_PATH="/mnt/nvme1/qcom_ci/dev_repo_poll/cache"
-DEV_REPO_STATE_PATH="/mnt/nvme1/qcom_ci/dev_repo_poll/state"
+DEV_REPO_CACHE_PATH="${CI_DEV_DIR}/dev_repo_poll/cache"
+DEV_REPO_STATE_PATH="${CI_DEV_DIR}/state"
 RELEVANT_FILES='^(conf/|recipes-|tools/|patches/|contents\.xml$)'
 manifest_path=""
 meta_dev_branches=""
