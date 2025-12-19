@@ -186,5 +186,3 @@ construct_manifest_json
 #output results to GitHub Action outputs
 echo "manifest_list=$compact" >> "$GITHUB_OUTPUT"
 echo "count=$(jq -r 'length' <<<"$JSON")" >> "$GITHUB_OUTPUT"
-
-
