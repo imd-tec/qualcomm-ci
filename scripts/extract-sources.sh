@@ -28,7 +28,7 @@ if [[ -d "${BUILD_PROJECT_PATH}/${QCS_SOURCES}" ]]; then
     rm -rf "${BUILD_PROJECT_PATH:?}/${QCS_SOURCES:?}"
 fi
 
-#locate and extract build-specific assets arhives(patch, cdt, etc.), as applicable
+#locate and extract build-specific assets archives(patch, cdt, etc.), as applicable
 assets_to_extract=()
 
 
