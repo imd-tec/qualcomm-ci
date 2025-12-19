@@ -146,14 +146,17 @@ jobs:
 
       - name: Create build project directory
         run: | 
-          #set build project path to /mnt/nvme1/qcom_ci/builds/[BUILD_NAME]
+          #set build project path
           BUILD_PROJECT_PATH="${CI_DIR}/builds/${BUILD_NAME}"
-          echo "Using project path: ${BUILD_PROJECT_PATH}"
+          #set shared sources path
+          SHARED_SOURCES_PATH="${CI_DIR}/builds/SHARED_SOURCES"
 
           #export to GITHUB_ENV for later steps
           echo "BUILD_PROJECT_PATH=${BUILD_PROJECT_PATH}" >> $GITHUB_ENV
+          echo "SHARED_SOURCES_PATH=${SHARED_SOURCES_PATH}" >> $GITHUB_ENV
 
           #create and change to build project directory
+          echo "Using project path: ${BUILD_PROJECT_PATH}"
           mkdir -p "${BUILD_PROJECT_PATH}" && cd "${BUILD_PROJECT_PATH}"
 
 
@@ -226,9 +229,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
-
-          patch ./meta-qti-bsp/classes/populate_sdk_qti.bbclass \
-          "/home/dev/Qualcomm/patches/populate_sdk_qti_remove_llvm_native.patch"
           
           cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
                   "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
@@ -242,7 +242,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/container_scripts/setup_yocto_env.sh
+          source /home/dev/tools/container_scripts/setup-yocto-environment.sh
           
           bitbake "${IMAGE}" --runall=fetch
           '
@@ -252,7 +252,7 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
-          source /home/dev/tools/container_scripts/setup_yocto_env.sh
+          source /home/dev/tools/container_scripts/setup-yocto-environment.sh
           
           #build image
           bitbake "${IMAGE}"
@@ -263,7 +263,7 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/tools/container_scripts/generate_sdk.sh
+          bash /home/dev/tools/container_scripts/generate-sdk.sh
           '
       
       - name: Build non-HLOS components
@@ -278,7 +278,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') && env.BUILD_VERSION != 'development' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/tools/container_scripts/create_artifact.sh
+          bash /home/dev/tools/container_scripts/create-artifact.sh
           '
       
       - name: Update development build state logs
