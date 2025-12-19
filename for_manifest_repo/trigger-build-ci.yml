@@ -5,7 +5,7 @@ on:
     #trigger on any branch upon any .xml modification at any depth
     paths:
       - "**/*.xml"
-      #as the CI repo is also checked out in the build process, avoid checking for changes there. This much match the path assigned below.
+      #as the CI repo is also checked out in the build process, avoid checking for changes there. This must match the path assigned below.
       - "!qualcomm_ci/**"
 
   #allows for manual workflow execution
