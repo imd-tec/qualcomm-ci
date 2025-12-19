@@ -2,7 +2,7 @@
 
 Automates fetching of sources and build processes for Qualcomm-based builds as adapted from the **Qualcomm Getting Started** guides. 
 
-The build process is executed in ```/mnt/nvm1/qcom_ci/builds/[project_version]/``` on **imdt-qcom-desktop**. 
+The build process is executed in ```/mnt/nvme1/qcom_ci/builds/[project_version]/``` on **imdt-qcom-desktop**. 
 
 The output artifacts are located in ```/mnt/nvm1/qcom_ci/builds/[project_version]/release/```.
 
