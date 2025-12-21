@@ -20,7 +20,7 @@
 #=============================================================================================================================================================================
 set -eu
 
-DEV_REPO_CACHE_PATH="${CI_DEV_DIR}/dev_repo_poll/cache"
+DEV_REPO_CACHE_PATH="${CI_DEV_DIR}/cache"
 DEV_REPO_STATE_PATH="${CI_DEV_DIR}/state"
 RELEVANT_FILES='^(conf/|recipes-|tools/|patches/|contents\.xml$)'
 manifest_path=""
