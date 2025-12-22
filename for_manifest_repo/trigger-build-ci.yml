@@ -2,11 +2,12 @@ name: Automate build process on manifest change or schedule
 
 on:
   push:
-    #trigger on any branch upon any .xml modification at any depth
+    #specify branch to monitor for changes
+    branches:
+      - 'master'
+    #trigger upon any .xml modification at any depth
     paths:
       - "**/*.xml"
-      #as the CI repo is also checked out in the build process, avoid checking for changes there. This must match the path assigned below.
-      - "!qualcomm_ci/**"
 
   #allows for manual workflow execution
   workflow_dispatch:
@@ -97,15 +98,15 @@ jobs:
       run: |
         set -x
         if [ -s "$RUNNER_TEMP/manifests.txt" ]; then
-          echo "has_manifests=1" >> "$GITHUB_OUTPUT"
+          echo "has_changed_manifests=1" >> "$GITHUB_OUTPUT"
         else
-          echo "has_manifests=0" >> "$GITHUB_OUTPUT"
+          echo "has_changed_manifests=0" >> "$GITHUB_OUTPUT"
         fi
 
     #provided manifests.txt has been created, use it to create a jsonified array containing each manifest's build details
     #build details are fetched from the corresponding project config yaml located in the manifest repository (e.g., imdt-qcom-bsp.yml)
     - name: Build manifest matrix
-      if: success() && steps.check_manifests.outputs.has_manifests == '1'
+      if: success() && steps.check_manifests.outputs.has_changed_manifests == '1'
       id: build_manifest_matrix
       working-directory: qualcomm_ci
       run: | 
@@ -122,7 +123,7 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJson(needs.get_manifests.outputs.manifest_list) }}
-    uses: imd-tec/qualcomm-ci/.github/workflows/build-qc-bsp-reusable.yml@master
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@master
     secrets: inherit
     with:
       MANIFEST_REPOSITORY: ${{ github.event.repository.html_url }}

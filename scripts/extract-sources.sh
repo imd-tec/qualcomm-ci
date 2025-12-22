@@ -2,7 +2,7 @@
 #=============================================================================================================================================================================
 #title: extract-sources.sh
 #description:
-#   For use in the build-qc-bsp-reusable reusable workflow.
+#   For use in the imdt-build-qcom-bsp reusable workflow.
 #   Extract Qualcomm source files and optional assets into build project directory.
 #   Tarballs to be extracted should be located under:
 #       $SHARED_SOURCES_DIR for Qualcomm source files

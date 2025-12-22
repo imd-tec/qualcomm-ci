@@ -37,8 +37,8 @@ Automates fetching of sources and build processes for Qualcomm-based builds as a
     - Alternatively, manual dispatch (under the **Actions** tab) can trigger specified builds (check ```DEBUG_LIST```, provided that ```BUILD_DEBUG == 1``` in ```trigger-build.yml```).
 3. The triggered workflow executes a job responsible for fetching the corresponding build details for the given manifests. These details are extracted from the associated configuration yaml file, converted to JSON and passed to the next job.
 
-4. Once the details have been extracted and collated, the ```build-qc-bsp-reusable.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a seperate build process for each configuration.
-5. Upon receiving a set of details, `build-qc-bsp-reusable.yml` executes the build steps, broadly following the Qualcomm *Getting Started* build process. This continues until all triggered builds either complete, fail or are manually cancelled.
+4. Once the details have been extracted and collated, the ```imdt-build-qcom-bsp.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a seperate build process for each configuration.
+5. Upon receiving a set of details, `imdt-build-qcom-bsp.yml` executes the build steps, broadly following the Qualcomm *Getting Started* build process. This continues until all triggered builds either complete, fail or are manually cancelled.
 6. The final build artifacts are located in corresponding build folder under ```$CI_DIR/builds/[project_version]/release```. 
 
 ### Development builds
