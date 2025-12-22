@@ -2,7 +2,7 @@
 #=============================================================================================================================================================================
 #title: create-docker-build-env.sh
 #description
-#     For use exclusively within the build-qc-bsp-reusable.yml workflow.
+#     For use exclusively within the imdt-build-qcom-bsp.yml workflow.
 #     Creates a docker image based on the specified BUILD_DOCKER base image. 
 #     Passes build parameters and mounts the build project directory, release directory, script directory and Bitbake cache directories onto the container.
 #assumes:
@@ -28,7 +28,7 @@ function create_container_image() {
     echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
 
     #build container image from BASE_DOCKER_IMAGE and pass host ID's as build args for permission and ownership setup 
-    docker build -f "${path_to_dockerfiles}/qc-ci-docker" \
+    docker build -f "${path_to_dockerfiles}/qcom-ci-docker" \
     --build-arg BASE_DOCKER_IMAGE="${BUILD_DOCKER}" \
     --build-arg HOST_UID="${HOST_UID}" \
     --build-arg HOST_GID="${HOST_GID}" \

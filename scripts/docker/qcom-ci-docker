@@ -1,5 +1,5 @@
 #=============================================================================================================================================================================
-#title: qc-ci-docker
+#title: qcom-ci-docker
 #
 #description: Dockerfile for building the Qualcomm CI Docker image. 
 #             Extends pre-existing build environment image, as defined by BASE_IMAGE.
@@ -39,3 +39,4 @@ USER dev
 #set working directory
 WORKDIR /home/dev
 CMD ["bash"]
+ 
