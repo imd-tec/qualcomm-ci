@@ -91,7 +91,7 @@ function check_for_differences() {
         last_result=$(xargs <<< "$last_result")
 
         if [ -n "$last_result" ]; then
-            echo -e "\nPROJECT: $project\nLast recorded run: $last_result on $last_date"
+            echo -e "\nFOUND PROJECT: $project\nLast recorded run: $last_result on $last_date"
         fi
     fi       
 
@@ -107,7 +107,7 @@ function check_for_differences() {
 
         for repo_name in $repo_names; do
             cd "$MANIFEST_REPO_PATH"
-            echo -e "\nChecking for changes in $repo_name($branch)\n"
+            echo -e "\n[$project] Checking for changes in $repo_name($branch)\n"
 
             #get remote from first project with this branch
             remote=$(xmllint --xpath "string(//project[@name='$repo_name']/@remote)" "$manifest_path") #imdt
@@ -180,7 +180,10 @@ function check_for_differences() {
     
     #if the build has been set to trigger, append manifest path to manifests.txt to signal build in later steps 
     if $trigger_build; then
+        echo -e "\nBuild will be triggered. Appending manifest path to output file."
         echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
+        else
+        echo -e "\nNo changes detected. No build will be triggered."
     fi
 
     #send accumulated repository details to output for later state file updates in reusable build workflow
