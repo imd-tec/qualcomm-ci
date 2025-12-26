@@ -86,15 +86,19 @@ jobs:
           echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
         done
     
-    #create a serialized json array containing each respective manifest's build details (e.g., imdt-qcom-bsp.yml)
+    #create a serialized json array containing each manifest's build details, as specified in the corresponding project config yaml (e.g., imdt-qcom-bsp.yml)
     - name: Build manifest matrix
-      if: success()
+      if: success() 
       id: build_manifest_matrix
       working-directory: qualcomm_ci
       run: | 
-        python ./scripts/build-manifest-matrix.py \
-        --manifest_list "$RUNNER_TEMP/manifests.txt" \
-        --manifest_path "$GITHUB_WORKSPACE/manifest_repo"
+        if [ -f "$RUNNER_TEMP/manifests.txt" ]; then
+          python ./scripts/build-manifest-matrix.py \
+          --manifest_list "$RUNNER_TEMP/manifests.txt" \
+          --manifest_path "$GITHUB_WORKSPACE/manifest_repo"
+        else
+          echo -e "\nNo manifests to build."
+        fi
 
   build:
     #trigger a parallel build job for each manifest using the generated matrix
