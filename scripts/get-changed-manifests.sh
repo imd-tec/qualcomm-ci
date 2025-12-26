@@ -26,9 +26,9 @@ while [[ $# -gt 0 ]]; do
 done
 }
 
-function perform_diff_check() {
-  #fallback: in the case of a new branch or repo, BEFORE_SHA may be invalid. Set it to an empty tree for valid first diff-check.
-  #https://stackoverflow.com/questions/9765453/is-gits-semi-secret-empty-tree-object-reliable-and-why-is-there-not-a-symbolic 
+function determine_changed_manifests() {
+  #perform diff check and populate MANIFESTS array
+  #in the case of a new branch or repo, BEFORE_SHA may be invalid. Set it to an empty tree for valid first diff-check.
   if [ -z "${BEFORE_SHA:-}" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then 
     BEFORE_SHA=$(git hash-object -t tree /dev/null) 
   fi
@@ -44,32 +44,22 @@ function perform_diff_check() {
 }
 
 function validate_diff_check() {
-    local manifest_array=("$@")
-
-    echo "Found ${#manifest_array[@]} changed XML files:"
-    if [ ${#manifest_array[@]} -eq 0 ]; then
-        echo "No manifests changed. Exiting."
-        echo "count=0" >> "$GITHUB_OUTPUT"
-        
-        #append message to github step summary
+    #validate array and exit if no changed manifests found
+    echo "Found ${#MANIFESTS[@]} changed XML files:"
+    if [ ${#MANIFESTS[@]} -eq 0 ]; then
+        echo "No manifests changed."
         {
           echo "## Triggered Builds"
           echo "_No manifests changed in this push._"
           echo "**Note:** Only added or modified XML files trigger builds."
         } >> "$GITHUB_STEP_SUMMARY"
-        exit 0
     fi
+    printf '%s\n' "${MANIFESTS[@]}"
 
-    printf '  - %s\n' "${manifest_array[@]}"
 }
 
 parse_args "$@"
-
-#perform diff check and populate MANIFESTS array
-perform_diff_check
-
-#validate array and exit if no changed manifests found
-validate_diff_check "${MANIFESTS[@]}"
-
-#pass each manifest to output list as new-line separated result for json-ification in next step
+determine_changed_manifests
+validate_diff_check
+#pass each manifest to output as a new-line separated result for json-ification in next step
 printf '%s\n' "${MANIFESTS[@]}" > "$RUNNER_TEMP/manifests.txt"
