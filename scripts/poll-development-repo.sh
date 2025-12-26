@@ -31,10 +31,8 @@ trigger_build=false
 function parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -p|--manifest_repo_path)
-        MANIFEST_REPO_PATH="$2"; shift 2 ;;
-      -n|--manifest_repo_name)
-        MANIFEST_REPO_NAME="$2"; shift 2 ;;
+      -p|--manifest_repo_path)  MANIFEST_REPO_PATH="$2"; shift 2 ;;
+      -n|--manifest_repo_name)  MANIFEST_REPO_NAME="$2"; shift 2 ;;
       *)
         echo "Unknown option: $1"; exit 1 ;;
     esac 
@@ -55,12 +53,15 @@ function get_manifest_path() {
 function get_development_revisions() {
     #check all project revisions that do not match /^[0-9a-fA-F]{40}$/ (ie. commit hash)
     commit_hash_regex='^[0-9a-fA-F]{40}$'
+
     #get all revisions from project tags from manifest (i.e.,  "revision="kirkstone"")
     revision_keys=$(xmllint --xpath "//project/@revision" "$manifest_path" | grep -oE 'revision="[^"]+"') 
+    
     #extract revision names (i.e., kirkstone)
-    revision_names=$(echo "$revision_keys" | cut -d'"' -f2)
+    revision_names=$(cut -d'"' -f2 <<< "$revision_keys")
+    
     #remove commit hash revisions and keep unique branch names only
-    meta_dev_branches=$(echo "$revision_names" | grep -Ev "$commit_hash_regex" | sort -u)
+    meta_dev_branches=$(grep -Ev "$commit_hash_regex"  <<< "$revision_names" | sort -u)
 
     if [ -z "$meta_dev_branches" ]; then
         echo "No non-commit hash revisions found in the manifest. Exiting."
@@ -86,8 +87,8 @@ function check_for_differences() {
     if [ -f "$state_file" ]; then
         #first line: PROJECT | DATE | RESULT
         IFS='|' read -r project last_date last_result < "$state_file"
-        last_date=$(echo "$last_date" | xargs)
-        last_result=$(echo "$last_result" | xargs)
+        last_date=$(xargs <<< "$last_date")
+        last_result=$(xargs <<< "$last_result")
 
         if [ -n "$last_result" ]; then
             echo -e "\nPROJECT: $project\nLast recorded run: $last_result on $last_date"
