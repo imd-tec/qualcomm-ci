@@ -89,25 +89,19 @@ def construct_manifest_matrix(manifest_list: Path, manifest_parent_path: Path):
     matrix_data = []
 
     for manifest_path in manifests:
-        full_path = os.path.join(manifest_parent_path, manifest_path)
-        print(f"Processing manifest: {manifest_path} ({full_path})")
-
-        manifest_dir = os.path.dirname(full_path)
-
-        print(f"\n[DEBUG] manifest_parent_path: {manifest_parent_path}")
-        print(f"[DEBUG] manifest_dir: {manifest_dir}\n")
-        if manifest_parent_path == manifest_dir:
-            print(f"manifest_dir is the same. Just use manifest_parent_path...")
+        path_to_manifest = os.path.join(manifest_parent_path, manifest_path)
+        manifest_directory = os.path.dirname(path_to_manifest)
+        print(f"Processing manifest: {manifest_path} ({path_to_manifest})")
 
         #get every .yml file in the manifest directory
-        yaml_files = glob.glob(os.path.join(manifest_dir, "*.yml"))
+        yaml_files = glob.glob(os.path.join(manifest_directory, "*.yml"))
 
         #assert that there is exactly one yaml configuration file
         if len(yaml_files) == 0:
-            print(f"[ERROR] No configuration yaml found in {manifest_dir} for manifest at {manifest_path}")
+            print(f"[ERROR] No configuration yaml found in {manifest_directory} for manifest at {manifest_path}")
             sys.exit(1)
         elif len(yaml_files) > 1:
-            print(f"[ERROR] More than one YAML config file found in {manifest_dir}. Please ensure only one config file is present.")
+            print(f"[ERROR] More than one YAML config file found in {manifest_directory}. Please ensure only one config file is present.")
             sys.exit(1)
         else:
             config_file = yaml_files[0]
@@ -121,7 +115,7 @@ def construct_manifest_matrix(manifest_list: Path, manifest_parent_path: Path):
             sys.exit(1)
 
         #extract manifest name from path 
-        manifest_name, _ = os.path.splitext(os.path.basename(full_path))
+        manifest_name, _ = os.path.splitext(os.path.basename(path_to_manifest))
         
         #find corresponding key in yaml config
         if manifest_name not in config_data:
@@ -153,6 +147,7 @@ def construct_manifest_matrix(manifest_list: Path, manifest_parent_path: Path):
 
         matrix_data.append(manifest_json)
         append_to_step_summary(summary_row)
+        print(f"Succesfully extracted configuration detaisl and added manifest '{manifest_name}' to  matrix.")
 
     #serialise JSON and write to GITHUB_OUTPUT  
     json_output = json.dumps(matrix_data, separators=(',', ':'))
