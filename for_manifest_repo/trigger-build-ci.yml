@@ -71,7 +71,7 @@ jobs:
       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG == '2'
       working-directory: qualcomm_ci
       run: |
-        bash -x ./scripts/poll-development-repo.sh \
+        bash ./scripts/poll-development-repo.sh \
         --manifest_repo_path "$GITHUB_WORKSPACE/manifest_repo" \
         --manifest_repo_name "${{ github.repository }}"
 
