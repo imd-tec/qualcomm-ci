@@ -121,7 +121,7 @@ jobs:
       BUILD_MACHINE: ${{ matrix.machine }}
       BUILD_DISTRO: ${{ matrix.distro }}
       BUILD_IMAGE: ${{ matrix.image }}
-      BUILD_DOCKER: ${{ matrix.docker }}
+      BASE_DOCKER_IMAGE: ${{ matrix.docker }}
       BUILD_PATCH_SCRIPT_PATH: ${{ matrix.patch_script_path }}
       BUILD_RELEASE_NAME: ${{ matrix.release_name }}
       PYENV: ${{ matrix.pyenv }}
