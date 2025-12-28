@@ -13,15 +13,13 @@ export MACHINE=$MACHINE
 export DISTRO=$DISTRO
 source poky/qti-conf/set_bb_env.sh
 
-
+    
 # if build version is development, override config cache directories 
 if [ "${BUILD_VERSION}" = "development" ]; then
     echo "Setting up shared caches for development build..."
-    export BB_ENV_PASSTHROUGH_ADDITIONS="DL_DIR SSTATE_DIR"
     export DL_DIR="/home/dev/downloads"
     export SSTATE_DIR="/home/dev/sstate-cache"
-    echo "Using shared caches (DL_DIR=$DL_DIR, SSTATE_DIR=$SSTATE_DIR)"
-
+    export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS} DL_DIR SSTATE_DIR"
 fi
 
 echo "Yocto environment setup completed"
