@@ -1,6 +1,6 @@
 # QUALCOMM BUILD AUTOMATION
 
-Automates fetching of sources and build processes for Qualcomm-based builds as adapted from the **Qualcomm Getting Started** guides. 
+Automates fetching of sources and build processes for Qualcomm-based projects as adapted from the **Qualcomm Getting Started** guides. 
 
 ## Requirements
 **GitHub**
@@ -24,7 +24,6 @@ Automates fetching of sources and build processes for Qualcomm-based builds as a
       | `DL_DIR` | Yocto download cache location |
       | `SSTATE_DIR` | Yocto shared state cache location |
 
-
 - The runner must contain the following source files:
   - Qualcomm source files (i.e., ```qcs8550-le-1-0_amss_standard_oem_apqgps.tar.gz```) under ```$SHARED_SOURCES_DIR```.
 
@@ -35,16 +34,16 @@ Automates fetching of sources and build processes for Qualcomm-based builds as a
 ### Release builds
 1. A push affecting (or creating) a manifest file triggers ```trigger-build.yml``` on the manifest repository.
     - Alternatively, manual dispatch (under the **Actions** tab) can trigger specified builds (check ```DEBUG_LIST```, provided that ```BUILD_DEBUG == 1``` in ```trigger-build.yml```).
-3. The triggered workflow executes a job responsible for fetching the corresponding build details for the given manifests. These details are extracted from the associated configuration yaml file, converted to JSON and passed to the next job.
+2. The triggered workflow executes the `get_changed_manifests` job, responsible for fetching the corresponding build details for the changed manifests, where applicable. These details are extracted from the associated configuration yaml file, converted to JSON and passed to the `build` job.
 
-4. Once the details have been extracted and collated, the ```imdt-build-qcom-bsp.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a seperate build process for each configuration.
-5. Upon receiving a set of details, `imdt-build-qcom-bsp.yml` executes the build steps, broadly following the Qualcomm *Getting Started* build process. This continues until all triggered builds either complete, fail or are manually cancelled.
-6. The final build artifacts are located in corresponding build folder under ```$CI_DIR/builds/[project_version]/release```. 
+3. Once the details have been extracted and collated, the ```imdt-build-qcom-bsp.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a separate build process for each configuration.
+4. Upon receiving a set of details, `imdt-build-qcom-bsp.yml` executes the build steps, broadly following the Qualcomm *Getting Started* build process. This continues until all triggered builds either complete, fail or are manually cancelled.
+5. The final build artifacts are located in corresponding build folder under ```$CI_DIR/builds/[project_version]/release```. 
 
 ### Development builds
 1. A cron-job triggers ```trigger-build.yml``` on the manifest repository.
 
-2. All project development build attempts are logged in a corresponding `.last` state file stored in `$CI_DEV_DIR/state`. This contains the build statuses and the meta-layer hashes fetched from branch revisions from the previous build attempt.
+2. All project development build attempts are logged in a corresponding `.last` state file stored in `$CI_DEV_DIR/state`. To handle non-static meta-layer branch revisions in the manifest, this state file records both the build status and the fetched meta-layer hashes of the most recent attempt.
 3. The [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/development/scripts/poll-development-repo.sh) script locates and accesses the `development.xml` manifest and determines the branch revision meta-layers to poll for changes.
 4. If not previously cached in `$CI_DEV_DIR/cache`, all detected meta-layer repositories are cloned, and their current branch hashes are fetched and diff-checked against the meta-layer hashes stored in the build state file.
 5. The rubric for a build trigger is as follows:
@@ -52,9 +51,9 @@ Automates fetching of sources and build processes for Qualcomm-based builds as a
     | -------- | ------- |
     | No state file found  | YES   |
     | State file not labelled `SUCCESS` | YES     |
-    | State file labelled `SUCCESS` and revision is up to date | NO |
-    | State file labelled `SUCCESS`, revision is not up to date and non-relevant files changed  | NO  |
-    | State file labelled `SUCCESS`, revision is not up to date and relevant files changed  | YES    |
+    | State file labelled `SUCCESS` and branch revisions are up to date | NO |
+    | State file labelled `SUCCESS`, branch revisions are not up to date and non-relevant files changed  | NO  |
+    | State file labelled `SUCCESS`, branch revisions are not up to date and relevant files changed  | YES    |
     
     See [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/development/scripts/poll-development-repo.sh) for more details.
 6. Upon build attempt, the build job status is logged to the project state file. No artifact is created on successful build.
