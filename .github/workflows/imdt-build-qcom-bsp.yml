@@ -280,9 +280,10 @@ jobs:
       - name: Clean up container and image
         if: ${{ always() && env.RETAIN_DOCKER == '0' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
-        run: docker compose \
-            -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
-            down --rmi local
+        run: |
+          docker compose \
+          -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
+          down --rmi local
 
       - name: Clean up source files
         if:  ${{ always() && env.RETAIN_BUILD_FILES == '0' }}
