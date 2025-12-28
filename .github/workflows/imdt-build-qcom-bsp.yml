@@ -164,7 +164,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') && env.EXTRACT_FRESH_SOURCES == '1' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash extract-sources.sh
-          
+ 
       - name: Create Docker image, build container and initialize user permissions & ownership
         if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
@@ -183,7 +183,11 @@ jobs:
           fi
 
           #sync repos
-          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"  '
+          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"
+
+          echo -e "\n[DEBUG]set_bb_env.sh:\n"
+          cat poky/qti-conf/set_bb_env.sh
+          '
 
       - name: Configure kernel directories
         if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
