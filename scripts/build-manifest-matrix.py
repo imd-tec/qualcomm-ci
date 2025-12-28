@@ -24,7 +24,7 @@ import yaml
 
 #fields to extract from each manifest's yaml config. Also serves as table columns in Github Actions step summary.
 MANIFEST_FIELDS=["version", "kernel_variant",
-        "machine", "distro", "image", "docker", "patch_script_path",
+        "machine", "distro", "image", "base_docker_image", "patch_script_path",
         "release_name", "pyenv", "qcs_sources", "patch_fallback_path", "skip_steps"]
 
 STEP_SUMMARY_PATH = os.environ['GITHUB_STEP_SUMMARY']
