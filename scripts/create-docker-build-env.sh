@@ -3,78 +3,31 @@
 #title: create-docker-build-env.sh
 #description
 #     For use exclusively within the imdt-build-qcom-bsp.yml workflow.
-#     Creates a docker image based on the specified BUILD_DOCKER base image. 
-#     Passes build parameters and mounts the build project directory, release directory, script directory and Bitbake cache directories onto the container.
+#     Creates Docker image and build container for Qualcomm CI environment via docker compose.
+#     Exports host UID/GID for container user initialisation.
 #assumes:
-#     BUILD_DOCKER is set to the base docker image to use for the build environment (i.e., imdtec/imdt-qualcomm-build-setup:0.5.1).
-#     CI_DIR is set to the root CI directory path on the runner.
-#     BUILD_PROJECT_DIR is set to the build project directory path.
-#     CONTAINER_NAME is set to 'ci_qualcomm_[unique_id]'.
-#     DOCKER_EXEC is set to 'docker exec -t -u dev'.
-#     DL_DIR and SSTATE_DIR are set to host paths for Yocto shared download and sstate cache directories.
-#     MANIFEST_REPOSITORY, MANIFEST_BRANCH, MANIFEST_XML, IMAGE, RELEASE_NAME, BUILD_VERSION, KERNEL_VARIANT, QCS_SOURCES, PYENV, MACHINE, DISTRO, PATCH_SCRIPT_PATH are set to build parameters.
+#     The host must have their .netrc file configured for repo access.
+#     BASE_DOCKER_IMAGE is set to the base docker image to use for the build environment (i.e., imdtec/imdt-qualcomm-build-setup:0.5.1).
 #=============================================================================================================================================================================
 set -e
 
-function create_container_image() {
-    local path_to_dockerfiles="${GITHUB_WORKSPACE}/qualcomm_ci/scripts/docker/"
-    HOST_UID=$(id -u)
-    HOST_GID=$(id -g)
-    export HOST_UID
-    export HOST_GID
+#get host user and group IDs for container permission and ownership setup
+HOST_UID=$(id -u)
+HOST_GID=$(id -g)
+export HOST_UID
+export HOST_GID
 
-    #affix base BUILD_DOCKER version to new image name
-    IMAGE_NAME="imdt-qualcomm-ci:${BUILD_DOCKER##*:}"
-    echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
+#affix base BASE_DOCKER_IMAGE version to CI image name
+export IMAGE_NAME="imdt-qualcomm-ci:${BASE_DOCKER_IMAGE##*:}"
+echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
 
-    #build container image from BASE_DOCKER_IMAGE and pass host ID's as build args for permission and ownership setup 
-    docker build -f "${path_to_dockerfiles}/qcom-ci-docker" \
-    --build-arg BASE_DOCKER_IMAGE="${BUILD_DOCKER}" \
-    --build-arg HOST_UID="${HOST_UID}" \
-    --build-arg HOST_GID="${HOST_GID}" \
-    --tag "$IMAGE_NAME" \
-    "$path_to_dockerfiles"
-}
+#verify that the host .netrc file exists before attempting to mount it
+if [ ! -f "${HOME}/.netrc" ]; then
+    echo "ERROR: ${HOME}/.netrc not found."
+    echo "Docker Compose cannot mount a missing file."
+    exit 1
+fi
 
-function run_container() {
-    docker run --rm -d \
-        --name "$CONTAINER_NAME" \
-        -e MANIFEST_REPOSITORY="$MANIFEST_REPOSITORY" \
-        -e MANIFEST_BRANCH="$MANIFEST_BRANCH" \
-        -e MANIFEST_XML="$MANIFEST_XML" \
-        -e IMAGE="$IMAGE" \
-        -e RELEASE_NAME="$RELEASE_NAME" \
-        -e BUILD_VERSION="$BUILD_VERSION" \
-        -e KERNEL_VARIANT="$KERNEL_VARIANT" \
-        -e QCOM_ROOT_DIR="/home/dev/Qualcomm/${QCS_SOURCES}" \
-        -e PYENV="$PYENV" \
-        -e MACHINE="$MACHINE" \
-        -e DISTRO="$DISTRO" \
-        -e PATCH_SCRIPT_PATH="$PATCH_SCRIPT_PATH" \
-        -v "${BUILD_PROJECT_DIR}:/home/dev/Qualcomm" \
-        -v "${BUILD_PROJECT_DIR}/release:/home/dev/Qualcomm/release" \
-        -v "${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/" \
-        -v "${DL_DIR}:/home/dev/downloads" \
-        -v "${SSTATE_DIR}:/home/dev/sstate-cache" \
-        "$IMAGE_NAME" \
-        sleep infinity
-
-    #verify that IDs are correct and ownership has been transferred correctly
-    result=$($DOCKER_EXEC "${CONTAINER_NAME}" bash -c 'id')
-    if [[ $result != *"uid=$HOST_UID"* && $result != *"gid=$HOST_GID"* ]]; then
-        echo "ERROR: User IDs do not match"
-        exit 1
-    fi
-
-    #copy host .netrc to container to allow repo access
-    if [ -f "${HOME}/.netrc" ]; then
-        echo "Copying host credentials to container..."
-        docker cp "${HOME}/.netrc" "${CONTAINER_NAME}:/home/dev/.netrc"
-    else
-        echo "ERROR: No host .netrc found. Credentials required for authentication."
-        exit 1
-    fi
-}
-
-create_container_image
-run_container
+docker compose \
+    -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
+    up -d
