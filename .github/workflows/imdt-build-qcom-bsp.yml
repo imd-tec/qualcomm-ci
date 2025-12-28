@@ -53,7 +53,7 @@ on:
           description: Target image to build (e.g. imdt-image-weston)
           type: string      
 
-        BUILD_DOCKER:
+        BASE_DOCKER_IMAGE:
           required: true
           description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
           type: string
@@ -100,9 +100,10 @@ env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_EXEC: docker exec -t -u dev
   
-  #Workflow development variables
-  DEBUG_CLEAN_UP: "1"
-  DEBUG_SKIP_SOURCE_EXTRACTION: "0"
+  #DEBUG FLAGS
+  RETAIN_BUILD_FILES: "0"
+  RETAIN_DOCKER: "0"
+  EXTRACT_FRESH_SOURCES: "1"
 
 jobs:
   build-qualcomm-bsp:
@@ -118,7 +119,7 @@ jobs:
       MACHINE: ${{ inputs.BUILD_MACHINE }}
       DISTRO: ${{ inputs.BUILD_DISTRO }}
       IMAGE: ${{ inputs.BUILD_IMAGE }}
-      BUILD_DOCKER: ${{ inputs.BUILD_DOCKER }}
+      BASE_DOCKER_IMAGE: ${{ inputs.BASE_DOCKER_IMAGE }}
       PATCH_SCRIPT_PATH: ${{ inputs.BUILD_PATCH_SCRIPT_PATH }}
       RELEASE_NAME: ${{ inputs.BUILD_RELEASE_NAME }}
       PYENV: ${{ inputs.PYENV }}
@@ -147,7 +148,6 @@ jobs:
           echo "DL_DIR: $DL_DIR"
           echo "SSTATE_DIR: $SSTATE_DIR"
 
-
       - name: Create build project directory
         run: | 
           #set build project path
@@ -160,16 +160,14 @@ jobs:
           echo "Using project path: ${BUILD_PROJECT_DIR}"
           mkdir -p "${BUILD_PROJECT_DIR}" && cd "${BUILD_PROJECT_DIR}"
 
-
       - name: Extract build sources files into build directory
-        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') || env.DEBUG_SKIP_SOURCE_EXTRACTION != '1' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') && env.EXTRACT_FRESH_SOURCES == '1' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash extract-sources.sh
           
       - name: Create Docker image, build container and initialize user permissions & ownership
         if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
-        timeout-minutes: 20
         run: bash create-docker-build-env.sh
 
       - name: Patch and synchronize repos
@@ -185,38 +183,34 @@ jobs:
           fi
 
           #sync repos
-          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML" 
-          '
+          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"  '
 
       - name: Configure kernel directories
         if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/setup_kernel.sh
-          '
+          bash -x /home/dev/build_scripts/setup_kernel.sh '
 
       - name: Apply IMDT patches to Qualcomm source
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}"
-          '
+          bash "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}" '
       
       - name: Configure contents.xml
         if: ${{ !contains(env.SKIP_STEPS, 'conf_contents') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          python3 /home/dev/build_scripts/configure_contents_xml.py -d "${DISTRO}" -m "${MACHINE}" -i "${IMAGE}" -x "${QCOM_ROOT_DIR}/contents.xml"
-          ' 
+          python3 /home/dev/build_scripts/configure_contents_xml.py -d "${DISTRO}" -m "${MACHINE}" -i "${IMAGE}" -x "${QCOM_ROOT_DIR}/contents.xml" ' 
 
       - name: Build kernel
+        if: ${{ !contains(env.SKIP_STEPS, 'build_kernel') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_kernel.sh \
           --lto "thin" --jobs 8 \
           --build_variant "${KERNEL_VARIANT}" \
-          --build_output_dir "../out/msm-kernel-kalama_le-${KERNEL_VARIANT}"
-          '
+          --build_output_dir "../out/msm-kernel-kalama_le-${KERNEL_VARIANT}" '
 
       - name: Build HLOS
         if: ${{ !contains(env.SKIP_STEPS, 'build_hlos') }}
@@ -228,8 +222,7 @@ jobs:
                   "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
 
           cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/src/"* \
-                  "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/"
-          '
+                  "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/src/" '
 
       - name: Bitbake fetch sources
         if: ${{ !contains(env.SKIP_STEPS, 'bitbake_fetch') }}
@@ -239,13 +232,12 @@ jobs:
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
 
           #verify DL_DIR and SSTATE_DIR usage
-          if [ {{ env.BUILD_VERSION }} == "development" ]; then
+          if [ "$BUILD_VERSION" == "development" ]; then
             bitbake -e | grep -E "^DL_DIR=|^SSTATE_DIR="
           
           fi
 
-          bitbake "${IMAGE}" --runall=fetch
-          '
+          bitbake "${IMAGE}" --runall=fetch '
 
       - name: Bitbake build image
         if: ${{ !contains(env.SKIP_STEPS, 'bitbake_build') }}
@@ -255,32 +247,28 @@ jobs:
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
           
           #build image
-          bitbake "${IMAGE}"
-          '
+          bitbake "${IMAGE}" '
 
       - name: Generate Yocto SDK
         if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') && env.BUILD_VERSION != 'development' }}
         continue-on-error: true
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/tools/container_scripts/generate-sdk.sh
-          '
+          bash /home/dev/tools/container_scripts/generate-sdk.sh '
       
       - name: Build non-HLOS components
         id: build_hlos
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all
-          '
+          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all '
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') && env.BUILD_VERSION != 'development' }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/tools/container_scripts/create-artifact.sh
-          '
-      
+          bash /home/dev/tools/container_scripts/create-artifact.sh '
+
       - name: Update development build state logs
         if: ${{ always() && env.BUILD_VERSION == 'development' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
@@ -289,14 +277,15 @@ jobs:
           echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
           bash -x log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
-
       - name: Clean up container and image
-        if: ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
+        if: ${{ always() && env.RETAIN_DOCKER == '0' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
-        run: bash -x stop-container.sh ${CONTAINER_NAME} ${IMAGE_NAME}
+        run: docker compose \
+            -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
+            down --rmi local
 
       - name: Clean up source files
-        if:  ${{ always() && env.DEBUG_CLEAN_UP == '1' }}
+        if:  ${{ always() && env.RETAIN_BUILD_FILES == '0' }}
         run: |
           set -euo pipefail -x
           #if development build, delete build directory
