@@ -139,7 +139,7 @@ jobs:
             persist-credentials: false
             path: qualcomm_ci
           
-      - name: Verify service variables
+      - name: Verify service environment variables
         run: |
           set -x
           echo "CI_DIR: $CI_DIR"
@@ -174,7 +174,6 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'sync_repos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-
           if [ -d "/home/dev/Qualcomm/patches" ]; then
             PATCHFILE="/home/dev/Qualcomm/patches/sync_snap_v2_remove_chipcode_copy.patch"
             TARGET="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/sync_snap_v2.sh"
@@ -184,9 +183,6 @@ jobs:
 
           #sync repos
           bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"
-          
-          echo -e "\n[DEBUG]set_bb_env.sh:\n"
-          cat "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/qti-conf/set_bb_env.sh"
           '
 
       - name: Configure kernel directories
@@ -234,13 +230,6 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           #set Yocto environment
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
-
-          #verify DL_DIR and SSTATE_DIR usage
-          if [ "$BUILD_VERSION" == "development" ]; then
-            bitbake -e | grep -E "^DL_DIR=|^SSTATE_DIR="
-          
-          fi
-
           bitbake "${IMAGE}" --runall=fetch '
 
       - name: Bitbake build image
