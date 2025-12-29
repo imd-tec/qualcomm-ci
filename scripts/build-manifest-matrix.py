@@ -147,7 +147,7 @@ def construct_manifest_matrix(manifest_list: Path, manifest_parent_path: Path):
 
         matrix_data.append(manifest_json)
         append_to_step_summary(summary_row)
-        print(f"Succesfully extracted configuration detaisl and added manifest '{manifest_name}' to  matrix.")
+        print(f"Successfully extracted configuration details and added manifest '{manifest_name}' to matrix.")
 
     #serialise JSON and write to GITHUB_OUTPUT  
     json_output = json.dumps(matrix_data, separators=(',', ':'))
