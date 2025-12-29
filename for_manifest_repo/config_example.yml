@@ -1,0 +1,27 @@
+#Example build configuration file (SBC project)
+
+defaults: &defaults #default values for all keys. Override under specific manifests as needed.
+  machine: "imdt-qcs8550-sbc"
+  distro: "imdt-qcom-distro-debug"
+  image: "imdt-image-weston"
+  kernel_variant: "consolidate"
+  version: ""
+  pyenv: "3.8.16"
+  qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps"
+  base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"
+  patch_script_path: "apps_proc/imdt-patch-qcs8550-build.sh"
+  release_name: "imdt_qcs8550_sbc_prebuilt_release"
+  patch_fallback_path: "/mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imdt-qcom-bsp"
+  skip_steps: []
+
+development:
+  <<: *defaults
+  version: "development"
+
+imdt-qcom-bsp-v1.0.1:
+  <<: *defaults 
+  version: "1.0.1"
+
+imdt-qcom-bsp-v1.1.0:
+  <<: *defaults
+  version: "1.1.0"
