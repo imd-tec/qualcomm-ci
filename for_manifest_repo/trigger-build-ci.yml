@@ -1,19 +1,32 @@
 name: Automate QCOM build process
 
 on:
+  #trigger on push to specified branch upon any .xml modification at any depth
   push:
-    #trigger upon any .xml modification at any depth on specified branch
     branches:
-      - 'master'
+      - 'kirkstone'
     paths:
       - "**/*.xml"
 
-  #allows for manual workflow execution
-  workflow_dispatch:
-
-  #scheduled nightly builds for development manifests
+  #schedule for development builds
   schedule: 
-    - cron: '00 23 * * *' #nightly at 23:00 UTC
+    - cron: '00 23 * * *' #23:00 UTC
+
+  #allows for manual workflow execution. Includes choice input for build type.
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Type of build to trigger'
+        required: true
+        default: ''
+        type: choice
+        options:
+          - 'development'
+          - 'list'
+      manifest_list:
+        description: 'Space-separated list of manifest paths to build (list only)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,12 +34,7 @@ permissions:
 defaults:
   run:
     shell: bash -euo pipefail {0}
-
-env:
-  #debug variables for forcing specified builds for testing
-  BUILD_DEBUG: "1"
-  DEBUG_LIST: ''
-
+    
 jobs:
   get_changed_manifests:
     runs-on: [self-hosted, Linux, X64, qcom]
@@ -38,7 +46,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        fetch-depth: 0 #set to 0 ensure that previous commit can be accessed for diff checks
+        fetch-depth: 0 #set to 0 ensure that previous commit can be accessed for diff check
         path: manifest_repo   
         
     #checkout qualcomm-ci repo under 'qualcomm_ci' => Access build matrix script located there
@@ -50,14 +58,14 @@ jobs:
           persist-credentials: false
           path: qualcomm_ci
     
-    - name: Get event details
+    - name: Log event details
       run: echo "Triggered by ${{ github.event_name }} event by ${{ github.triggering_actor}} on ${{ github.ref }}."
 
-    ## CREATE MANIFESTS.TXT BASED ON EVENT TRIGGER TYPE
+    ## CREATE LIST OF MANIFESTS BASED ON EVENT TRIGGER TYPE
 
     #PUSH => build added or modified xml manifests
     - name: Diff-check commits to determine added or modified manifests
-      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG == '1'
+      if: github.event_name == 'push' 
       working-directory: qualcomm_ci
       run: | 
         bash ./scripts/get-changed-manifests.sh \
@@ -65,27 +73,26 @@ jobs:
         --before_sha "${{ github.event.before }}" \
         --current_sha "${{ github.event.after }}"
         
-    #SCHEDULE => attempt development build/s, dependant on meta-layer changes
+    #SCHEDULE => attempt development build/s, dependant on detectedmeta-layer changes
     - name: Poll development manifest metalayers for changes
       id: get_scheduled_manifests
-      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && env.BUILD_DEBUG == '2'
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.build_type == 'development'
       working-directory: qualcomm_ci
       run: |
         bash ./scripts/poll-development-repo.sh \
         --manifest_repo_path "$GITHUB_WORKSPACE/manifest_repo" \
         --manifest_repo_name "${{ github.repository }}"
 
-    #MANUAL => if the BUILD_DEBUG flag is set, force line-seperated builds outlined in DEBUG_LIST
+    #MANUAL DISPATCH => force builds from provided manifest list
     - name: Get manifests from debug list
-      if: github.event_name == 'workflow_dispatch' && env.DEBUG_LIST != '' && env.BUILD_DEBUG == '3'
-      #as GitHub Action environment variables are strings, we need to read the debug list into an array line-by-line for sanitation
+      if: github.event_name == 'workflow_dispatch' && inputs.manifest_list != '' && inputs.build_type == 'list'
+      env:
+        MANIFEST_LIST: ${{ inputs.manifest_list }}
       run: |
-        mapfile -t MANIFESTS <<< "$DEBUG_LIST"
-        for mani in "${MANIFESTS[@]}"; do
-          mani=$(printf '%s' "$mani" | xargs)  #xargs to trim any whitespace
-          echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
-        done
-    
+          for mani in $MANIFEST_LIST; do
+            echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
+          done
+              
     #create a serialized json array containing each manifest's build details, as specified in the corresponding project config yaml (e.g., imdt-qcom-bsp.yml)
     - name: Build manifest matrix
       if: success() 
@@ -109,24 +116,29 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJson(needs.get_changed_manifests.outputs.manifest_list) }}
-    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@master
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@development
     secrets: inherit
     with:
-      MANIFEST_REPOSITORY: ${{ github.event.repository.html_url }}
-      MANIFEST_BRANCH: ${{ github.ref_name }}  
-      MANIFEST_XML: ${{ matrix.manifest }}    
-      BUILD_NAME: ${{ matrix.name }}
-      BUILD_VERSION: ${{ matrix.version }}
-      BUILD_KERNEL_VARIANT: ${{ matrix.kernel_variant }}
-      BUILD_MACHINE: ${{ matrix.machine }}
-      BUILD_DISTRO: ${{ matrix.distro }}
-      BUILD_IMAGE: ${{ matrix.image }}
-      BASE_DOCKER_IMAGE: ${{ matrix.docker }}
-      BUILD_PATCH_SCRIPT_PATH: ${{ matrix.patch_script_path }}
-      BUILD_RELEASE_NAME: ${{ matrix.release_name }}
-      PYENV: ${{ matrix.pyenv }}
-      QCS_SOURCES: ${{ matrix.qcs_sources }}
-      PATCH_FALLBACK_PATH: ${{ matrix.patch_fallback_path }}
-      SKIP_STEPS: ${{ matrix.skip_steps }}
-      DEV_STATE_LOG: ${{ needs.get_changed_manifests.outputs.dev_state_log}}
+      #Manifest parameters
+      MANIFEST_REPOSITORY:      ${{ github.event.repository.html_url }}
+      MANIFEST_BRANCH:          ${{ github.ref_name }}  
+      MANIFEST_XML:             ${{ matrix.manifest }}   
+      
+      #Build parameters
+      BUILD_NAME:               ${{ matrix.name }}
+      BUILD_VERSION:            ${{ matrix.version }}
+      BUILD_KERNEL_VARIANT:     ${{ matrix.kernel_variant }}
+      BUILD_MACHINE:            ${{ matrix.machine }}
+      BUILD_DISTRO:             ${{ matrix.distro }}
+      BUILD_IMAGE:              ${{ matrix.image }}
+      BASE_DOCKER_IMAGE:        ${{ matrix.base_docker_image }}
+      BUILD_PATCH_SCRIPT_PATH:  ${{ matrix.patch_script_path }}
+      BUILD_RELEASE_NAME:       ${{ matrix.release_name }}
+      PYENV:                    ${{ matrix.pyenv }}
+      QCS_SOURCES:              ${{ matrix.qcs_sources }}
+      SKIP_STEPS:               ${{ matrix.skip_steps }}
+      
+      #Path parameters
+      PATCH_FALLBACK_PATH:      ${{ matrix.patch_fallback_path }}
+      DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log}}
 
