@@ -16,7 +16,7 @@
 #outputs:
 #   Extracted qcs source files and build-specific assets in the build project directory.
 #=============================================================================================================================================================================
-set -eux
+set -eu
 
 #set sources path
 PROJECT_SOURCES_DIR=${BUILD_PROJECT_DIR}/sources
@@ -30,7 +30,7 @@ fi
 #locate and extract build-specific assets archives(patch, cdt, etc.), as applicable
 assets_to_extract=()
 
-
+#extend to handle other assets as required
 if [ -f "${PROJECT_SOURCES_DIR}/patches.tar.gz" ]; then
     assets_to_extract+=("patches.tar.gz")
 else
@@ -46,12 +46,8 @@ else
     fi
 fi
 
-#extend to handle other assets as required
-#e.g., if [[ "$BUILD_CDT" == "1" ]]; then assets_to_extract+=("cdt.tar.gz"); fi 
-
 for asset in "${assets_to_extract[@]}"; do
     if [[ -f "${PROJECT_SOURCES_DIR}/$asset" ]]; then
-    echo "Extracting $asset..."
     tar -xf "${PROJECT_SOURCES_DIR}/$asset" -C "$BUILD_PROJECT_DIR"
         if [[ -f "$BUILD_PROJECT_DIR/$asset"  ]]; then
             echo "$asset extracted to ""$BUILD_PROJECT_DIR/$asset"

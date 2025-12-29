@@ -140,7 +140,6 @@ jobs:
           
       - name: Verify service environment variables
         run: |
-          set -x
           echo "CI_DIR: $CI_DIR"
           echo "CI_DEV_DIR: $CI_DEV_DIR"
           echo "SHARED_SOURCES_DIR: $SHARED_SOURCES_DIR"
@@ -186,7 +185,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/setup_kernel.sh '
+          bash /home/dev/build_scripts/setup_kernel.sh '
 
       - name: Apply IMDT patches to Qualcomm source
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
@@ -251,7 +250,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all '
+          bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') && env.BUILD_VERSION != 'development' }}
@@ -265,7 +264,7 @@ jobs:
         run: |
           echo "Build status: ${{ job.status }}"
           echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
-          bash -x log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
       - name: Clean up container and image
         if: ${{ always() && env.RETAIN_DOCKER == '0' }}
