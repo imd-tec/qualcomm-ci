@@ -165,7 +165,6 @@ jobs:
         run: bash extract-sources.sh
  
       - name: Create Docker image, build container and initialize user permissions & ownership
-        if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash create-docker-build-env.sh
 
@@ -193,7 +192,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}" '
+          bash "${QCOM_ROOT_DIR}/${PATCH_SCRIPT_PATH}" '
       
       - name: Configure contents.xml
         if: ${{ !contains(env.SKIP_STEPS, 'conf_contents') }}
