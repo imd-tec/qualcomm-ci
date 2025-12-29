@@ -6,6 +6,7 @@ defaults:
     shell: bash -ueo pipefail {0}
 
 on:
+  #only triggered on external workflow call
   workflow_call:
       inputs:
         MANIFEST_REPOSITORY:
@@ -94,8 +95,6 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
-  workflow_dispatch:
-
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_EXEC: docker exec -t -u dev
@@ -131,7 +130,7 @@ jobs:
     steps:      
       - name: Set repository workspace
         #explicitly checkout into the CI repository. Required if triggered from external repo.
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
             repository: imd-tec/qualcomm-ci
             ref: development
@@ -182,8 +181,7 @@ jobs:
           fi
 
           #sync repos
-          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML"
-          '
+          bash /home/dev/build_scripts/sync_repos.sh -u "$MANIFEST_REPOSITORY" -b "$MANIFEST_BRANCH" -m "$MANIFEST_XML" '
 
       - name: Configure kernel directories
         if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
