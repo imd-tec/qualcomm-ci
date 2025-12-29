@@ -20,14 +20,8 @@ defaults: &defaults
   pyenv: "3.8.16"
   qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps"
   release_name: "imdt_qcs8550_sbc_prebuilt_release"
-
-  # IMDT patch script path
   patch_script_path: "LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh"
-
-  # Docker image to use as the base for the build environment
-  base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"
-  
-  # Fallback path to fallback patches directory on the runner
+  base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"  
   patch_fallback_path: "/mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imdt-qcom-bsp"
   
   # Comma-separated list of build steps to skip (see qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml for further details)  
