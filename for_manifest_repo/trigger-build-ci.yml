@@ -4,7 +4,7 @@ on:
   #trigger on push to specified branch upon any .xml modification at any depth
   push:
     branches:
-      - 'kirkstone'
+      - 'master'
     paths:
       - "**/*.xml"
 
@@ -44,16 +44,16 @@ jobs:
 
     #checkout the current repository under 'manifest_repo' => Access manifests
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0 #set to 0 ensure that previous commit can be accessed for diff check
         path: manifest_repo   
         
     #checkout qualcomm-ci repo under 'qualcomm_ci' => Access build matrix script located there
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
           repository: imd-tec/qualcomm-ci
-          ref: development
+          ref: master
           token: ${{ secrets.QCI_DEPLOY_PAT }}
           persist-credentials: false
           path: qualcomm_ci
@@ -73,7 +73,7 @@ jobs:
         --before_sha "${{ github.event.before }}" \
         --current_sha "${{ github.event.after }}"
         
-    #SCHEDULE => attempt development build/s, dependant on detectedmeta-layer changes
+    #SCHEDULE => attempt development build/s, dependant on detected meta-layer changes
     - name: Poll development manifest metalayers for changes
       id: get_scheduled_manifests
       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.build_type == 'development'
@@ -116,7 +116,7 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJson(needs.get_changed_manifests.outputs.manifest_list) }}
-    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@development
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@master
     secrets: inherit
     with:
       #Manifest parameters
