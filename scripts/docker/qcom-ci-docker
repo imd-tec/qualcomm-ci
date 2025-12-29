@@ -1,0 +1,42 @@
+#=============================================================================================================================================================================
+#title: qcom-ci-docker
+#
+#description: Dockerfile for building the Qualcomm CI Docker image. 
+#             Extends pre-existing build environment image, as defined by BASE_IMAGE.
+#             Takes host UID and GID arguments to initialize container user permissions and ownership to match host user.
+#
+#usage: docker build -f <path_to_qc-ci-docker> \
+#       --build-arg <BASE_IMAGE> \
+#       --build-arg <HOST_UID> \
+#       --build-arg <HOST_GID> \
+#       -t <IMAGE_NAME> \
+#       <path_to_entry_script>
+#=============================================================================================================================================================================
+
+#default to imdtec/imdt-qualcomm-build-setup:0.5.1 if BASE_DOCKER_IMAGE is not provided.
+ARG BASE_DOCKER_IMAGE=imdtec/imdt-qualcomm-build-setup:0.5.1
+FROM ${BASE_DOCKER_IMAGE}
+
+#get host user and group IDs to set inside container
+ARG HOST_UID
+ARG HOST_GID
+
+#copy docker entry point script for setting user permissions and ownership inside container
+USER root
+
+#setup container user permissions and ownership
+RUN if [ -n "${HOST_UID}" ] && [ -n "${HOST_GID}" ]; then \
+        if [ "${HOST_UID}" != "$(id -u dev)" ] || [ "${HOST_GID}" != "$(id -g dev)" ]; then \
+            groupmod -g "${HOST_GID}" dev && \
+            usermod -u "${HOST_UID}" dev && \
+            chown -R "${HOST_UID}:${HOST_GID}" /home/dev ; \
+        fi; \
+    else \
+        echo "HOST_UID or HOST_GID not set; skipping user/group ID modification."; \
+    fi
+USER dev
+
+#set working directory
+WORKDIR /home/dev
+CMD ["bash"]
+ 

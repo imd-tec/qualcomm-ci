@@ -1,6 +1,6 @@
 #!/bin/bash
 #=============================================================================================================================================================================
-#title: create_artifact.sh
+#title: create-artifact.sh
 #description: Creates output release artifact tarball from built source.
 #=============================================================================================================================================================================
 set -xe
@@ -10,12 +10,12 @@ OUTPUT_TAR="${RELEASE_DIR}.tar.gz"
 
 #if release directory already exists, remove it
 if [ -d "$RELEASE_DIR" ]; then
-rm -rf "$RELEASE_DIR"
+    rm -rf "$RELEASE_DIR"
 fi
 
 #if previous prebuilt tarball exists, remove it
 if [ -f "$OUTPUT_TAR" ]; then
-rm -f "$OUTPUT_TAR"
+    rm -f "$OUTPUT_TAR"
 fi
 
 #create new prebuilt release directory
@@ -26,7 +26,6 @@ python3 create_release.py \
     -b "${QCOM_ROOT_DIR}"
 
 #create fresh prebuilt tarball 
-ls -la /home/dev/Qualcomm/release
 cd /home/dev/Qualcomm/release
 tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 
@@ -34,11 +33,11 @@ tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 if [ -f "$OUTPUT_TAR" ]; then
     echo "Release artifact compressed at $OUTPUT_TAR"
     echo "Removing uncompressed release directory..."
-if [ -d "$RELEASE_DIR" ]; then
-    echo "Removing $RELEASE_DIR"
-    rm -rf "$RELEASE_DIR"
-fi
-    else
+    if [ -d "$RELEASE_DIR" ]; then
+        echo "Removing $RELEASE_DIR"
+        rm -rf "$RELEASE_DIR"
+    fi
+else
     echo "ERROR: Release artifact creation failed at $OUTPUT_TAR"
     exit 1
 fi
