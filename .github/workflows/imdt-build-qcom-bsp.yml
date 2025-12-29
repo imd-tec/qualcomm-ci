@@ -59,9 +59,9 @@ on:
           description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
           type: string
 
-        BUILD_PATCH_SCRIPT_PATH:
+        IMDT_PATCH_SCRIPT_PATH:
           required: true
-          description: Path to IMDT patch build script (e.g. apps_proc/imdt-patch-qcs8550-build.sh)
+          description: Path to IMDT patch build script (e.g. LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh)
           type: string
 
         BUILD_RELEASE_NAME:
@@ -119,7 +119,7 @@ jobs:
       DISTRO: ${{ inputs.BUILD_DISTRO }}
       IMAGE: ${{ inputs.BUILD_IMAGE }}
       BASE_DOCKER_IMAGE: ${{ inputs.BASE_DOCKER_IMAGE }}
-      PATCH_SCRIPT_PATH: ${{ inputs.BUILD_PATCH_SCRIPT_PATH }}
+      IMDT_PATCH_SCRIPT_PATH: ${{ inputs.IMDT_PATCH_SCRIPT_PATH }}
       RELEASE_NAME: ${{ inputs.BUILD_RELEASE_NAME }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
@@ -140,7 +140,6 @@ jobs:
           
       - name: Verify service environment variables
         run: |
-          set -x
           echo "CI_DIR: $CI_DIR"
           echo "CI_DEV_DIR: $CI_DEV_DIR"
           echo "SHARED_SOURCES_DIR: $SHARED_SOURCES_DIR"
@@ -165,7 +164,6 @@ jobs:
         run: bash extract-sources.sh
  
       - name: Create Docker image, build container and initialize user permissions & ownership
-        if: ${{ !contains(env.SKIP_STEPS, 'build_container') }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash create-docker-build-env.sh
 
@@ -187,13 +185,13 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'conf_kernel') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/setup_kernel.sh '
+          bash /home/dev/build_scripts/setup_kernel.sh '
 
       - name: Apply IMDT patches to Qualcomm source
         if: ${{ !contains(env.SKIP_STEPS, 'apply_patches') }}
         run: | 
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/${PATCH_SCRIPT_PATH}" '
+          bash "${QCOM_ROOT_DIR}/${IMDT_PATCH_SCRIPT_PATH}" '
       
       - name: Configure contents.xml
         if: ${{ !contains(env.SKIP_STEPS, 'conf_contents') }}
@@ -252,7 +250,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash -x /home/dev/build_scripts/build_non_hlos.sh --build all '
+          bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') && env.BUILD_VERSION != 'development' }}
@@ -266,7 +264,7 @@ jobs:
         run: |
           echo "Build status: ${{ job.status }}"
           echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
-          bash -x log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
       - name: Clean up container and image
         if: ${{ always() && env.RETAIN_DOCKER == '0' }}

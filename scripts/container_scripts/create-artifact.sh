@@ -3,7 +3,7 @@
 #title: create-artifact.sh
 #description: Creates output release artifact tarball from built source.
 #=============================================================================================================================================================================
-set -xe
+set -e
 FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
 RELEASE_DIR="/home/dev/Qualcomm/release/${FULL_RELEASE_NAME}"
 OUTPUT_TAR="${RELEASE_DIR}.tar.gz"

@@ -4,7 +4,7 @@ on:
   #trigger on push to specified branch upon any .xml modification at any depth
   push:
     branches:
-      - 'master'
+      - 'kirkstone'
     paths:
       - "**/*.xml"
 
@@ -119,26 +119,30 @@ jobs:
     uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@master
     secrets: inherit
     with:
-      #Manifest parameters
+      #Source Context
       MANIFEST_REPOSITORY:      ${{ github.event.repository.html_url }}
       MANIFEST_BRANCH:          ${{ github.ref_name }}  
       MANIFEST_XML:             ${{ matrix.manifest }}   
-      
-      #Build parameters
+
+      #Build environment 
+      BASE_DOCKER_IMAGE:        ${{ matrix.base_docker_image }}
+      PYENV:                    ${{ matrix.pyenv }}
+
+      #Build target parameters
       BUILD_NAME:               ${{ matrix.name }}
       BUILD_VERSION:            ${{ matrix.version }}
       BUILD_KERNEL_VARIANT:     ${{ matrix.kernel_variant }}
       BUILD_MACHINE:            ${{ matrix.machine }}
       BUILD_DISTRO:             ${{ matrix.distro }}
       BUILD_IMAGE:              ${{ matrix.image }}
-      BASE_DOCKER_IMAGE:        ${{ matrix.base_docker_image }}
-      BUILD_PATCH_SCRIPT_PATH:  ${{ matrix.patch_script_path }}
       BUILD_RELEASE_NAME:       ${{ matrix.release_name }}
-      PYENV:                    ${{ matrix.pyenv }}
+      IMDT_PATCH_SCRIPT_PATH:   ${{ matrix.imdt_patch_script_path }}
+
+      #Sources
       QCS_SOURCES:              ${{ matrix.qcs_sources }}
-      SKIP_STEPS:               ${{ matrix.skip_steps }}
-      
-      #Path parameters
       PATCH_FALLBACK_PATH:      ${{ matrix.patch_fallback_path }}
+
+      #Development
       DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log}}
+      SKIP_STEPS:               ${{ matrix.skip_steps }}
 
