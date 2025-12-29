@@ -1,7 +1,7 @@
 """build-manifest-matrix.py
 
     For use exclusively within the trigger-build.yml workflow.
-    Takes in newline separated manifest file names in previously created $RUNNER_TEMP/manifest.txt and 
+    Takes in newline separated manifest file names from previously created $RUNNER_TEMP/manifests.txt and 
     extracts each files corresponding build details from the yaml configuration file.
     Outputs Json array of each manifest and its respective build details to $GITHUB_OUTPUT.
     Additionally creates a $GITHUB_STEP_SUMMARY table for viewing triggered build details on workflow execution.
