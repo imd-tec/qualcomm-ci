@@ -48,7 +48,7 @@ for asset_tar in "${assets_to_extract[@]}"; do
     tar -xf "${PROJECT_SOURCES_DIR}/${asset_tar}" -C "$BUILD_PROJECT_DIR"
         #verify extraction
         if [[ -d "${BUILD_PROJECT_DIR}/${asset_name}"  ]]; then
-            echo "Extracted successfully to '${BUILD_PROJECT_DIR}/${asset_name}'."
+            echo "Extracted ${asset_name} successfully to '${BUILD_PROJECT_DIR}/${asset_name}'."
         else
             echo "Error: ${asset_tar} failed to extract to ${BUILD_PROJECT_DIR}"
             exit 1
