@@ -29,5 +29,5 @@ if [ ! -f "${HOME}/.netrc" ]; then
 fi
 
 docker compose \
-    -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
+    -f "${GITHUB_WORKSPACE}"/qualcomm_ci/docker/docker-compose.yaml \
     up -d

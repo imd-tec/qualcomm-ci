@@ -1,13 +1,12 @@
 # ==============================================================================
-# CI QUALCOMM BUILD CONFIGURATION (build-config.yaml)
+# CI QUALCOMM BUILD CONFIGURATION (build-config.yml)
 # ==============================================================================
 # This file determines the build parameters for each manifest version for build automation.
 #
 # KEY CONSIDERATIONS BEFORE EDITING:
 # 1. The Key Name (e.g., 'imdt-qcom-bsp-v1.0.0') MUST match the manifest filename 
 #    (e.g., 'imdt-qcom-bsp-v1.0.0.xml') exactly, excluding extension.
-# 2. The 'defaults' key contains the base build parameters.
-#    This is extended by the versions below it via the YAML anchor '<<: *defaults'.
+# 2. The versions extend from the 'defaults' key via the YAML anchor '<<: *defaults'.
 #    Parameters can be overridden as needed per version.
 # ==============================================================================
 
@@ -18,14 +17,17 @@ defaults: &defaults
   kernel_variant: "consolidate"
   version: ""
   pyenv: "3.8.16"
-  qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps"
+  qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1-0f7967532c0daa362217cd4e6fad847356328e0a"
   release_name: "imdt_qcs8550_sbc_prebuilt_release"
-  patch_script_path: "LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh"
-  base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"  
-  patch_fallback_path: "/mnt/nvme1/qcom_ci/builds/SHARED_SOURCES/fallback_patches/imdt-qcom-bsp"
-  
-  # Comma-separated list of build steps to skip (see qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml for further details)  
-  # Valid options: extract_sources, sync_repos, conf_kernel, apply_patches, 
+
+  # IMDT patch script path
+  imdt_patch_script_path: "LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh"
+
+  # Docker image to use as the base for the build environment
+  base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"
+    
+  # List build steps to skip (see qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml for further details)  
+  # Options: extract_sources, sync_repos, conf_kernel, apply_patches, 
   # conf_contents, build_kernel, build_hlos, bitbake_fetch, bitbake_build, build_sdk, build_non_hlos
   skip_steps: []
 

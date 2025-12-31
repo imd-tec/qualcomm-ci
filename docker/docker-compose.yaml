@@ -28,8 +28,6 @@ services:
       - MACHINE=${MACHINE}
       - DISTRO=${DISTRO}
       - IMDT_PATCH_SCRIPT_PATH=${IMDT_PATCH_SCRIPT_PATH}
-      - RECIPE_PATCHES=${RECIPE_PATCHES}
-      - PATCH_SCRIPT_PATH=${PATCH_SCRIPT_PATH}
 
     volumes:
       - ${BUILD_PROJECT_DIR}:/home/dev/Qualcomm

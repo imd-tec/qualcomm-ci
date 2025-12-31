@@ -59,7 +59,7 @@ jobs:
           path: qualcomm_ci
     
     - name: Log event details
-      run: echo "Triggered by ${{ github.event_name }} event by ${{ github.triggering_actor}} on ${{ github.ref }}."
+      run: echo "Triggered by ${{ github.event_name }} event by ${{ github.triggering_actor }} on ${{ github.ref }}."
 
     ## CREATE LIST OF MANIFESTS BASED ON EVENT TRIGGER TYPE
 
@@ -93,7 +93,7 @@ jobs:
             echo "$mani" >> "$RUNNER_TEMP/manifests.txt"
           done
               
-    #create a serialized json array containing each manifest's build details, as specified in the corresponding project config yaml (e.g., imdt-qcom-bsp.yml)
+    #create a serialized json array containing each manifest's build details, as specified in the corresponding project configuration yaml
     - name: Build manifest matrix
       if: success() 
       id: build_manifest_matrix
@@ -140,9 +140,8 @@ jobs:
 
       #Sources
       QCS_SOURCES:              ${{ matrix.qcs_sources }}
-      PATCH_FALLBACK_PATH:      ${{ matrix.patch_fallback_path }}
 
       #Development
-      DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log}}
+      DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log }}
       SKIP_STEPS:               ${{ matrix.skip_steps }}
 

@@ -77,12 +77,7 @@ on:
 
         QCS_SOURCES:
           required: true
-          description: Qualcomm source files to use (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps)
-          type: string
-
-        PATCH_FALLBACK_PATH:
-          required: true
-          description: Fallback path for patches if not found in build (e.g. $SHARED_SOURCES_DIR/fallback_patches/imsu-glasses-bsp)
+          description: Qualcomm source files to use (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1)
           type: string
 
         SKIP_STEPS:
@@ -123,7 +118,6 @@ jobs:
       RELEASE_NAME: ${{ inputs.BUILD_RELEASE_NAME }}
       PYENV: ${{ inputs.PYENV }}
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
-      PATCH_FALLBACK_PATH: ${{ inputs.PATCH_FALLBACK_PATH }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
       DEV_STATE_LOG: ${{ inputs.DEV_STATE_LOG }}
 
@@ -142,7 +136,7 @@ jobs:
         run: |
           echo "CI_DIR: $CI_DIR"
           echo "CI_DEV_DIR: $CI_DEV_DIR"
-          echo "SHARED_SOURCES_DIR: $SHARED_SOURCES_DIR"
+          echo "BSP_SOURCES_DIR: $BSP_SOURCES_DIR"
           echo "DL_DIR: $DL_DIR"
           echo "SSTATE_DIR: $SSTATE_DIR"
 
@@ -207,13 +201,12 @@ jobs:
           --lto "thin" --jobs 8 \
           --build_variant "${KERNEL_VARIANT}" \
           --build_output_dir "../out/msm-kernel-kalama_le-${KERNEL_VARIANT}" '
-
+      
       - name: Build HLOS
         if: ${{ !contains(env.SKIP_STEPS, 'build_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           cd "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky"
-          
           cp -rn "${QCOM_ROOT_DIR}/LE.FRAMEWORK.2.0.r1/apps_proc/poky/"* \
                   "${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/poky/"
 
@@ -271,7 +264,7 @@ jobs:
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |
           docker compose \
-          -f "${GITHUB_WORKSPACE}"/qualcomm_ci/scripts/docker/docker-compose.yaml \
+          -f "${GITHUB_WORKSPACE}"/qualcomm_ci/docker/docker-compose.yaml \
           down --rmi local
 
       - name: Clean up source files
