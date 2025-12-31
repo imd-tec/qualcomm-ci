@@ -60,7 +60,11 @@ done
 #extract Qualcomm source files
 if [[ -f "${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz" ]]; then
     echo "Extracting ${QCS_SOURCES}.tar.gz to ${BUILD_PROJECT_DIR}/"
-    tar -xf "${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_DIR"
+    #create target directory
+    mkdir -p "${BUILD_PROJECT_DIR}/${QCS_SOURCES}"
+    #extract under target directory, stripping top-level component
+    tar -xf "${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz" -C "${BUILD_PROJECT_DIR}/${QCS_SOURCES}" \
+        --strip-components=1
 else
     echo "Error: Source tarball '${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz' not found"
     exit 1
