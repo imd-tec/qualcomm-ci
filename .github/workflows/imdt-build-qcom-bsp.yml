@@ -134,12 +134,12 @@ jobs:
           
       - name: Verify service environment variables
         run: |
-          ERROR="Service variable not set. Runner service restart required?"
+          ERROR="ERROR: Service variable/s not set. Daemon reload and service restart required?"
           echo "CI_DIR: ${CI_DIR:?${ERROR}}"
-          echo "CI_DEV_DIR: ${CI_DEV_DIR:?${ERROR}.}"
-          echo "BSP_SOURCES_DIR: ${BSP_SOURCES_DIR:?${ERROR}.}"
-          echo "DL_DIR: ${DL_DIR:?${ERROR}.}"
-          echo "SSTATE_DIR: ${SSTATE_DIR:?${ERROR}.}"
+          echo "CI_DEV_DIR: ${CI_DEV_DIR:?${ERROR}}"
+          echo "BSP_SOURCES_DIR: ${BSP_SOURCES_DIR:?${ERROR}}"
+          echo "DL_DIR: ${DL_DIR:?${ERROR}}"
+          echo "SSTATE_DIR: ${SSTATE_DIR:?${ERROR}}"
 
       - name: Create build project directory
         run: | 
