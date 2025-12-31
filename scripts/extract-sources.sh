@@ -9,7 +9,7 @@
 #   BUILD_PROJECT_DIR is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name, as specified in the manifest yaml config.
 #=============================================================================================================================================================================
-set -eu
+set -eux
 
 #ensure that QCS_SOURCES does not contain any .tar.gz extension
 QCS_SOURCES=${QCS_SOURCES%.tar.gz}
@@ -45,10 +45,11 @@ for asset_tar in "${assets_to_extract[@]}"; do
         fi
 
     #extract fresh asset tarball
+    echo "Extracting ${asset_tar} to ${BUILD_PROJECT_DIR}/"
     tar -xf "${PROJECT_SOURCES_DIR}/${asset_tar}" -C "$BUILD_PROJECT_DIR"
         #verify extraction
         if [[ -d "${BUILD_PROJECT_DIR}/${asset_name}"  ]]; then
-            echo "Extracted ${asset_name} successfully to '${BUILD_PROJECT_DIR}/${asset_name}'."
+            echo "${asset_name} extracted to '${BUILD_PROJECT_DIR}/${asset_name}' successfully."
         else
             echo "Error: ${asset_tar} failed to extract to ${BUILD_PROJECT_DIR}"
             exit 1
@@ -58,6 +59,7 @@ done
 
 #extract Qualcomm source files
 if [[ -f "${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz" ]]; then
+    echo "Extracting ${QCS_SOURCES}.tar.gz to ${BUILD_PROJECT_DIR}/"
     tar -xf "${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz" -C "$BUILD_PROJECT_DIR"
 else
     echo "Error: Source tarball '${PROJECT_SOURCES_DIR}/${QCS_SOURCES}.tar.gz' not found"
@@ -66,8 +68,8 @@ fi
 
 #verify extraction
 if [[ -d "${BUILD_PROJECT_DIR}/${QCS_SOURCES}" ]]; then
-    echo " ${QCS_SOURCES} extracted to ${BUILD_PROJECT_DIR}/"
+    echo " ${QCS_SOURCES} extracted to ${BUILD_PROJECT_DIR}/${QCS_SOURCES} successfully."
 else
-    echo "Error: ${QCS_SOURCES} failed to extract to ${BUILD_PROJECT_DIR}/${QCS_SOURCES}"
+    echo "Error: ${QCS_SOURCES}.tar.gz failed to extract to ${BUILD_PROJECT_DIR}"
     exit 1
 fi
