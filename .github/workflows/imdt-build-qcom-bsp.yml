@@ -134,11 +134,12 @@ jobs:
           
       - name: Verify service environment variables
         run: |
-          echo "CI_DIR: $CI_DIR"
-          echo "CI_DEV_DIR: $CI_DEV_DIR"
-          echo "BSP_SOURCES_DIR: $BSP_SOURCES_DIR"
-          echo "DL_DIR: $DL_DIR"
-          echo "SSTATE_DIR: $SSTATE_DIR"
+          ERROR="Service variable not set. Runner service restart required?"
+          echo "CI_DIR: ${CI_DIR:?${ERROR}}"
+          echo "CI_DEV_DIR: ${CI_DEV_DIR:?${ERROR}.}"
+          echo "BSP_SOURCES_DIR: ${BSP_SOURCES_DIR:?${ERROR}.}"
+          echo "DL_DIR: ${DL_DIR:?${ERROR}.}"
+          echo "SSTATE_DIR: ${SSTATE_DIR:?${ERROR}.}"
 
       - name: Create build project directory
         run: | 
