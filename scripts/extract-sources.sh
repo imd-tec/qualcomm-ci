@@ -44,9 +44,9 @@ for asset_tar in "${assets_to_extract[@]}"; do
             rm -rf "${BUILD_PROJECT_DIR:?}/${asset_name:?}"
         fi
 
-    #extract fresh asset tarball
-    echo "Extracting ${asset_tar} to ${BUILD_PROJECT_DIR}/"
-    tar -xf "${PROJECT_SOURCES_DIR}/${asset_tar}" -C "$BUILD_PROJECT_DIR"
+        #extract fresh asset tarball
+        echo "Extracting ${asset_tar} to ${BUILD_PROJECT_DIR}/"
+        tar -xf "${PROJECT_SOURCES_DIR}/${asset_tar}" -C "$BUILD_PROJECT_DIR"
         #verify extraction
         if [[ -d "${BUILD_PROJECT_DIR}/${asset_name}"  ]]; then
             echo "${asset_name} extracted to '${BUILD_PROJECT_DIR}/${asset_name}' successfully."
