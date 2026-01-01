@@ -27,7 +27,7 @@ services:
       - PYENV=${PYENV}
       - MACHINE=${MACHINE}
       - DISTRO=${DISTRO}
-      - PATCH_SCRIPT_PATH=${PATCH_SCRIPT_PATH}
+      - IMDT_PATCH_SCRIPT_PATH=${IMDT_PATCH_SCRIPT_PATH}
 
     volumes:
       - ${BUILD_PROJECT_DIR}:/home/dev/Qualcomm

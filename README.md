@@ -8,6 +8,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
   - Contains the ```trigger-build.yml``` workflow under ```.github/workflows```.
     - See [```for-manifest-repo/trigger-build-ci```](https://github.com/imd-tec/qualcomm-ci/blob/master/for_manifest_repo/trigger-build-ci.yml).
   - Has a PAT secret for inter-repo read access.
+  
   - Has a single yml configuration file located at the same depth as the manifest xml files, outlining the build details for each manifest version.
     - See [```for-manifest-repo/config_example.yml```](https://github.com/imd-tec/qualcomm-ci/blob/master/for_manifest_repo/config_example.yml) for a template.
 - The ***imdt-qcom-desktop*** self-hosted runner must be shared to the manifest repository.
@@ -15,20 +16,21 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 **Runner setup**
 - The self-hosted `actions.runner` service must be:
   - Run as a user with a configured `.netrc`.
+
   - Configured with the following environment variables:
       | Environment variable | Description |
       | -------- | ------- |
       | `CI_DIR` | Root CI directory |
-      | `SHARED_SOURCES_DIR` | Directory containing source archives (i.e, *qcs8550-le-1-0_amss_standard_oem_apqgps.tar.gz*) |
+      | `BSP_SOURCES_DIR` | Directory containing versioned QCS release folders (i.e, `qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1/`) |
       | `CI_DEV_DIR` | Directory containing development build logs |
       | `DL_DIR` | Yocto download cache location |
       | `SSTATE_DIR` | Yocto shared state cache location |
 
-- The runner must contain the following source files:
-  - Qualcomm source files (i.e., ```qcs8550-le-1-0_amss_standard_oem_apqgps.tar.gz```) under ```$SHARED_SOURCES_DIR```.
+- The runner must contain the required Qualcomm source release archive at ```$BSP_SOURCES_DIR/<qcs_sources>/```.
+  - The name of the `<qcs_sources>` directory must exactly match the `qcs_sources` value defined in the build configuration yaml. 
 
-  - Patches archive (i.e., ```patches.tar.gz```) under ```$CI_DIR/builds/[project_version]/sources/```.
-    - Alternatively under a fallback patch path, as specified in [```for-manifest-repo/config_example.yml```](https://github.com/imd-tec/qualcomm-ci/blob/master/for_manifest_repo/config_example.yml).
+  - An optional ```patches.tar.gz``` archive may also be included in this directory. 
+    - **Note**: The workflow currently only supports `sync_snap_v2_remove_chipcode_copy.patch`.
 
 ## How it works
 ### Release builds
@@ -38,7 +40,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 
 3. Once the details have been extracted and collated, the ```imdt-build-qcom-bsp.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a separate build process for each configuration.
 4. Upon receiving a set of details, `imdt-build-qcom-bsp.yml` executes the build steps, broadly following the Qualcomm *Getting Started* build process. This continues until all triggered builds either complete, fail or are manually cancelled.
-5. The final build artifacts are located in corresponding build folder under ```$CI_DIR/builds/[project_version]/release```. 
+5. The final build artifacts are located in corresponding build folder under ```$CI_DIR/builds/<project_version>/release```. 
 
 ### Development builds
 1. A cron-job triggers ```trigger-build.yml``` on the manifest repository.
@@ -59,9 +61,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 6. Upon build attempt, the build job status is logged to the project state file. No artifact is created on successful build.
 
 ## Notes
-- By design, only development builds utilize Yocto caching. Release builds must fetch fresh sources to ensure reproducibility.
+- By design, only development builds utilize Yocto caching. Release builds must fetch fresh meta-layer sources to ensure reproducibility.
 - This process currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.
-- As it stands, Qualcomm source files will need to be manually added to the *SHARED_SOURCES* directory. 
-- Pushing a manifest that does not currently have a build directory will automatically create one; however, for now, any non-shared assets (i.e., patches) will have to be manually fetched and placed in its respective folder or fallback patch path.
 - Pushing a development change manifest will trigger a build and log the success status as expected. However, currently, triggering a development build this way will omit the hash logging step and thus the next cron-job will trigger another build regardless of success status. 
 
