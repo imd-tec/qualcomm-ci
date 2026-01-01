@@ -27,7 +27,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
       | `SSTATE_DIR` | Yocto shared state cache location |
 
 - The runner must contain the required Qualcomm source release archive at ```$BSP_SOURCES_DIR/<qcs_sources>/```.
-  - The name of the `<qcs_sources>` directory must exactly match the  `qcs_sources` value defined in the build configuration yaml. 
+  - The name of the `<qcs_sources>` directory must exactly match the `qcs_sources` value defined in the build configuration yaml. 
 
   - An optional ```patches.tar.gz``` archive may also be included in this directory. 
     - **Note**: The workflow currently only supports `sync_snap_v2_remove_chipcode_copy.patch`.
