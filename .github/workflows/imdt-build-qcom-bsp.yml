@@ -278,8 +278,8 @@ jobs:
             exit 0
           fi
 
-          if [ -d "${BUILD_PROJECT_DIR:?}/qcs8550-le-1-0_amss_standard_oem_apqgps" ]; then
-            rm -rf "${BUILD_PROJECT_DIR:?}/qcs8550-le-1-0_amss_standard_oem_apqgps"
+          if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
+            rm -rf "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}"
           fi
 
           if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
