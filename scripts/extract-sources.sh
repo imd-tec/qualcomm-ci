@@ -9,7 +9,7 @@
 #   BUILD_PROJECT_DIR is set to the CI build project directory path.
 #   QCS_SOURCES is set to the Qualcomm source file name, as specified in the manifest yaml config.
 #=============================================================================================================================================================================
-set -eux
+set -eu
 
 #ensure that QCS_SOURCES does not contain any .tar.gz extension
 QCS_SOURCES=${QCS_SOURCES%.tar.gz}
