@@ -250,7 +250,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
           FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
-          RELEASE_DIR="/home/dev/Qualcomm/release/${FULL_RELEASE_NAME}"
+          RELEASE_DIR="${BUILD_PROJECT_DIR}/release/${FULL_RELEASE_NAME}"
           #remove existing release directory if present
           if [ -d "$RELEASE_DIR" ]; then
               rm -rf "$RELEASE_DIR"
