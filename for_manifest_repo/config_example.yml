@@ -28,7 +28,8 @@ defaults: &defaults
     
   # List build steps to skip (see qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml for further details)  
   # Options: extract_sources, sync_repos, conf_kernel, apply_patches, 
-  # conf_contents, build_kernel, build_hlos, bitbake_fetch, bitbake_build, build_sdk, build_non_hlos
+  # conf_contents, build_kernel, copy_hlos_files, bitbake_fetch, bitbake_build, 
+  # build_sdk, build_non_hlos, create_release
   skip_steps: []
 
 development:
