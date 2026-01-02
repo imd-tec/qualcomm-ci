@@ -13,19 +13,16 @@ if [ -d "$RELEASE_DIR" ]; then
     rm -rf "$RELEASE_DIR"
 fi
 
-#if previous prebuilt tarball exists, remove it
-if [ -f "$OUTPUT_TAR" ]; then
-    rm -f "$OUTPUT_TAR"
-fi
+mkdir -p "$RELEASE_DIR"
 
-#create new prebuilt release directory
+#create new prebuilt release
 cd /home/dev/build_scripts
 python3 create_release.py \
     -r "$RELEASE_DIR" \
     -x "${QCOM_ROOT_DIR}/contents.xml" \
     -b "${QCOM_ROOT_DIR}"
 
-#create fresh prebuilt tarball 
+#create prebuilt tarball 
 cd /home/dev/Qualcomm/release
 tar -czvf "$OUTPUT_TAR" "$FULL_RELEASE_NAME"
 
