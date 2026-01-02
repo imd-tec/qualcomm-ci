@@ -249,15 +249,6 @@ jobs:
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
-          FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
-          RELEASE_DIR="${BUILD_PROJECT_DIR}/release/${FULL_RELEASE_NAME}"
-          #remove existing release directory if present
-          if [ -d "$RELEASE_DIR" ]; then
-              rm -rf "$RELEASE_DIR"
-          fi
-
-          mkdir -p "$RELEASE_DIR"
-
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/create-artifact.sh '
 

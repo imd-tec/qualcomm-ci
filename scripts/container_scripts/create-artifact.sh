@@ -8,6 +8,13 @@ FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
 RELEASE_DIR="/home/dev/Qualcomm/release/${FULL_RELEASE_NAME}"
 OUTPUT_TAR="${RELEASE_DIR}.tar.gz"
 
+#remove existing release directory if present
+if [ -d "$RELEASE_DIR" ]; then
+    rm -rf "$RELEASE_DIR"
+fi
+
+mkdir -p "$RELEASE_DIR"
+
 #create new prebuilt release
 cd /home/dev/build_scripts
 python3 create_release.py \
