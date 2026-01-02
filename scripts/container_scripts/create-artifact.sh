@@ -18,7 +18,8 @@ if [ -f "$OUTPUT_TAR" ]; then
     rm -f "$OUTPUT_TAR"
 fi
 
-#create new prebuilt release directory
+#create new prebuilt release
+mkdir -p "$RELEASE_DIR"
 cd /home/dev/build_scripts
 python3 create_release.py \
     -r "$RELEASE_DIR" \
