@@ -27,8 +27,6 @@ defaults: &defaults
   base_docker_image: "imdtec/imdt-qualcomm-build-setup:0.5.1"
     
   # List build steps to skip (see qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml for further details)  
-  # Options: extract_sources, sync_repos, conf_kernel, apply_patches, 
-  # conf_contents, build_kernel, build_hlos, bitbake_fetch, bitbake_build, build_sdk, build_non_hlos
   skip_steps: []
 
 development:
