@@ -107,7 +107,7 @@ function check_for_differences() {
 
         for repo_name in $repo_names; do
             cd "$MANIFEST_REPO_PATH"
-            echo -e "\n[$project] Checking for changes in $repo_name($branch)\n"
+            echo -e "\n['$project_name'] Checking for changes in '$repo_name'('$branch')\n"
 
             #get remote from first project with this branch
             remote=$(xmllint --xpath "string(//project[@name='$repo_name']/@remote)" "$manifest_path") #imdt
