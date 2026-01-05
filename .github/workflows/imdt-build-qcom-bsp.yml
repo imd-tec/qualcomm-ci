@@ -218,7 +218,6 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'bitbake_fetch') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          #set Yocto environment
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
           bitbake "${IMAGE}" --runall=fetch '
 
@@ -226,10 +225,7 @@ jobs:
         if: ${{ !contains(env.SKIP_STEPS, 'bitbake_build') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          #set Yocto environment
           source /home/dev/tools/container_scripts/setup-yocto-environment.sh
-          
-          #build image
           bitbake "${IMAGE}" '
 
       - name: Generate Yocto SDK
@@ -246,6 +242,12 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
+      - name: Generate SWUpdate
+        if: ${{ !contains(env.SKIP_STEPS, 'generate_swupdate') && env.MACHINE == 'imdt-qcs8550-sbc' }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          bash /home/dev/tools/container_scripts/generate-swu.sh'
+          
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
         run: |
