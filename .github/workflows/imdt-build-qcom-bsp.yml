@@ -90,7 +90,7 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
-        SWU_IMAGE:
+        BUILD_SWU:
           required: false
           description: Generate SWUpdate update image
           type: boolean
@@ -259,8 +259,8 @@ jobs:
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
-      - name: Generate SWUpdate
-        if: ${{ !contains(env.SKIP_STEPS, 'generate_swu_image') && inputs.SWU_IMAGE}}
+      - name: Generate SWUpdate image
+        if: ${{ inputs.BUILD_SWU }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/generate-swu.sh'
