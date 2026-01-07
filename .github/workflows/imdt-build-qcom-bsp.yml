@@ -92,7 +92,7 @@ on:
 
         SWU_IMAGE:
           required: false
-          description: Generate SWUpdate artifact
+          description: Generate SWUpdate update image
           type: boolean
           default: false
           
