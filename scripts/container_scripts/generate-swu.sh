@@ -1,7 +1,7 @@
 #!/bin/bash
 #=============================================================================================================================================================================
 #title: generate-swu.sh
-#description: Generate a SWUpdate for the specified image, and locate and move it to the release directory.
+#description: Generate a swu package for the specified image, then locate and move it to the build release directory.
 #=============================================================================================================================================================================
 set -ex
 
