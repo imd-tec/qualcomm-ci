@@ -29,20 +29,14 @@ on:
         type: string
       preserve_build_dir:
         description: 'Whether to preserve build files after build completion (1 = preserve, 0 = delete)'
-        required: false
-        default: '0'
-        type: choice
-        options:
-          - '0'
-          - '1'
+        required: true
+        default: false
+        type: boolean
       preserve_docker:
         description: 'Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)'
-        required: false
-        default: '0'
-        type: choice
-        options:
-          - '0'
-          - '1'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read

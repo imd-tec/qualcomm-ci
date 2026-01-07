@@ -92,15 +92,15 @@ on:
 
         PRESERVE_BUILD_DIR:
           required: false
-          description: Preserve build files after build completion (1 = preserve, 0 = delete)
-          type: string
-          default: '0'
+          description: Preserve build files after build completion
+          type: boolean
+          default: false
 
         PRESERVE_DOCKER:
           required: false
-          description: Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)
-          type: string
-          default: '0'
+          description: Whether to preserve docker container and image after build completion
+          type: boolean
+          default: false
 
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
@@ -268,7 +268,7 @@ jobs:
           bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
       - name: Clean up container and image
-        if: ${{ always() && inputs.PRESERVE_DOCKER == '0' }}
+        if: ${{ always() && inputs.PRESERVE_DOCKER == false }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |
           docker compose \
@@ -276,7 +276,7 @@ jobs:
           down --rmi local
 
       - name: Clean up source files
-        if:  ${{ always() && inputs.PRESERVE_BUILD_DIR == '0' }}
+        if:  ${{ always() && inputs.PRESERVE_BUILD_DIR == false }}
         run: |
           set -euo pipefail -x
           if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
