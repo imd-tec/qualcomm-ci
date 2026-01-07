@@ -27,6 +27,16 @@ on:
         description: 'Space-separated list of manifest paths to build (list only)'
         required: false
         type: string
+      preserve_build_dir:
+        description: 'Whether to preserve build files after build completion (1 = preserve, 0 = delete)'
+        required: true
+        default: false
+        type: boolean
+      preserve_docker:
+        description: 'Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -144,4 +154,5 @@ jobs:
       #Development
       DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log }}
       SKIP_STEPS:               ${{ matrix.skip_steps }}
-
+      PRESERVE_BUILD_DIR:       ${{ inputs.preserve_build_dir }}
+      PRESERVE_DOCKER:          ${{ inputs.preserve_docker }}
