@@ -35,7 +35,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 ## How it works
 ### Release builds
 1. A push affecting (or creating) a manifest file triggers ```trigger-build.yml``` on the manifest repository.
-    - Alternatively, manual dispatch (under the **Actions** tab) can force specified builds (development or by input space-separated list).
+    - Alternatively, manual dispatch (under the **Actions** tab) can force specified builds (development or by input space-separated list). 
 2. The triggered workflow executes the `get_changed_manifests` job, responsible for fetching the corresponding build details for the changed manifests, where applicable. These details are extracted from the associated configuration yaml file, converted to JSON and passed to the `build` job.
 
 3. Once the details have been extracted and collated, the ```imdt-build-qcom-bsp.yml``` workflow located in *this* repository is *used* with each set of build parameters. The [matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) enables iteration over the sets of parameters, triggering a separate build process for each configuration.
@@ -58,10 +58,13 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
     | State file labelled `SUCCESS`, branch revisions are not up to date and relevant files changed  | YES    |
     
     See [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/master/scripts/poll-development-repo.sh) for more details.
-6. Upon build attempt, the build job status is logged to the project state file. No artifact is created on successful build.
+6. Upon build attempt, the build job status is logged to the project state file.
 
 ## Notes
+- Upon build conclusion, all build directories and Docker resources are automatically deleted. Under the **Actions** tab, manually dispatched builds have the option to preserve these resources for further debugging or aritfact creation.
+  - **NOTE**: Developers are responsible for manual clean-up of preserved resources.  
 - By design, only development builds utilize Yocto caching. Release builds must fetch fresh meta-layer sources to ensure reproducibility.
 - This process currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.
 - Pushing a development change manifest will trigger a build and log the success status as expected. However, currently, triggering a development build this way will omit the hash logging step and thus the next cron-job will trigger another build regardless of success status. 
+
 
