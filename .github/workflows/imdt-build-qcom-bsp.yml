@@ -274,11 +274,6 @@ jobs:
         if:  ${{ always() && env.RETAIN_BUILD_FILES == '0' }}
         run: |
           set -euo pipefail -x
-          #if development build, delete build directory
-          if [ $BUILD_VERSION == "development" ] && [ -d "${BUILD_PROJECT_DIR}" ]; then
-            rm -rf "${BUILD_PROJECT_DIR}"
-            exit 0
-          fi
 
           if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
             rm -rf "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}"
