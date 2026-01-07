@@ -58,9 +58,11 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
     | State file labelled `SUCCESS`, branch revisions are not up to date and relevant files changed  | YES    |
     
     See [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/master/scripts/poll-development-repo.sh) for more details.
-6. Upon build attempt, the build job status is logged to the project state file. No artifact is created on successful build.
+6. Upon build attempt, the build job status is logged to the project state file.
 
 ## Notes
+- Upon build conclusion, all build directories and Docker resources are automatically deleted. Under the **Actions** tab, manually dispatched builds have the option to preserve these resources for further debugging or aritfact creation.
+  - **NOTE**: Developers are responsible for manual clean-up of preserved resources.  
 - By design, only development builds utilize Yocto caching. Release builds must fetch fresh meta-layer sources to ensure reproducibility.
 - This process currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.
 - Pushing a development change manifest will trigger a build and log the success status as expected. However, currently, triggering a development build this way will omit the hash logging step and thus the next cron-job will trigger another build regardless of success status. 

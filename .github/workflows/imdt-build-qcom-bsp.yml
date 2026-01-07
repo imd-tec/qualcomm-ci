@@ -90,15 +90,22 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
+        PRESERVE_BUILD_DIR:
+          required: false
+          description: Preserve build files after build completion (1 = preserve, 0 = delete)
+          type: string
+          default: '0'
+
+        PRESERVE_DOCKER:
+          required: false
+          description: Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)
+          type: string
+          default: '0'
+
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_EXEC: docker exec -t -u dev
   
-  #DEBUG FLAGS
-  RETAIN_BUILD_FILES: "0"
-  RETAIN_DOCKER: "0"
-  EXTRACT_FRESH_SOURCES: "1"
-
 jobs:
   build-qualcomm-bsp:
     #specify labels to run on qcom desktop
@@ -120,6 +127,8 @@ jobs:
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
       DEV_STATE_LOG: ${{ inputs.DEV_STATE_LOG }}
+      PRESERVE_BUILD_DIR: ${{ inputs.PRESERVE_BUILD_DIR }}
+      PRESERVE_DOCKER: ${{ inputs.PRESERVE_DOCKER }}
 
     steps:      
       - name: Set repository workspace
@@ -154,7 +163,7 @@ jobs:
           mkdir -p "${BUILD_PROJECT_DIR}" && cd "${BUILD_PROJECT_DIR}"
 
       - name: Extract build sources files into build directory
-        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') && env.EXTRACT_FRESH_SOURCES == '1' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'extract_sources') }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: bash extract-sources.sh
  
@@ -261,7 +270,7 @@ jobs:
           bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
       - name: Clean up container and image
-        if: ${{ always() && env.RETAIN_DOCKER == '0' }}
+        if: ${{ always() && env.PRESERVE_DOCKER == '0' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |
           docker compose \
@@ -269,15 +278,9 @@ jobs:
           down --rmi local
 
       - name: Clean up source files
-        if:  ${{ always() && env.RETAIN_BUILD_FILES == '0' }}
+        if:  ${{ always() && env.PRESERVE_BUILD_DIR == '0' }}
         run: |
           set -euo pipefail -x
-          #if development build, delete build directory
-          if [ $BUILD_VERSION == "development" ] && [ -d "${BUILD_PROJECT_DIR}" ]; then
-            rm -rf "${BUILD_PROJECT_DIR}"
-            exit 0
-          fi
-
           if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
             rm -rf "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}"
           fi
