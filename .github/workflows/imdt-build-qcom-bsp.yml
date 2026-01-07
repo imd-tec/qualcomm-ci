@@ -268,7 +268,7 @@ jobs:
           bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
           
       - name: Clean up container and image
-        if: ${{ always() && inputs.PRESERVE_DOCKER == false }}
+        if: ${{ always() && !inputs.PRESERVE_DOCKER }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |
           docker compose \
@@ -276,7 +276,7 @@ jobs:
           down --rmi local
 
       - name: Clean up source files
-        if:  ${{ always() && inputs.PRESERVE_BUILD_DIR == false }}
+        if:  ${{ always() && !inputs.PRESERVE_BUILD_DIR }}
         run: |
           set -euo pipefail -x
           if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
