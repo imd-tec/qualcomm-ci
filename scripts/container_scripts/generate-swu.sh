@@ -3,7 +3,7 @@
 #title: generate-swu.sh
 #description: Generate a SWUpdate for the specified image, and locate and move it to the release directory.
 #=============================================================================================================================================================================
-set -e
+set -ex
 
 #set Yocto environment
 source /home/dev/tools/container_scripts/setup-yocto-environment.sh
