@@ -5,20 +5,23 @@
 #=============================================================================================================================================================================
 set -ex
 
+#cache build variables to avoid yocto unsetting the variables
+DISTRO_NAME="${DISTRO}"
+MACHINE_NAME="${MACHINE}"    
+IMAGE_NAME="${IMAGE}"
+
 #set Yocto environment
 source /home/dev/tools/container_scripts/setup-yocto-environment.sh
 
 #generate the SWU package
-echo "Generating SWUpdate package for image: ${IMAGE}"
-bitbake "${IMAGE}-swu"
+bitbake "${IMAGE_NAME}-swu"
 
 #locate the generated swu package
-SWU_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/images/${MACHINE}/"
+SWU_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/images/${MACHINE_NAME}/"
 
-#find the SWU package
 cd "$SWU_DIR" || exit 1
-swu="$(find -maxdepth 1 -type f -name '*.swu')"
 
+swu="$(find -maxdepth 1 -type f -name '*.swu')"
 if [[ -z "$swu" ]]; then
     echo "ERROR: No .swu files found in ${SWU_DIR}"
     exit 1
@@ -30,7 +33,7 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
     mkdir -p "$RELEASE_DIR"
 fi
 
-SWU_FILENAME="${IMAGE}-sdk-${MACHINE}.swu"
+SWU_FILENAME="${IMAGE_NAME}-sdk-${MACHINE_NAME}.swu"
 
 #move the SWU package to the release directory
 mv "$swu" "$RELEASE_DIR/$SWU_FILENAME"
