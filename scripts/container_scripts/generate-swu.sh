@@ -14,6 +14,8 @@ bitbake "${IMAGE}-swu"
 
 #locate the generated swu package
 SWU_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/images/${MACHINE}/"
+
+#find the SWU package
 cd "$SWU_DIR" || exit 1
 swu="$(find -maxdepth 1 -type f -name '*.swu')"
 
@@ -28,5 +30,7 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
     mkdir -p "$RELEASE_DIR"
 fi
 
+SWU_FILENAME="${IMAGE}-sdk-${MACHINE}.swu"
+
 #move the SWU package to the release directory
-mv "$swu" "$RELEASE_DIR/"
+mv "$swu" "$RELEASE_DIR/$SWU_FILENAME"
