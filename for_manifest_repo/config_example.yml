@@ -19,6 +19,7 @@ defaults: &defaults
   pyenv: "3.8.16"
   qcs_sources: "qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1-0f7967532c0daa362217cd4e6fad847356328e0a"
   release_name: "imdt_qcs8550_sbc_prebuilt_release"
+  swu_update: "0"
 
   # IMDT patch script path
   imdt_patch_script_path: "LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh"

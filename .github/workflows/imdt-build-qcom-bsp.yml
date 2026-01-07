@@ -90,6 +90,12 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
+        SWU_UPDATE:
+          required: false
+          description: Generate SWUpdate artifact
+          type: string
+          default: '0'
+          
         PRESERVE_BUILD_DIR:
           required: false
           description: Preserve build files after build completion
@@ -252,6 +258,12 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_non_hlos.sh --build all '
+
+      - name: Generate SWUpdate
+        if: ${{ !contains(env.SKIP_STEPS, 'generate_swu_update') && inputs.SWU_UPDATE == '1' }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          bash /home/dev/tools/container_scripts/generate-swu.sh'
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}

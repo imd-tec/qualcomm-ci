@@ -148,6 +148,9 @@ jobs:
       BUILD_RELEASE_NAME:       ${{ matrix.release_name }}
       IMDT_PATCH_SCRIPT_PATH:   ${{ matrix.imdt_patch_script_path }}
 
+      #Flag to generate SWUpdate package
+      SWU_UPDATE:               ${{ matrix.swu_update }}
+
       #Sources
       QCS_SOURCES:              ${{ matrix.qcs_sources }}
 
