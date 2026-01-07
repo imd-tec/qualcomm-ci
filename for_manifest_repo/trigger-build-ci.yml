@@ -27,6 +27,22 @@ on:
         description: 'Space-separated list of manifest paths to build (list only)'
         required: false
         type: string
+      preserve_build_dir:
+        description: 'Whether to preserve build files after build completion (1 = preserve, 0 = delete)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+      preserve_docker:
+        description: 'Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
 
 permissions:
   contents: read
@@ -120,28 +136,30 @@ jobs:
     secrets: inherit
     with:
       #Source Context
-      MANIFEST_REPOSITORY:      ${{ github.event.repository.html_url }}
-      MANIFEST_BRANCH:          ${{ github.ref_name }}  
-      MANIFEST_XML:             ${{ matrix.manifest }}   
+      MANIFEST_REPOSITORY:          ${{ github.event.repository.html_url }}
+      MANIFEST_BRANCH:              ${{ github.ref_name }}  
+      MANIFEST_XML:                 ${{ matrix.manifest }}   
 
       #Build environment 
-      BASE_DOCKER_IMAGE:        ${{ matrix.base_docker_image }}
-      PYENV:                    ${{ matrix.pyenv }}
+      BASE_DOCKER_IMAGE:            ${{ matrix.base_docker_image }}
+      PYENV:                        ${{ matrix.pyenv }}
 
       #Build target parameters
-      BUILD_NAME:               ${{ matrix.name }}
-      BUILD_VERSION:            ${{ matrix.version }}
-      BUILD_KERNEL_VARIANT:     ${{ matrix.kernel_variant }}
-      BUILD_MACHINE:            ${{ matrix.machine }}
-      BUILD_DISTRO:             ${{ matrix.distro }}
-      BUILD_IMAGE:              ${{ matrix.image }}
-      BUILD_RELEASE_NAME:       ${{ matrix.release_name }}
-      IMDT_PATCH_SCRIPT_PATH:   ${{ matrix.imdt_patch_script_path }}
+      BUILD_NAME:                   ${{ matrix.name }}
+      BUILD_VERSION:                ${{ matrix.version }}
+      BUILD_KERNEL_VARIANT:         ${{ matrix.kernel_variant }}
+      BUILD_MACHINE:                ${{ matrix.machine }}
+      BUILD_DISTRO:                 ${{ matrix.distro }}
+      BUILD_IMAGE:                  ${{ matrix.image }}
+      BUILD_RELEASE_NAME:           ${{ matrix.release_name }}
+      IMDT_PATCH_SCRIPT_PATH:       ${{ matrix.imdt_patch_script_path }}
 
       #Sources
-      QCS_SOURCES:              ${{ matrix.qcs_sources }}
+      QCS_SOURCES:                  ${{ matrix.qcs_sources }}
 
       #Development
-      DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log }}
-      SKIP_STEPS:               ${{ matrix.skip_steps }}
+      DEV_STATE_LOG:                ${{ needs.get_changed_manifests.outputs.dev_state_log }}
+      SKIP_STEPS:                   ${{ matrix.skip_steps }}
+      PRESERVE_BUILD_DIR:           ${{ inputs.preserve_build_dir }}
+      PRESERVE_DOCKER:              ${{ inputs.preserve_docker }}
 
