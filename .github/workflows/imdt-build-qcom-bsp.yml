@@ -90,11 +90,11 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
-        SWU_UPDATE:
+        SWU_IMAGE:
           required: false
           description: Generate SWUpdate artifact
-          type: string
-          default: '0'
+          type: boolean
+          default: false
           
         PRESERVE_BUILD_DIR:
           required: false
@@ -260,7 +260,7 @@ jobs:
           bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
       - name: Generate SWUpdate
-        if: ${{ !contains(env.SKIP_STEPS, 'generate_swu_update') && inputs.SWU_UPDATE == '1' }}
+        if: ${{ !contains(env.SKIP_STEPS, 'generate_swu_image') && inputs.SWU_IMAGE}}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/generate-swu.sh'
