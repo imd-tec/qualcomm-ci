@@ -34,4 +34,5 @@ services:
       - ${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/
       - ${DL_DIR}:/home/dev/downloads
       - ${SSTATE_DIR}:/home/dev/sstate-cache
+      - ${CI_DIR}/builds/PRESERVED_BUILDS/:/home/dev/debug/PRESERVED_BUILDS
       - ${HOME}/.netrc:/home/dev/.netrc
