@@ -61,7 +61,8 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 6. Upon build attempt, the build job status is logged to the project state file.
 
 ## Notes
-- Upon build conclusion, all build directories and Docker resources are automatically deleted. Under the **Actions** tab, manually dispatched builds have the option to preserve these resources for further debugging or aritfact creation.
+- Upon build conclusion, all build directories and Docker resources are normally automatically deleted. 
+  - However, under the **Actions** tab, manually dispatched builds have the option to preserve these resources (located at `$CI_DIR/builds/PRESERVED_BUILDS/`) for further debugging or artifact creation.
   - **NOTE**: Developers are responsible for manual clean-up of preserved resources.  
 - By design, only development builds utilize Yocto caching. Release builds must fetch fresh meta-layer sources to ensure reproducibility.
 - This process currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.
