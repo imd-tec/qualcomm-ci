@@ -308,6 +308,3 @@ jobs:
           if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
             rm -rf "${BUILD_PROJECT_DIR:?}/patches"  
           fi
-
-
-         
