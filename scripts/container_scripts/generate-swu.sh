@@ -3,7 +3,6 @@
 #title: generate-swu.sh
 #description: Generate an swu update image, then locate and move it to the build release directory.
 #=============================================================================================================================================================================
-set -ex
 
 #cache build variables to avoid yocto environment setup unsetting the variables
 DISTRO_NAME="${DISTRO}"
