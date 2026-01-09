@@ -245,6 +245,12 @@ jobs:
           #build image
           bitbake "${IMAGE}" '
 
+      - name: Generate SWUpdate image
+        if: ${{ inputs.BUILD_SWU }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          bash /home/dev/tools/container_scripts/generate-swu.sh'
+
       - name: Generate Yocto SDK
         if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
         continue-on-error: true
@@ -258,12 +264,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/build_scripts/build_non_hlos.sh --build all '
-
-      - name: Generate SWUpdate image
-        if: ${{ inputs.BUILD_SWU }}
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/tools/container_scripts/generate-swu.sh'
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
