@@ -28,12 +28,12 @@ on:
         required: false
         type: string
       preserve_build_dir:
-        description: 'Whether to preserve build files after build completion (1 = preserve, 0 = delete)'
+        description: 'Preserve build files after build completion?'
         required: true
         default: false
         type: boolean
       preserve_docker:
-        description: 'Whether to preserve docker container and image after build completion (1 = preserve, 0 = delete)'
+        description: 'Preserve docker container and image after build completion?'
         required: true
         default: false
         type: boolean
