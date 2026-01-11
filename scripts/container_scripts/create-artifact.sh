@@ -4,14 +4,17 @@
 #description:  Creates output release artifact tarball from built source. 
 #              Non-development builds are stored in $CI_DIR/builds/<versioned-build>/release/.
 #              Development builds are stored in $CI_DIR/builds/development/release/<triggering-manifest-name>/.
+#assumes:      BUILD_VERSION, RELEASE_NAME, MANIFEST_REPOSITORY, QCOM_ROOT_DIR environment variables are set.
 #=============================================================================================================================================================================
 set -e
-FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
 
+#define release path and name based on build type
 if [ "$BUILD_VERSION" == "development" ]; then
     REPO_NAME=$(basename "$MANIFEST_REPOSITORY")
     RELEASE_PATH="/home/dev/Qualcomm/release/${REPO_NAME}"
+    FULL_RELEASE_NAME="${RELEASE_NAME}_${BUILD_VERSION}"
 else
+    FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
     RELEASE_PATH="/home/dev/Qualcomm/release"
 fi
 
