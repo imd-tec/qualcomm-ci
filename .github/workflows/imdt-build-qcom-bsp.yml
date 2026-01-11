@@ -281,7 +281,7 @@ jobs:
         run: |          
           echo "'PRESERVE_BUILD_DIR' is 'true'. Preserving build source files..."
           
-          if [ ${VERSION} == "development" ]; then
+          if [ ${BUILD_VERSION} == "development" ]; then
               BUILD_NAME="${REPO_NAME}_dev"
           fi
             
