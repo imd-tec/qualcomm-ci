@@ -280,7 +280,11 @@ jobs:
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
         run: |          
           echo "'PRESERVE_BUILD_DIR' is 'true'. Preserving build source files..."
-
+          
+          if [ ${VERSION} == "development" ]; then
+              BUILD_NAME="${REPO_NAME}_dev"
+          fi
+            
           preserved_dirname="${BUILD_NAME}_$(date +%Y%m%d_%H%M%S)"
           preserved_path="${CI_DIR}/builds/PRESERVED_BUILDS/${preserved_dirname}"
           mkdir -p "${preserved_path}"
