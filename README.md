@@ -59,6 +59,7 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
     
     See [`poll-development-repo.sh`](https://github.com/imd-tec/qualcomm-ci/blob/master/scripts/poll-development-repo.sh) for more details.
 6. Upon build attempt, the build job status is logged to the project state file.
+7. Development build artifacts are located under `$CI_DIR/builds/development/release/<manifest_repository>`
 
 ## Notes
 - Upon build conclusion, all build directories and Docker resources are automatically deleted. Under the **Actions** tab, manually dispatched builds have the option to preserve these resources for further debugging or aritfact creation.
