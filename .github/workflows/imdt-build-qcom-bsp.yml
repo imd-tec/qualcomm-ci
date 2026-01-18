@@ -267,7 +267,7 @@ jobs:
         run: |
           echo "Build status: ${status}"
           echo "Development repository states: ${DEV_STATE_LOG}"
-          bash log-dev-state.sh ${status} ${DEV_STATE_LOG}" "${MANIFEST_REPOSITORY}"
+          bash log-dev-state.sh "${status}" "${DEV_STATE_LOG}" "${MANIFEST_REPOSITORY}"
           
       - name: Clean up container and image
         if: ${{ always() && !inputs.PRESERVE_DOCKER }}
