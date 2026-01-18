@@ -262,10 +262,12 @@ jobs:
       - name: Update development build state logs
         if: ${{ always() && env.BUILD_VERSION == 'development' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
+        env:
+          status: ${{ job.status }}
         run: |
-          echo "Build status: ${{ job.status }}"
-          echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
-          bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          echo "Build status: ${status}"
+          echo "Development repository states: ${DEV_STATE_LOG}"
+          bash log-dev-state.sh ${status} ${DEV_STATE_LOG}" "${MANIFEST_REPOSITORY}"
           
       - name: Clean up container and image
         if: ${{ always() && !inputs.PRESERVE_DOCKER }}
@@ -282,6 +284,7 @@ jobs:
           echo "'PRESERVE_BUILD_DIR' is 'true'. Preserving build source files..."
           
           if [ ${BUILD_VERSION} == "development" ]; then
+              REPO_NAME=$(basename ${MANIFEST_REPOSITORY})
               BUILD_NAME="${REPO_NAME}_dev"
           fi
             
