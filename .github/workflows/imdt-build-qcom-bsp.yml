@@ -280,27 +280,13 @@ jobs:
       - name: Preserve source files
         if: ${{ always() && inputs.PRESERVE_BUILD_DIR }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
-        run: |          
-          echo "'PRESERVE_BUILD_DIR' is 'true'. Preserving build source files..."
+        env:
+          STATUS: ${{ job.status }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+        run: preserve-build.sh "${STATUS}" "${RUN_URL}" "${BRANCH}" "${ACTOR}"           
           
-          if [ ${BUILD_VERSION} == "development" ]; then
-              REPO_NAME=$(basename ${MANIFEST_REPOSITORY})
-              BUILD_NAME="${REPO_NAME}_dev"
-          fi
-            
-          preserved_dirname="${BUILD_NAME}_$(date +%Y%m%d_%H%M%S)"
-          preserved_path="${CI_DIR}/builds/PRESERVED_BUILDS/${preserved_dirname}"
-          mkdir -p "${preserved_path}"
-          
-          if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then           
-            mv "${BUILD_PROJECT_DIR}/${QCS_SOURCES}" "${preserved_path}/${QCS_SOURCES}"
-          fi
-
-          if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
-            mv "${BUILD_PROJECT_DIR}/patches" "${preserved_path}/patches"
-          fi
-          
-          echo "Preserved build files moved to: ${preserved_path}/"
 
       - name: Clean up source files
         if:  ${{ always() && !inputs.PRESERVE_BUILD_DIR }}
