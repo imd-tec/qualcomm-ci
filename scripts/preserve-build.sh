@@ -19,7 +19,7 @@ ACTOR=$4
           
 if [ ${BUILD_VERSION} == "development" ]; then
     REPO_NAME=$(basename ${MANIFEST_REPOSITORY})
-    BUILD_NAME="${REPO_NAME}_dev"
+    BUILD_NAME="${REPO_NAME}_development"
 fi
 
 timestamp=$(date +%Y%m%d_%H%M%S)
@@ -40,9 +40,11 @@ log_file="${preserved_path}/BUILD_INFO.txt"
 echo "==========================================" >> "$log_file"
 echo "         PRESERVED BUILD METADATA         " >> "$log_file"
 echo "==========================================" >> "$log_file"
-echo "Build Status : $STATUS"                     >> "$log_file"
-echo "Timestamp    : $timestamp"                  >> "$log_file"
+echo "Repository   : $MANIFEST_REPOSITORY"        >> "$log_file"
 echo "Branch       : $BRANCH"                     >> "$log_file"
+echo "Manifest:    : $MANIFEST_XML"               >> "$log_file"
+echo "Build Name   : $BUILD_NAME"                 >> "$log_file"
+echo "Build Status : $STATUS"                     >> "$log_file"
 echo "Triggered By : $ACTOR"                      >> "$log_file"
 echo "------------------------------------------" >> "$log_file"
 echo "Run Link     : $RUN_URL"                    >> "$log_file"
