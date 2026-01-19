@@ -285,9 +285,8 @@ jobs:
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           BRANCH: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
-        run: preserve-build.sh "${STATUS}" "${RUN_URL}" "${BRANCH}" "${ACTOR}"           
+        run: bash preserve-build.sh "${STATUS}" "${RUN_URL}" "${BRANCH}" "${ACTOR}"           
           
-
       - name: Clean up source files
         if:  ${{ always() && !inputs.PRESERVE_BUILD_DIR }}
         run: |
