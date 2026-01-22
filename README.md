@@ -62,7 +62,8 @@ Automates fetching of sources and build processes for Qualcomm-based projects as
 7. Development build artifacts are located under `$CI_DIR/builds/development/release/<manifest_repository>`
 
 ## Notes
-- Upon build conclusion, all build directories and Docker resources are automatically deleted. Under the **Actions** tab, manually dispatched builds have the option to preserve these resources for further debugging or aritfact creation.
+- Upon build conclusion, all build directories and Docker resources are automatically deleted under normal circumstances. 
+  - However, under the **Actions** tab in a manifest repository, manually dispatched builds have the option to preserve these resources (build files located at `$CI_DIR/builds/PRESERVED_BUILDS/`) for further debugging or artifact creation.
   - **NOTE**: Developers are responsible for manual clean-up of preserved resources.  
 - By design, only development builds utilize Yocto caching. Release builds must fetch fresh meta-layer sources to ensure reproducibility.
 - This process currently depends on a personal PAT for inter-repository access and should later be adapted to a service account or other user account independent token.
