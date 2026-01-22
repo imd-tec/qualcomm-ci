@@ -262,10 +262,12 @@ jobs:
       - name: Update development build state logs
         if: ${{ always() && env.BUILD_VERSION == 'development' }}
         working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
+        env:
+          status: ${{ job.status }}
         run: |
-          echo "Build status: ${{ job.status }}"
-          echo "Development repository states: ${{ env.DEV_STATE_LOG }}"
-          bash log-dev-state.sh ${{ job.status }} "${{ env.DEV_STATE_LOG }}" "${{ env.MANIFEST_REPOSITORY }}"
+          echo "Build status: ${status}"
+          echo "Development repository states: ${DEV_STATE_LOG}"
+          bash log-dev-state.sh "${status}" "${DEV_STATE_LOG}" "${MANIFEST_REPOSITORY}"
           
       - name: Clean up container and image
         if: ${{ always() && !inputs.PRESERVE_DOCKER }}
@@ -275,17 +277,26 @@ jobs:
           -f "${GITHUB_WORKSPACE}"/qualcomm_ci/docker/docker-compose.yaml \
           down --rmi local
 
+      - name: Preserve source files
+        if: ${{ always() && inputs.PRESERVE_BUILD_DIR }}
+        working-directory: ${{ github.workspace }}/qualcomm_ci/scripts
+        env:
+          STATUS: ${{ job.status }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+        run: bash preserve-build.sh "${STATUS}" "${RUN_URL}" "${BRANCH}" "${ACTOR}"           
+          
       - name: Clean up source files
         if:  ${{ always() && !inputs.PRESERVE_BUILD_DIR }}
         run: |
           set -euo pipefail -x
-          if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then
+          echo "Cleaning up build source files..."
+
+          if [ -d "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}" ]; then           
             rm -rf "${BUILD_PROJECT_DIR:?}/${QCS_SOURCES}"
           fi
 
           if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
-              rm -rf "${BUILD_PROJECT_DIR:?}/patches"
+            rm -rf "${BUILD_PROJECT_DIR:?}/patches"  
           fi
-
-
-         
