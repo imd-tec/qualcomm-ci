@@ -3,10 +3,10 @@
 #title: preserve-build.sh
 #description:
 #   Provided PRESERVE_BUILD_DIR is enabled on workflow dispatch, build source files are moved to
-#   the PRESERVED_BUILDS directory with a timestamped folder name.
+#   the PRESERVED_BUILDS directory under a timestamped directory named after the build.
 #   A BUILD_INFO.txt log file is created in the preserved build directory containing build metadata.
 #usage: 
-#     preserve-build.sh
+#   preserve-build.sh <build_status> <run_url> <branch> <actor>
 #=============================================================================================================================================================================
 set -e
 
@@ -17,8 +17,8 @@ RUN_URL=$2
 BRANCH=$3
 ACTOR=$4 
           
-if [ ${BUILD_VERSION} == "development" ]; then
-    REPO_NAME=$(basename ${MANIFEST_REPOSITORY})
+if [ "${BUILD_VERSION}" == "development" ]; then
+    REPO_NAME=$(basename "${MANIFEST_REPOSITORY}")
     BUILD_NAME="${REPO_NAME}_development"
 fi
 
