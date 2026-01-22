@@ -158,10 +158,12 @@ function repo_has_changes() {
     fi
 
     #fetch and get current hash 
-    cd "$DEV_REPO_CACHE_PATH/$meta_layer"
-    git fetch origin "$branch"
-    local current_hash=$(git rev-parse origin/"$branch")
-
+    local current_hash=""
+    current_hash=$(
+        cd "$DEV_REPO_CACHE_PATH/$meta_layer"
+        git fetch origin "$branch"
+        git rev-parse origin/"$branch"
+    )
 
     #append to GH output
     #NOTE: always log the current hash for every repository, regardless of whether
