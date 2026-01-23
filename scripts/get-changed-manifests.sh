@@ -85,7 +85,7 @@ function validate_diff_check() {
         {
           echo "## Triggered Builds"
           echo "_No production manifests changed in this push._"
-          echo "**Note**: Only added or modified production manifests trigger immediate builds. Modified development manifests are queued for next scheduled cron job."
+          echo -e "**Note**: Only added or modified production manifests trigger immediate builds.\nModified development manifests are queued for next scheduled cron job."
         } >> "$GITHUB_STEP_SUMMARY"
     fi
     printf '%s\n' "${MANIFESTS[@]}"
