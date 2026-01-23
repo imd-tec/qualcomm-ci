@@ -177,13 +177,13 @@ function repo_has_changes() {
         last_hash=$(grep -m1 "^$meta_layer *|" "$state_file" | cut -d'|' -f2 | xargs || true)
     fi
 
-    #IF LAST_HASH IS UNDEFINED => SIGNAL BUILD
+    #if last_hash is undefined => singnal build
     if [ -z "$last_hash"  ]; then
         echo -e "\nNo previous state found for $meta_layer. Assuming first build. Continuing build process..." 
         return 0 
     fi
     
-    #IF HASHES DIFFER WITH RELEVANT FILES MODIFIED => SIGNAL BUILD
+    #if hashes differ with relevant files modified => signal build
     if [ "$last_hash" != "$current_hash" ]; then
         echo "Comparing files between $last_hash and $current_hash:"
         #check if relevant files have been modified
@@ -196,12 +196,12 @@ function repo_has_changes() {
             echo -e "\nRelevant changes detected:\n$include\nContinuing build process..."
             return 0 
         else
-            #NO RELEVANT FILES CHANGED => NO CHANGES; SKIP BUILD
+            #no relevant files changed => no changes; skip build
             echo "No relevant files were modified. Skipping build for $meta_layer."
             return 1
         fi
     else
-        #HASHES ARE IDENTICAL => NO CHANGES; SKIP BUILD
+        #hashes are the same => no changes; skip build
         return 1
     fi
 }
