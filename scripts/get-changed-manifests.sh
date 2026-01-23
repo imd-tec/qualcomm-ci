@@ -59,7 +59,7 @@ function check_if_development() {
 
     for manifest in "${ALL_MANIFESTS[@]}"; do
         if [[ "$(basename "$manifest")" == development*.xml ]]; then
-            echo "Changed development manifest detected: $manifest"
+            echo -e "\nChanged development manifest detected: $manifest"
 
             #construct state file path
             DEV_REPO_STATE_PATH="${CI_DEV_DIR}/state"
@@ -79,7 +79,7 @@ function check_if_development() {
 
 function validate_diff_check() {
     # Validate MANIFESTS array and exit, echoing to GH STEP SUMMARY if no changed manifests found
-    echo "Found ${#MANIFESTS[@]} changed XML files:"
+    echo -e "\nFound ${#MANIFESTS[@]} changed non-development xml files:"
     if [ ${#MANIFESTS[@]} -eq 0 ]; then
         echo "No production manifests changed."
         {
