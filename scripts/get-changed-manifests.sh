@@ -55,7 +55,7 @@ function determine_changed_manifests() {
 function check_if_development() {
     # Iterate through ALL_MANIFESTS to check if any of the changed manifests are development manifests
     # If so, update their state files to QUEUED_FOR_BUILD to trigger build next scheduled trigger
-    local repository_base=$(basename "$MANIFEST_REPO_PATH")    
+    local repository_base=$(basename "$GITHUB_REPOSITORY")    
 
     for manifest in "${ALL_MANIFESTS[@]}"; do
         if [[ "$(basename "$manifest")" == development*.xml ]]; then
