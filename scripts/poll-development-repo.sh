@@ -187,7 +187,10 @@ function repo_has_changes() {
     if [ "$last_hash" != "$current_hash" ]; then
         echo "Comparing files between $last_hash and $current_hash:"
         #check if relevant files have been modified
-        local changed_files=$(git diff --name-only "$last_hash" "$current_hash")
+        local changed_files=$(
+            cd "$DEV_REPO_CACHE_PATH/$meta_layer"
+            git diff --name-only "$last_hash" "$current_hash"
+        )
         include=$(printf "%s\n" "$changed_files" | grep -E "$RELEVANT_FILES" || true)
         if [ -n "$include" ]; then
             echo -e "\nRelevant changes detected:\n$include\nContinuing build process..."
