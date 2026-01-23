@@ -78,7 +78,7 @@ function process_manifest() {
     echo "==============================================="
     echo "Processing development manifest: $manifest_path"
 
-    #IF STATE FILE DOES NOT EXIST; IT'S THE FIRST BUILD => SIGNAL BUILD AND CONTINUE
+    # If state file does not exist; it's the first build => signal build and continue
     if [ ! -f "$state_file" ]; then
         echo -e "\nNo previous state file found for $state_file. Assuming first build. Continuing build process..." 
         trigger_manifest_build=true
