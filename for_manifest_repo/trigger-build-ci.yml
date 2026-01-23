@@ -63,7 +63,7 @@ jobs:
     - uses: actions/checkout@v6
       with:
           repository: imd-tec/qualcomm-ci
-          ref: master
+          ref: stable
           token: ${{ secrets.QCI_DEPLOY_PAT }}
           persist-credentials: false
           path: qualcomm_ci
@@ -126,7 +126,7 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJson(needs.get_changed_manifests.outputs.manifest_list) }}
-    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@master
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-build-qcom-bsp.yml@stable
     secrets: inherit
     with:
       #Source Context
