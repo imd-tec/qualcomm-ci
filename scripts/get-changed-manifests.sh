@@ -4,8 +4,8 @@
 #description:
 #     For use exclusively within the trigger-build.yml workflow.
 #     This script takes the previous manifest repository commit SHA (BEFORE_SHA) and the latest commit SHA (CURRENT_SHA) as inputs.
-#     As this script must be accessed from a seperate checked-out repository (qualcomm-ci), the manifest repository path must be provided 
-#     as an argument to ensure that the diff check is being perfomed in correct location.
+#     As this script must be accessed from a separate checked-out repository (qualcomm-ci), the manifest repository path must be provided 
+#     as an argument to ensure that the diff check is being performed in correct location.
 #     The diff identifies any manifest XML files that were added, modified, copied or renamed between the two commits.
 #
 #     If any development manifests are detected, their state files are updated to QUEUED_FOR_BUILD to trigger a build in the next scheduled cron job.
@@ -85,7 +85,9 @@ function validate_diff_check() {
         {
           echo "## Triggered Builds"
           echo "_No production manifests changed in this push._"
-          echo -e "\n**Note**: Only added or modified production manifests trigger immediate builds.\nModified development manifests are queued for next scheduled cron job."
+          echo
+          echo "**Note**: Only added or modified production manifests trigger immediate builds."
+          echo "Modified development manifests are queued for next scheduled cron job."
         } >> "$GITHUB_STEP_SUMMARY"
     fi
     printf '%s\n' "${MANIFESTS[@]}"
