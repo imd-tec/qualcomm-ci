@@ -17,6 +17,7 @@
 set -e 
 
 MANIFESTS=()
+ALL_MANIFESTS=()
 
 if [ -z "${CI_DEV_DIR:-}" ]; then
     echo "ERROR: CI_DEV_DIR is not set."
