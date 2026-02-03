@@ -140,7 +140,7 @@ jobs:
         uses: actions/checkout@v6
         with:
             repository: imd-tec/qualcomm-ci
-            ref: bugfix/fix-swu-implementation
+            ref: feature/implement-swu
             token: ${{ secrets.QCI_DEPLOY_PAT }}
             persist-credentials: false
             path: qualcomm_ci
