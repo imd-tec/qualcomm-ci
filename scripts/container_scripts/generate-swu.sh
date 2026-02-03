@@ -35,6 +35,6 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
     mkdir -p "$RELEASE_DIR"
 fi
 
-#rename move the SWU image to the release directory
+#rename and move the SWU image to the release directory
 SWU_FILENAME="${IMAGE_NAME}-sdk-${MACHINE_NAME}.swu"
 mv "$swu" "$RELEASE_DIR/$SWU_FILENAME"
