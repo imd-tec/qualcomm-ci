@@ -17,9 +17,7 @@ bitbake "${IMAGE_NAME}-swu"
 
 #locate the generated swu image
 SWU_DIR="${QCOM_ROOT_DIR}/LE.PRODUCT.2.1.r1/apps_proc/build-${DISTRO_NAME}/tmp-glibc/deploy/images/${MACHINE_NAME}/"
-
 cd "$SWU_DIR" || exit 1
-
 swu="$(find -maxdepth 1 -type f -name '*.swu')"
 if [[ -z "$swu" ]]; then
     echo "ERROR: No .swu files found in ${SWU_DIR}"
@@ -32,7 +30,13 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
     mkdir -p "$RELEASE_DIR"
 fi
 
-SWU_FILENAME="${IMAGE_NAME}-sdk-${MACHINE_NAME}.swu"
+#define release directory based on build type
+if [ "$BUILD_VERSION" == "development" ]; then
+    RELEASE_DIR="/home/dev/Qualcomm/release/${REPO_NAME}"
+else
+    RELEASE_DIR="/home/dev/Qualcomm/release"
+fi
 
-#move the SWU image to the release directory
+#rename move the SWU image to the release directory
+SWU_FILENAME="${IMAGE_NAME}-sdk-${MACHINE_NAME}.swu"
 mv "$swu" "$RELEASE_DIR/$SWU_FILENAME"
