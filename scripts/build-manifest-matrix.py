@@ -64,7 +64,9 @@ def construct_step_summary_header():
 
 def append_to_step_summary(row_data):
     """Formats and appends a row to the summary table"""
-    row = "| " + " | ".join(row_data) + " |"
+    #replace any None values with "N/A" to avoid crashing on .join()
+    safe_row = [str(x) if x is not None else "N/A" for x in row_data]
+    row = "| " + " | ".join(safe_row) + " |"
     with open(STEP_SUMMARY_PATH, 'a') as summary_file:
         summary_file.write(row + "\n")        
 
