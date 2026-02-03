@@ -24,17 +24,15 @@ if [[ -z "$swu" ]]; then
     exit 1
 fi
 
-#ensure release directory exists
-RELEASE_DIR="/home/dev/Qualcomm/release"
-if [[ ! -d "$RELEASE_DIR" ]]; then
-    mkdir -p "$RELEASE_DIR"
-fi
-
 #define release directory based on build type
 if [ "$BUILD_VERSION" == "development" ]; then
     RELEASE_DIR="/home/dev/Qualcomm/release/${REPO_NAME}"
 else
     RELEASE_DIR="/home/dev/Qualcomm/release"
+fi
+
+if [[ ! -d "$RELEASE_DIR" ]]; then
+    mkdir -p "$RELEASE_DIR"
 fi
 
 #rename move the SWU image to the release directory
