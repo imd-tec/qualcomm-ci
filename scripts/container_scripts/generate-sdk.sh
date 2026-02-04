@@ -25,6 +25,7 @@ fi
 #define release directory based on build type and set SDK filename
 #sdk output name format: [release_name_without_prebuilt_suffix]-sdk-v[build_version].sh
 if [ "$BUILD_VERSION" == "development" ]; then
+    REPO_NAME=$(basename "$MANIFEST_REPOSITORY")
     RELEASE_DIR="/home/dev/Qualcomm/release/${REPO_NAME}"
     SDK_FILENAME="${RELEASE_NAME%_prebuilt*}-sdk-${BUILD_VERSION}.sh"
 else

@@ -26,6 +26,7 @@ fi
 
 #define release directory based on build type
 if [ "$BUILD_VERSION" == "development" ]; then
+    REPO_NAME=$(basename "$MANIFEST_REPOSITORY")
     RELEASE_DIR="/home/dev/Qualcomm/release/${REPO_NAME}"
 else
     RELEASE_DIR="/home/dev/Qualcomm/release"
