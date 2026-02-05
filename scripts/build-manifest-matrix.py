@@ -25,7 +25,7 @@ import yaml
 #fields to extract from each manifest's yaml config. Also serves as table columns in Github Actions step summary.
 MANIFEST_FIELDS=["version", "kernel_variant",
         "machine", "distro", "image", "base_docker_image", "imdt_patch_script_path",
-        "release_name", "pyenv", "qcs_sources", "skip_steps"]
+        "release_name", "pyenv", "qcs_sources", "build_swu", "skip_steps"]
 
 STEP_SUMMARY_PATH = os.environ['GITHUB_STEP_SUMMARY']
 GITHUB_OUTPUT = os.environ.get("GITHUB_OUTPUT")
@@ -64,7 +64,9 @@ def construct_step_summary_header():
 
 def append_to_step_summary(row_data):
     """Formats and appends a row to the summary table"""
-    row = "| " + " | ".join(row_data) + " |"
+    #replace any None values with "N/A" to avoid crashing on .join()
+    safe_row = [str(x) if x is not None else "N/A" for x in row_data]
+    row = "| " + " | ".join(safe_row) + " |"
     with open(STEP_SUMMARY_PATH, 'a') as summary_file:
         summary_file.write(row + "\n")        
 
