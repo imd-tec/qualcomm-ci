@@ -90,6 +90,12 @@ on:
           description: Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
+        BUILD_SWU:
+          required: false
+          description: Generate SWUpdate update image
+          type: boolean
+          default: false
+          
         PRESERVE_BUILD_DIR:
           required: false
           description: Preserve build files after build completion
@@ -238,6 +244,12 @@ jobs:
           
           #build image
           bitbake "${IMAGE}" '
+
+      - name: Generate SWUpdate image
+        if: ${{ inputs.BUILD_SWU }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          bash /home/dev/tools/container_scripts/generate-swu.sh'
 
       - name: Generate Yocto SDK
         if: ${{ !contains(env.SKIP_STEPS, 'build_sdk') }}
