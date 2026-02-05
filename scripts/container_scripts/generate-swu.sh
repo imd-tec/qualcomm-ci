@@ -37,5 +37,5 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
 fi
 
 #rename and move the SWU image to the release directory
-SWU_FILENAME="${IMAGE_NAME}-sdk-${MACHINE_NAME}.swu"
+SWU_FILENAME="${IMAGE_NAME}-swu-${MACHINE_NAME}.swu"
 mv "$swu" "$RELEASE_DIR/$SWU_FILENAME"
