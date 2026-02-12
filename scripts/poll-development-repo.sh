@@ -51,7 +51,7 @@ function poll_development_manifests() {
         exit 1
     fi
     echo "Found $(echo "$manifest_paths" | wc -l) development manifest(s)."
-    echo manifest_paths: $manifest_paths
+    echo -e "Manifest_paths:\n $manifest_paths"
 
     for manifest_path in $manifest_paths; do
         echo "================================================================="
@@ -104,7 +104,7 @@ function process_manifest() {
             echo -e "\nLast recorded run: $last_result on $last_date"
         fi
         if [ "$last_result" != "SUCCESS" ]; then
-            echo -e "\nLast build was not SUCCESS. Retrying..."
+            echo "Last build was not SUCCESS. Retrying..."
             trigger_manifest_build=true
         fi
     fi
@@ -127,10 +127,10 @@ function process_manifest() {
 
     #if the build has been set to trigger, append current manifest path to manifests.txt to signal build process 
     if $trigger_manifest_build; then
-        echo -e "\nBuild will be triggered. Appending manifest path to output file."
+        echo -e "\nSignalling to build. Appending '$manifest_name' to output file."
         echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
     else
-        echo -e "\nNo changes detected. No build will be triggered."
+        echo -e "\nNo changes detected. '$manifest_base' will not be built."
     fi
 }
 
@@ -146,7 +146,7 @@ function get_metalayer_branches() {
     commit_hash_regex='^[0-9a-fA-F]{40}$'
     meta_dev_branches=$(grep -Ev "$commit_hash_regex"  <<< "$revision_names" | sort -u)
 
-    echo "Found non-commit hash revisions: $meta_dev_branches"
+    echo -e "\nFound non-commit hash revisions: $meta_dev_branches"
 }
 
 function repo_has_changes() {
@@ -160,7 +160,7 @@ function repo_has_changes() {
     local remote=$(xmllint --xpath "string(//project[@name='$meta_layer']/@remote)" "$manifest_path") #imdt
     local base_url=$(xmllint --xpath "string(//remote[@name='$remote']/@fetch)" "$manifest_path") #https://github.com/imd-tec"
     local repo_url="${base_url}/${meta_layer}.git"
-    echo -e "\n['$manifest_base'] Checking for changes in '$meta_layer'('$branch')\n"
+    echo -e "Checking for changes in '$meta_layer'('$branch')\n"
 
     mkdir -p "${DEV_REPO_CACHE_PATH}" "${DEV_REPO_STATE_PATH}"
     if [ ! -d "$DEV_REPO_CACHE_PATH/$meta_layer" ]; then
@@ -190,7 +190,7 @@ function repo_has_changes() {
 
     #if last_hash is undefined => signal build
     if [ -z "$last_hash"  ]; then
-        echo -e "\nNo previous state found for $meta_layer. Assuming first build. Continuing build process..." 
+        echo -e "\nNo previous state found for $meta_layer. Assuming first build." 
         return 0 
     fi
     
@@ -204,7 +204,7 @@ function repo_has_changes() {
         )
         include=$(printf "%s\n" "$changed_files" | grep -E "$RELEVANT_FILES" || true)
         if [ -n "$include" ]; then
-            echo -e "\nRelevant changes detected:\n$include\nContinuing build process..."
+            echo -e "\nRelevant changes detected:\n$include\n."
             return 0 
         else
             #no relevant files changed => no changes; skip build
