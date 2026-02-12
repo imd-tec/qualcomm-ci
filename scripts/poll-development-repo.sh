@@ -219,4 +219,4 @@ function repo_has_changes() {
 
 parse_args "$@"
 poll_development_manifests
-echo -e "\nContuing with ${}
+echo -e "\nSignalling builds for: \n" && cat "$RUNNER_TEMP/manifests.txt"
