@@ -54,7 +54,7 @@ function poll_development_manifests() {
         exit 1
     fi
     echo "Found $(echo "$dev_manifest_paths" | wc -l) development manifest(s)."
-    echo -e "dev_Manifest_paths:\n $dev_manifest_paths"
+    echo -e "Development manifest paths:\n $dev_manifest_paths"
 
     for dev_manifest_path in $dev_manifest_paths; do
         echo "================================================================="
