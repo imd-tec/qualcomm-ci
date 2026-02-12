@@ -39,19 +39,33 @@ function parse_args() {
 
 function poll_development_manifests() {
     # Find development manifest files in the repository and iterate through them, checking for changes.
+    # If a manifest is not associated with a build config it will be skipped.
     # Trigger build and log build state as applicable.
-    local meta_dev_branches
+    local dev_manifest_paths
+    local dev_manifest_path
+    local dev_manifest_filename
+    local dev_manifest_dir
+    local config_file
 
     cd "$MANIFEST_REPO_PATH"
-    manifest_paths=$(find . -type f -name 'development*.xml')
-    if [ -z "$manifest_paths" ]; then
+    dev_manifest_paths=$(find . -type f -name 'development*.xml')
+    if [ -z "$dev_manifest_paths" ]; then
         echo "ERROR: No development manifests found in the repository."
         exit 1
     fi
-    echo "Found $(echo "$manifest_paths" | wc -l) development manifest(s)."
+    echo "Found $(echo "$dev_manifest_paths" | wc -l) development manifest(s)."
+    echo -e "Development manifest paths:\n $dev_manifest_paths"
 
-    for manifest_path in $manifest_paths; do
-        process_manifest "$manifest_path"
+    for dev_manifest_path in $dev_manifest_paths; do
+        echo "================================================================="
+        dev_manifest_dir=$(dirname "$dev_manifest_path")
+        dev_manifest_filename=$(basename "$dev_manifest_path" .xml)
+        config_file="$dev_manifest_dir/ci-build-config.yml"
+        if [ -f "$config_file" ] && grep -q -E "^${dev_manifest_filename}:" "$config_file" 2>/dev/null; then
+            process_manifest "$dev_manifest_path"
+        else
+            echo "No build config found for $dev_manifest_filename. Skipping..."
+        fi
     done
 
     #export log file to output for use in later steps
@@ -67,16 +81,14 @@ function poll_development_manifests() {
 function process_manifest() {
     # Process a single development manifest file to check for changes in relevant meta-layer repositories.
     # If a relevant change is detected via diff-checking, or if the last build was not successful, signal to trigger a build.
-
-    local manifest_path="$1"
-    local manifest_name=$(basename "$manifest_path")
-    local manifest_base=${manifest_name%.*} #remove file extension
-    local repository_base=$(basename "$MANIFEST_REPO_NAME") #e.g., imsu-glasses-manifest-dev
-    local state_file="$DEV_REPO_STATE_PATH/${repository_base}-${manifest_base}.last" #e.g., /${CI_DEV_DIR}/state/imsu-glasses-manifest-dev-development-glasses.last
+    local dev_manifest_path="$1"
+    local dev_manifest_filename=$(basename "$dev_manifest_path")
+    local dev_manifest_name=${dev_manifest_filename%.*} #remove file extension
+    local repository_name=$(basename "$MANIFEST_REPO_NAME") #e.g., imsu-glasses-manifest-dev
+    local state_file="$DEV_REPO_STATE_PATH/${repository_name}-${dev_manifest_name}.last" #e.g., /${CI_DEV_DIR}/state/imsu-glasses-manifest-dev-development-glasses.last
     local trigger_manifest_build=false
 
-    echo "==============================================="
-    echo "Processing development manifest: $manifest_path"
+    echo "Processing development manifest: $dev_manifest_path"
 
     # If state file does not exist; it's the first build => signal build and continue
     if [ ! -f "$state_file" ]; then
@@ -85,30 +97,31 @@ function process_manifest() {
     else
         #extract last recorded result from state file and check if previous build was not successful, if so => RETRY BUILD
         #first line: PROJECT | DATE | RESULT
+        echo -e "\nReading state file: $state_file"
         IFS='|' read -r project last_date last_result < "$state_file"
         project=$(xargs <<< "$project")
         last_date=$(xargs <<< "$last_date")
         last_result=$(xargs <<< "$last_result")
         if [ -n "$last_result" ]; then
-            echo -e "\nFOUND PROJECT: $project\nLast recorded run: $last_result on $last_date"
+            echo -e "\nLast recorded run: $last_result on $last_date"
         fi
         if [ "$last_result" != "SUCCESS" ]; then
-            echo -e "\nLast build was not SUCCESS. Retrying..."
+            echo "Last build was not SUCCESS. Retrying..."
             trigger_manifest_build=true
         fi
     fi
 
     #get meta-layer branches to be polled for given manifest
     local meta_dev_branches=""
-    get_metalayer_branches "$manifest_path"
+    get_metalayer_branches "$dev_manifest_path"
 
     for branch in $meta_dev_branches; do
         #name="meta-imdt-qcom-dev" ; name="clo/le/meta-qti-gst" ... => meta-imdt-qcom-dev clo/le/meta-qti-gst ... 
-        local meta_layers=$(xmllint --xpath "//project[@revision='$branch']/@name" "$manifest_path" \
+        local meta_layers=$(xmllint --xpath "//project[@revision='$branch']/@name" "$dev_manifest_path" \
                     | grep -o 'name=\"[^\"]*\"' \
                     | cut -d'"' -f2)
         for meta_layer in $meta_layers; do
-            if repo_has_changes "$meta_layer" "$branch" "$manifest_path" "$state_file"; then
+            if repo_has_changes "$meta_layer" "$branch" "$dev_manifest_path" "$state_file"; then
                 trigger_manifest_build=true
             fi
         done
@@ -116,40 +129,41 @@ function process_manifest() {
 
     #if the build has been set to trigger, append current manifest path to manifests.txt to signal build process 
     if $trigger_manifest_build; then
-        echo -e "\nBuild will be triggered. Appending manifest path to output file."
-        echo "$manifest_path" >> "$RUNNER_TEMP/manifests.txt"
+        echo -e "\nSignalling to build. Appending '$dev_manifest_filename' to output file."
+        echo "$dev_manifest_path" >> "$RUNNER_TEMP/manifests.txt"
     else
-        echo -e "\nNo changes detected. No build will be triggered."
+        echo -e "\nNo changes detected. '$dev_manifest_name' will not be built."
     fi
 }
 
 function get_metalayer_branches() {    
     # Get all meta-layer revisions that are not hashes
-
-    local manifest_path="$1"
+    local dev_manifest_path="$1"
     #extract revisions from project tags from manifest (i.e.,  "revision="kirkstone"")
-    revision_keys=$(xmllint --xpath "//project/@revision" "$manifest_path" | grep -oE 'revision="[^"]+"')     
+    revision_keys=$(xmllint --xpath "//project/@revision" "$dev_manifest_path" | grep -oE 'revision="[^"]+"')     
     #extract revision names (i.e., kirkstone)
     revision_names=$(cut -d'"' -f2 <<< "$revision_keys")
     #remove commit hash revisions and keep unique branch names only
     commit_hash_regex='^[0-9a-fA-F]{40}$'
     meta_dev_branches=$(grep -Ev "$commit_hash_regex"  <<< "$revision_names" | sort -u)
 
-    echo "Found non-commit hash revisions: $meta_dev_branches"
+    echo -e "\nFound non-commit hash revisions: $meta_dev_branches"
 }
 
 function repo_has_changes() {
+    # Check if the given meta layer repository has changes in relevant files since the last recorded commit hash in the state file.
+    # Signals to trigger build if changes are detected, or if the last recorded hash is undefined (e.g., first run or state file deleted).
     local meta_layer="$1"
     local branch="$2"
-    local manifest_path="$3"
-    local manifest_base=$(basename "$manifest_path" .xml)
+    local dev_manifest_path="$3"
+    local dev_manifest_name=$(basename "$dev_manifest_path" .xml)
     local state_file="$4"
 
     #construct repo url for cloning and  clone repo into local cache if not already cached
-    local remote=$(xmllint --xpath "string(//project[@name='$meta_layer']/@remote)" "$manifest_path") #imdt
-    local base_url=$(xmllint --xpath "string(//remote[@name='$remote']/@fetch)" "$manifest_path") #https://github.com/imd-tec"
+    local remote=$(xmllint --xpath "string(//project[@name='$meta_layer']/@remote)" "$dev_manifest_path") #imdt
+    local base_url=$(xmllint --xpath "string(//remote[@name='$remote']/@fetch)" "$dev_manifest_path") #https://github.com/imd-tec"
     local repo_url="${base_url}/${meta_layer}.git"
-    echo -e "\n['$manifest_base'] Checking for changes in '$meta_layer'('$branch')\n"
+    echo -e "Checking for changes in '$meta_layer'('$branch')\n"
 
     mkdir -p "${DEV_REPO_CACHE_PATH}" "${DEV_REPO_STATE_PATH}"
     if [ ! -d "$DEV_REPO_CACHE_PATH/$meta_layer" ]; then
@@ -169,7 +183,7 @@ function repo_has_changes() {
     #NOTE: always log the current hash for every repository, regardless of whether
     #      relevant changes are later detected. This is used for state tracking when
     #      updating the dev state file (see log-dev-state.sh).
-    echo "${manifest_base}|${meta_layer}|${current_hash}" >> "$RUNNER_TEMP/dev_state_log.txt"
+    echo "${dev_manifest_name}|${meta_layer}|${current_hash}" >> "$RUNNER_TEMP/dev_state_log.txt"
 
     #if applicable, get last checked hash for this repository from state file
     local last_hash=""
@@ -177,9 +191,9 @@ function repo_has_changes() {
         last_hash=$(grep -m1 "^$meta_layer *|" "$state_file" | cut -d'|' -f2 | xargs || true)
     fi
 
-    #if last_hash is undefined => singnal build
+    #if last_hash is undefined => signal build
     if [ -z "$last_hash"  ]; then
-        echo -e "\nNo previous state found for $meta_layer. Assuming first build. Continuing build process..." 
+        echo -e "\nNo previous state found for $meta_layer. Assuming first build." 
         return 0 
     fi
     
@@ -193,7 +207,7 @@ function repo_has_changes() {
         )
         include=$(printf "%s\n" "$changed_files" | grep -E "$RELEVANT_FILES" || true)
         if [ -n "$include" ]; then
-            echo -e "\nRelevant changes detected:\n$include\nContinuing build process..."
+            echo -e "\nRelevant changes detected:\n$include\n"
             return 0 
         else
             #no relevant files changed => no changes; skip build
@@ -208,3 +222,9 @@ function repo_has_changes() {
 
 parse_args "$@"
 poll_development_manifests
+if [ -s "$RUNNER_TEMP/manifests.txt" ]; then
+    echo -e "\nSignalling builds for: \n"
+    cat "$RUNNER_TEMP/manifests.txt"
+else
+    echo -e "\nNo builds were signalled; '$RUNNER_TEMP/manifests.txt' is empty."
+fi
