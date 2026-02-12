@@ -41,8 +41,11 @@ function poll_development_manifests() {
     # Find development manifest files in the repository and iterate through them, checking for changes.
     # If a manifest is not associated with a build config it will be skipped.
     # Trigger build and log build state as applicable.
-
-    local meta_dev_branches
+    local manifest_paths
+    local manifest_path
+    local manifest_name
+    local manifest_dir
+    local config_file
 
     cd "$MANIFEST_REPO_PATH"
     manifest_paths=$(find . -type f -name 'development*.xml')
@@ -55,12 +58,13 @@ function poll_development_manifests() {
 
     for manifest_path in $manifest_paths; do
         echo "================================================================="
-        dir=$(dirname "$manifest_path")
-        name=$(basename "$manifest_path" .xml)
-        if grep -q -w "$name:" "$dir/ci-build-config.yml"; then
+        manifest_dir=$(dirname "$manifest_path")
+        manifest_name=$(basename "$manifest_path" .xml)
+        config_file="$manifest_dir/ci-build-config.yml"
+        if [ -f "$config_file" ] && grep -q -E "^${manifest_name}:" "$config_file" 2>/dev/null; then
             process_manifest "$manifest_path"
         else
-            echo "No build config found for $name. Skipping..."
+            echo "No build config found for $manifest_name. Skipping..."
         fi
     done
 
@@ -77,7 +81,6 @@ function poll_development_manifests() {
 function process_manifest() {
     # Process a single development manifest file to check for changes in relevant meta-layer repositories.
     # If a relevant change is detected via diff-checking, or if the last build was not successful, signal to trigger a build.
-
     local manifest_path="$1"
     local manifest_name=$(basename "$manifest_path")
     local manifest_base=${manifest_name%.*} #remove file extension
@@ -85,7 +88,6 @@ function process_manifest() {
     local state_file="$DEV_REPO_STATE_PATH/${repository_base}-${manifest_base}.last" #e.g., /${CI_DEV_DIR}/state/imsu-glasses-manifest-dev-development-glasses.last
     local trigger_manifest_build=false
 
-    
     echo "Processing development manifest: $manifest_path"
 
     # If state file does not exist; it's the first build => signal build and continue
@@ -136,7 +138,6 @@ function process_manifest() {
 
 function get_metalayer_branches() {    
     # Get all meta-layer revisions that are not hashes
-
     local manifest_path="$1"
     #extract revisions from project tags from manifest (i.e.,  "revision="kirkstone"")
     revision_keys=$(xmllint --xpath "//project/@revision" "$manifest_path" | grep -oE 'revision="[^"]+"')     
@@ -150,6 +151,8 @@ function get_metalayer_branches() {
 }
 
 function repo_has_changes() {
+    # Check if the given meta layer repository has changes in relevant files since the last recorded commit hash in the state file.
+    # Signals to trigger build if changes are detected, or if the last recorded hash is undefined (e.g., first run or state file deleted).
     local meta_layer="$1"
     local branch="$2"
     local manifest_path="$3"
@@ -204,7 +207,7 @@ function repo_has_changes() {
         )
         include=$(printf "%s\n" "$changed_files" | grep -E "$RELEVANT_FILES" || true)
         if [ -n "$include" ]; then
-            echo -e "\nRelevant changes detected:\n$include\n."
+            echo -e "\nRelevant changes detected:\n$include\n"
             return 0 
         else
             #no relevant files changed => no changes; skip build
@@ -219,4 +222,9 @@ function repo_has_changes() {
 
 parse_args "$@"
 poll_development_manifests
-echo -e "\nSignalling builds for: \n" && cat "$RUNNER_TEMP/manifests.txt"
+if [ -s "$RUNNER_TEMP/manifests.txt" ]; then
+    echo -e "\nSignalling builds for: \n"
+    cat "$RUNNER_TEMP/manifests.txt"
+else
+    echo -e "\nNo builds were signalled; '$RUNNER_TEMP/manifests.txt' is empty."
+fi
