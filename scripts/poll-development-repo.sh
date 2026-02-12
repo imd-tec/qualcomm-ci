@@ -39,7 +39,9 @@ function parse_args() {
 
 function poll_development_manifests() {
     # Find development manifest files in the repository and iterate through them, checking for changes.
+    # If a manifest is not associated with a build config it will be skipped.
     # Trigger build and log build state as applicable.
+
     local meta_dev_branches
 
     cd "$MANIFEST_REPO_PATH"
@@ -51,7 +53,13 @@ function poll_development_manifests() {
     echo "Found $(echo "$manifest_paths" | wc -l) development manifest(s)."
 
     for manifest_path in $manifest_paths; do
-        process_manifest "$manifest_path"
+        dir=$(dirname "$manifest_path")
+        name=$(basename "$manifest_path" .xml)
+        if grep -q -w "$name:" "$dir/ci-build-config.yml"; then
+            process_manifest "$manifest_path"
+        else
+            echo "No build config found for $name. Skipping..."
+        fi
     done
 
     #export log file to output for use in later steps
