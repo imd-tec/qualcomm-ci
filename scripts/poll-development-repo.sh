@@ -51,8 +51,10 @@ function poll_development_manifests() {
         exit 1
     fi
     echo "Found $(echo "$manifest_paths" | wc -l) development manifest(s)."
+    echo manifest_paths: $manifest_paths
 
     for manifest_path in $manifest_paths; do
+        echo "================================================================="
         dir=$(dirname "$manifest_path")
         name=$(basename "$manifest_path" .xml)
         if grep -q -w "$name:" "$dir/ci-build-config.yml"; then
@@ -83,7 +85,7 @@ function process_manifest() {
     local state_file="$DEV_REPO_STATE_PATH/${repository_base}-${manifest_base}.last" #e.g., /${CI_DEV_DIR}/state/imsu-glasses-manifest-dev-development-glasses.last
     local trigger_manifest_build=false
 
-    echo "==============================================="
+    
     echo "Processing development manifest: $manifest_path"
 
     # If state file does not exist; it's the first build => signal build and continue
@@ -93,12 +95,13 @@ function process_manifest() {
     else
         #extract last recorded result from state file and check if previous build was not successful, if so => RETRY BUILD
         #first line: PROJECT | DATE | RESULT
+        echo -e "\nReading state file: $state_file"
         IFS='|' read -r project last_date last_result < "$state_file"
         project=$(xargs <<< "$project")
         last_date=$(xargs <<< "$last_date")
         last_result=$(xargs <<< "$last_result")
         if [ -n "$last_result" ]; then
-            echo -e "\nFOUND PROJECT: $project\nLast recorded run: $last_result on $last_date"
+            echo -e "\nLast recorded run: $last_result on $last_date"
         fi
         if [ "$last_result" != "SUCCESS" ]; then
             echo -e "\nLast build was not SUCCESS. Retrying..."
@@ -185,7 +188,7 @@ function repo_has_changes() {
         last_hash=$(grep -m1 "^$meta_layer *|" "$state_file" | cut -d'|' -f2 | xargs || true)
     fi
 
-    #if last_hash is undefined => singnal build
+    #if last_hash is undefined => signal build
     if [ -z "$last_hash"  ]; then
         echo -e "\nNo previous state found for $meta_layer. Assuming first build. Continuing build process..." 
         return 0 
@@ -216,3 +219,4 @@ function repo_has_changes() {
 
 parse_args "$@"
 poll_development_manifests
+echo -e "\nContuing with ${}
