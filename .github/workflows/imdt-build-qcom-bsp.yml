@@ -110,9 +110,9 @@ on:
 
         JOB_TIMEOUT:
           required: false
-          description: Timeout for the build job in minutes (default: 720 minutes / 12 hours)
+          description: Timeout for the build job in minutes 
           type: number
-          default: 720
+          default: 720 # 12 hours
 
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
