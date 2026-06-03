@@ -154,5 +154,5 @@ jobs:
       #Development
       DEV_STATE_LOG:            ${{ needs.get_changed_manifests.outputs.dev_state_log }}
       SKIP_STEPS:               ${{ matrix.skip_steps }}
-      PRESERVE_BUILD_DIR:       ${{ inputs.preserve_build_dir }}
-      PRESERVE_DOCKER:          ${{ inputs.preserve_docker }}
+      PRESERVE_BUILD_DIR:       ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_build_dir || false }}
+      PRESERVE_DOCKER:          ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_docker || false }}
