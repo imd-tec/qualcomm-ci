@@ -253,7 +253,7 @@ jobs:
           bitbake "${IMAGE}" '
 
       - name: Build non-HLOS components
-        id: build_hlos
+        id: build_non_hlos
         if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
