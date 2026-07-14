@@ -252,6 +252,13 @@ jobs:
           #build image
           bitbake "${IMAGE}" '
 
+      - name: Build non-HLOS components
+        id: build_hlos
+        if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
+        run: |
+          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
+          bash /home/dev/build_scripts/build_non_hlos.sh --build all '
+
       - name: Generate SWUpdate image
         if: ${{ inputs.BUILD_SWU }}
         run: |
@@ -264,13 +271,6 @@ jobs:
         run: |
           $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
           bash /home/dev/tools/container_scripts/generate-sdk.sh '
-      
-      - name: Build non-HLOS components
-        id: build_hlos
-        if: ${{ !contains(env.SKIP_STEPS, 'build_non_hlos') }}
-        run: |
-          $DOCKER_EXEC "${CONTAINER_NAME}" bash -c '
-          bash /home/dev/build_scripts/build_non_hlos.sh --build all '
 
       - name: Create release artifact
         if: ${{ !contains(env.SKIP_STEPS, 'create_release') }}
