@@ -147,7 +147,7 @@ jobs:
         uses: actions/checkout@v6
         with:
             repository: imd-tec/qualcomm-ci
-            ref: feature/add_rawprogram_support 
+            ref: main
             token: ${{ secrets.QCI_DEPLOY_PAT }}
             persist-credentials: false
             path: qualcomm_ci
