@@ -31,3 +31,4 @@ fi
 docker compose \
     -f "${GITHUB_WORKSPACE}"/qualcomm_ci/docker/docker-compose.yaml \
     up -d --build
+    

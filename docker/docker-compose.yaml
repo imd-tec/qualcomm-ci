@@ -9,6 +9,8 @@ services:
         BASE_DOCKER_IMAGE: ${BASE_DOCKER_IMAGE}
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
+      secrets:
+        - .netrc
 
     # RUN
     container_name: ${CONTAINER_NAME}
@@ -36,4 +38,7 @@ services:
       - ${SSTATE_DIR}:/home/dev/sstate-cache
       - ${CI_DIR}/builds/PRESERVED_BUILDS/:/home/dev/PRESERVED_BUILDS/
       - ${HOME}/.netrc:/home/dev/.netrc
-      
+
+secrets:
+  .netrc:
+    file: ${HOME}/.netrc
