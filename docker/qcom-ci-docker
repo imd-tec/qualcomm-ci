@@ -38,9 +38,10 @@ USER dev
 
 # Update build scripts
 RUN cd ${HOME}/build_scripts && \
-    git fetch origin && \
     git checkout dc227f588f292faf16d680b92a4dd8e3f6f9f61a && \
     chmod 775 ${HOME}/build_scripts/*.sh
+    ls -l ${HOME}/build_scripts
+    git log --oneline 
 
 #set working directory
 WORKDIR /home/dev
