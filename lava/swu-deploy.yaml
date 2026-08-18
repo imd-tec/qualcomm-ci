@@ -1,0 +1,185 @@
+device_type: docker
+job_name: deploy swu to imdt-8550-sbc via ssh
+tags:
+- dut
+
+# Job/test budget covers the worst retry case: 10 resumable push attempts of a
+# multi-GB .swu (a stalled transfer dies in ~60s via ssh keepalive, a reset one
+# sooner), a swupdate install polled for up to 10 min, plus up to 3 reboot
+# attempts of ~5 min each, each preceded by a wait for the rootfs grow to
+# settle (capped at 3 min). A healthy run still completes in well under 10
+# minutes.
+timeouts:
+  job:
+    minutes: 75
+  action:
+    minutes: 20
+  connection:
+    minutes: 5
+priority: medium
+visibility: public
+
+actions:
+- deploy:
+    to: docker
+    image:
+      name: lava-adb:latest
+      local: true
+    timeout:
+      minutes: 5
+
+- boot:
+    method: docker
+    command: /bin/bash
+    prompts:
+    - 'root@lava'
+    timeout:
+      minutes: 5
+
+- test:
+    timeout:
+      minutes: 60
+    definitions:
+    - from: inline
+      name: swu-deploy
+      path: inline/swu-deploy.yaml
+      parameters:
+        SWU_FILE: '
+        SWU_URL: ''
+        # DUT address reachable from the dispatcher/container over the LAN
+        # (GbE/Wi-Fi). Auth is key-based: the lava-adb image ships the private
+        # key matching lava-dut-key.pub in root's authorized_keys on the DUT.
+        SSH_HOST: 'SET-BY-CI'
+        SSH_PORT: '2222'
+        SSH_USER: 'root'
+        # Whether this fixture has an SD card inserted (overridden per board
+        # by the CI workflow). Used as a post-reboot boot-health probe: the
+        # 12GB board's known bad-boot signature is the SD card never
+        # enumerating, and such boots also wedge the ssh-tests suite later.
+        SDCARD_PRESENT: 'yes'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: swu-deploy
+          description: Push .swu over ssh/scp and run swupdate (A/B rootfs)
+        run:
+          steps:
+          # All DUT access is over ssh/scp. UserKnownHostsFile=/dev/null +
+          # StrictHostKeyChecking=no are required because each A/B rootfs slot
+          # carries its own host keys, so the key changes after the slot switch
+          # below; ConnectTimeout keeps the reboot wait-loops responsive.
+          # ServerAliveInterval/CountMax kill a silently-stalled connection in
+          # ~60s: the multi-hop transport to the 12GB board (wireguard tunnel +
+          # adb forward) can stall an established stream without an RST, which
+          # once left an scp of the .swu hanging at 35% for 16 minutes.
+          - SSH="ssh -p $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 $SSH_USER@$SSH_HOST"
+          - SCP="scp -P $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+          - 'echo "DUT: $SSH_USER@$SSH_HOST:$SSH_PORT"'
+          # Wait for the board to be reachable over ssh (it may still be booting
+          # when the job starts).
+          - i=0; SSH_OK=0; while [ $i -lt 60 ]; do if $SSH true >/dev/null 2>&1; then SSH_OK=1; break; fi; i=$((i+1)); sleep 2; done
+          - if [ "$SSH_OK" = 1 ]; then lava-test-case ssh-detect --result pass; else lava-test-case ssh-detect --result fail; fi
+          - 'echo "Using .swu: ${SWU_URL:-/images/prop/$SWU_FILE}"'
+          - if [ -n "$SWU_URL" ]; then lava-test-case fetch-swu --shell curl -fsSL "$SWU_URL" -o /tmp/update.swu; else lava-test-case copy-swu --shell cp "/images/prop/$SWU_FILE" /tmp/update.swu; fi
+          - ROOT_BEFORE=$($SSH cat /proc/cmdline | tr ' ' '\n' | grep ^root=) || ROOT_BEFORE=""
+          - 'echo "Active rootfs before update: $ROOT_BEFORE"'
+          - $SSH mkdir -p /home/swu
+          # Push the .swu in resumable chunks, verifying the whole file by
+          # checksum at the end.
+          #
+          # A single scp of the .swu dies with "Couldn't send packet:
+          # Connection reset by peer" about 105s in on the 12GB board, at the
+          # same elapsed time whatever the size (a 202MB minimal .swu fails as
+          # readily as a 1.6GB proprietary one) — the sender runs far ahead of
+          # what the adb-forwarded USB hop can drain, and adbd drops the stream
+          # once its queue backs up. Retrying the whole file just re-enters the
+          # same doomed long-lived stream, so instead each connection carries at
+          # most CHUNK bytes and is torn down well inside that window.
+          #
+          # Each pass appends only the bytes the DUT is still missing, so a
+          # reset mid-chunk costs that chunk, not the transfer. The budget is 10
+          # *consecutive* no-progress passes rather than 10 total, so a slow
+          # transport still converges while a genuinely dead one gives up.
+          #
+          # A no-progress pass backs off 10s before retrying. A USB-level reset
+          # takes the whole adb transport down, not just this stream, and the
+          # forwards have to be re-established before anything can connect --
+          # ssh then fails instantly with connection refused, which would
+          # otherwise burn the whole budget in a couple of seconds.
+          #
+          # Deliberately not rsync: qcom-minimal-image ships busybox+coreutils
+          # only, and that is the image running on the DUT while the next one is
+          # pushed, so rsync is missing exactly when it would be needed. stat,
+          # tail, head and cat are always present.
+          #
+          # Appending in place also holds peak DUT usage to one copy of the
+          # .swu, which matters on a board whose rootfs has ~2.6G free.
+          - SWU_MD5=$(md5sum /tmp/update.swu | cut -d' ' -f1)
+          # 64MB: even at the ~2MB/s this transport degrades to, a chunk is
+          # ~34s of connection life, comfortably inside the ~105s window in
+          # which the stream gets reset. Handshake cost per chunk is ~1s.
+          - CHUNK=$((64 * 1024 * 1024))
+          - 'dut_size() { S=$($SSH "stat -c%s /home/swu/update.swu 2>/dev/null" 2>/dev/null) || S=""; case "$S" in ""|*[!0-9]*) S=0 ;; esac; echo "$S"; }'
+          - 'push_swu() { LOCAL_SIZE=$(stat -c%s /tmp/update.swu); STALL=0; PASS=0; while [ $STALL -lt 10 ]; do PASS=$((PASS+1)); HAVE=$(dut_size); if [ "$HAVE" -gt "$LOCAL_SIZE" ]; then echo "dut copy is longer than the source - restarting"; $SSH rm -f /home/swu/update.swu || true; HAVE=0; fi; if [ "$HAVE" -eq "$LOCAL_SIZE" ]; then DUT_MD5=$($SSH md5sum /home/swu/update.swu | cut -d" " -f1) || DUT_MD5=""; if [ -n "$DUT_MD5" ] && [ "$DUT_MD5" = "$SWU_MD5" ]; then echo "push-swu verified after $((PASS-1)) pass(es)"; return 0; fi; echo "checksum mismatch at full length - restarting"; $SSH rm -f /home/swu/update.swu || true; HAVE=0; fi; echo "push-swu pass $PASS: $HAVE of $LOCAL_SIZE bytes on dut"; tail -c +$((HAVE+1)) /tmp/update.swu | head -c $CHUNK | $SSH "cat >> /home/swu/update.swu" || true; if [ "$(dut_size)" -gt "$HAVE" ]; then STALL=0; else STALL=$((STALL+1)); echo "no progress ($STALL/10)"; sleep 10; fi; done; echo "push-swu gave up after 10 passes with no progress"; return 1; }'
+          - if push_swu; then PUSH_OK=1; else PUSH_OK=0; fi
+          - 'echo "swu md5 local=$SWU_MD5 dut=${DUT_MD5:-<none>}"'
+          - if [ "$PUSH_OK" = 1 ]; then lava-test-case push-swu --result pass; else lava-test-case push-swu --result fail; fi
+          # Run swupdate detached and poll over short-lived connections: the
+          # 12GB board's install stalls its transport past the 60s keepalive
+          # above, which failed the test case for an update that succeeded.
+          # The launch is idempotent (guarded on the log the redirection
+          # creates) so a lost reply cannot start a second swupdate, and never
+          # returns early into the cleanup/reboot below while one is writing.
+          - 'run_swupdate() { $SSH "rm -f /home/swu/swupdate.log /home/swu/swupdate.rc" || true; L=0; while [ $L -lt 3 ]; do L=$((L+1)); if $SSH "if [ ! -f /home/swu/swupdate.log ]; then nohup sh -c ''TMPDIR=/home/swu swupdate -i /home/swu/update.swu >/home/swu/swupdate.log 2>&1; echo \$? >/home/swu/swupdate.rc'' >/dev/null 2>&1 & fi"; then break; fi; echo "swupdate launch attempt $L failed - retrying"; sleep 5; done; SWU_RC=""; i=0; while [ $i -lt 120 ]; do SWU_RC=$($SSH cat /home/swu/swupdate.rc 2>/dev/null) || SWU_RC=""; if [ -n "$SWU_RC" ]; then break; fi; i=$((i+1)); sleep 5; done; $SSH cat /home/swu/swupdate.log 2>/dev/null || true; echo "swupdate exit status: ${SWU_RC:-<timed out after 10 min>} (launch attempts: $L)"; [ "$SWU_RC" = 0 ]; }'
+          # Only attempt the update with a verified file; a swupdate run on a
+          # truncated image is guaranteed noise.
+          - if [ "$PUSH_OK" != 1 ]; then lava-test-case swupdate --result skip; elif run_swupdate; then lava-test-case swupdate --result pass; else lava-test-case swupdate --result fail; fi
+          - $SSH rm -rf /home/swu
+          # Record the current boot so the reboot can be detected reliably.
+          # Comparing /proc/sys/kernel/random/boot_id before/after is immune
+          # to transient ssh failures on the forwarded transport, which used
+          # to fake the offline/online cycle and let the slot check read the
+          # pre-reboot cmdline (false slot-switched failures).
+          # NB: every probe is guarded with `|| ...` — the LAVA test shell
+          # runs with `set -e`, so an unguarded failing ssh (expected while
+          # the board is down) would kill the whole test run.
+          - i=0; BOOT_ID_BEFORE=""; while [ $i -lt 3 ] && [ -z "$BOOT_ID_BEFORE" ]; do BOOT_ID_BEFORE=$($SSH cat /proc/sys/kernel/random/boot_id 2>/dev/null) || BOOT_ID_BEFORE=""; i=$((i+1)); done
+          - 'echo "boot_id before reboot: ${BOOT_ID_BEFORE:-<unknown>}"'
+          # Never reboot through a filesystem grow. resize-rootfs latches
+          # "already grown" by writing `systemctl disable` into /etc, which
+          # lives inside the rootfs SWUpdate overwrites, so the grow re-arms
+          # on every update: each first boot of a new slot expands ext4 from
+          # ~2 GB to the full ~22 GiB slot, and ext4lazyinit then zeroes the
+          # new inode tables in the background. Interrupting either leaves
+          # half-initialised metadata on disk. Every reboot below is gated on
+          # this returning; a timeout is logged and reported but does not
+          # abort the run.
+          - 'wait_fs_settle() { i=0; while [ $i -lt 90 ]; do GA=$($SSH systemctl is-active systemd-growfs-root.service 2>/dev/null) || GA=inactive; LZ=$($SSH ps ax 2>/dev/null | grep ext4lazyinit | grep -v grep | wc -l) || LZ=0; if [ "$GA" != activating ] && [ "$LZ" = 0 ]; then return 0; fi; echo "waiting for fs to settle (growfs=$GA lazyinit=$LZ)"; i=$((i+1)); sleep 2; done; return 1; }'
+          # Reboot and wait for ssh to come back under a NEW boot_id — i.e.
+          # the board really rebooted into the switched slot. Up to 3 boot
+          # attempts: a boot that comes back
+          # without the SD card enumerating (when the fixture has one) is the
+          # 12GB board's known bad-boot signature — such boots later wedge
+          # mid-suite in ssh-tests — so it is retried with a further reboot
+          # rather than handed on. Issue each reboot in the background and
+          # detach: `reboot` tears down the ssh connection, so the command
+          # would otherwise return 255.
+          - BOOT_TRY=0; NEW_BOOT=0; BOOT_HEALTHY=0; PREV_BID="$BOOT_ID_BEFORE"
+          - while [ $BOOT_TRY -lt 3 ] && [ "$BOOT_HEALTHY" != 1 ]; do BOOT_TRY=$((BOOT_TRY+1)); echo "boot attempt $BOOT_TRY"; wait_fs_settle || echo "fs settle timed out before reboot $BOOT_TRY - rebooting anyway"; $SSH 'nohup sh -c "sleep 1; reboot" >/dev/null 2>&1 &' || true; if [ $BOOT_TRY = 1 ]; then lava-test-case reboot --result pass; fi; NEW_BOOT=0; i=0; while [ $i -lt 150 ]; do BID=$($SSH cat /proc/sys/kernel/random/boot_id 2>/dev/null) || BID=""; if [ -n "$BID" ] && [ "$BID" != "$PREV_BID" ]; then NEW_BOOT=1; break; fi; i=$((i+1)); sleep 2; done; if [ "$NEW_BOOT" != 1 ]; then echo "no new boot_id on attempt $BOOT_TRY"; continue; fi; PREV_BID="$BID"; if [ "$SDCARD_PRESENT" != yes ]; then BOOT_HEALTHY=1; else j=0; while [ $j -lt 15 ]; do if $SSH test -e /dev/mmcblk0 2>/dev/null; then BOOT_HEALTHY=1; break; fi; j=$((j+1)); sleep 2; done; fi; if [ "$BOOT_HEALTHY" != 1 ]; then echo "degraded boot (no mmcblk0) on attempt $BOOT_TRY - retrying reboot"; fi; done
+          - 'echo "boot_id after reboot: ${BID:-<unreachable>} (attempts: $BOOT_TRY)"'
+          - if [ "$NEW_BOOT" = 1 ] && [ -n "$BOOT_ID_BEFORE" ]; then lava-test-case wait-reboot --result pass; else lava-test-case wait-reboot --result fail; fi
+          # Boot health = the post-reboot system looks like a good boot (SD
+          # card enumerated when the fixture has one). Reported separately so
+          # a boot that only recovered on a retry is still visible in the
+          # attempt count logged above.
+          - if [ "$BOOT_HEALTHY" = 1 ]; then lava-test-case boot-health --result pass; else lava-test-case boot-health --result fail; fi
+          # Reported separately so a slow/stuck grow is visible rather than
+          # just showing up as downstream flakiness in ssh-tests.
+          - if wait_fs_settle; then lava-test-case fs-settle --result pass; else lava-test-case fs-settle --result fail; fi
+          - 'echo "rootfs after boot: $($SSH df -h / | tail -1)"'
+          - ROOT_AFTER=$($SSH cat /proc/cmdline | tr ' ' '\n' | grep ^root=) || ROOT_AFTER=""
+          - 'echo "Active rootfs after update: $ROOT_AFTER"'
+          # Both sides must be non-empty AND differ — two failed reads would
+          # otherwise compare equal ("" != "") and mask a broken probe.
+          - if [ -n "$ROOT_BEFORE" ] && [ -n "$ROOT_AFTER" ] && [ "$ROOT_BEFORE" != "$ROOT_AFTER" ]; then lava-test-case slot-switched --result pass; else lava-test-case slot-switched --result fail; fi
+          - lava-test-case post-boot-shell --shell $SSH "cat /etc/hwrevision"

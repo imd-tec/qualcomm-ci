@@ -114,6 +114,19 @@ on:
           type: number
           default: 720 # 12 hours
 
+        RUN_LAVA_TESTS:
+          required: false
+          description: Flag to execute LAVA tests after build completion
+          type: boolean
+          default: false
+
+        SELF_HOSTED_RUNNER:
+          required: false
+          description: Flag to specify if the LAVA tests should execute on a self-hosted runner (true) or a remote GitHub runner (false)
+          type: boolean
+          default: true
+
+
 env:
   CONTAINER_NAME: "ci_qualcomm_${{ github.run_id }}"
   DOCKER_EXEC: docker exec -t -u dev
@@ -319,3 +332,57 @@ jobs:
           if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
             rm -rf "${BUILD_PROJECT_DIR:?}/patches"  
           fi
+
+  # LAVA test jobs for 8GB and 12GB boards
+  # @WilliamBright-IMD
+  lava-8gb:
+    needs: [build-qualcomm-bsp]
+    if: needs.build-qualcomm-bsp.result == 'success' && inputs.RUN_LAVA_TESTS == true
+    uses: ./.github/workflows/lava-tests.yml
+    with:
+      # if [ "$BUILD_VERSION" == "development" ]; then
+      #     REPO_NAME=$(basename "$MANIFEST_REPOSITORY")
+      #     RELEASE_PATH="/home/dev/Qualcomm/release/${REPO_NAME}"
+      #     FULL_RELEASE_NAME="${RELEASE_NAME}_${BUILD_VERSION}"
+      # else
+      #     FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
+      #     RELEASE_PATH="/home/dev/Qualcomm/release"
+      # fi
+      release-name: ${{ inputs.BUILD_RELEASE_NAME }}
+      build-version: ${{ inputs.BUILD_VERSION }}
+      build-name: ${{ inputs.BUILD_NAME }}
+      swu-filename: ${{ inputs.BUILD_IMAGE }}-swu-${{ inputs.BUILD_MACHINE }}.swu
+      board-tag: '8550-8gb'
+      mem-min-mb: '4500'
+      has-camera: true
+      # No SD card inserted in this fixture — flip once a card is fitted.
+      has-sdcard: false
+      # IW416 enumerates on SDIO but no driver binds with the current image.
+      has-wifi: false
+      # wg-slot: ${{ needs.build-qualcomm-bsp.outputs.wg-slot-8gb }}
+      is-pr: ${{ github.event_name == 'pull_request' }}
+      pr-number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
+      self-hosted-runner: ${{ inputs.SELF_HOSTED_RUNNER }}
+    secrets: inherit
+
+  lava-12gb:
+    needs: [build-qualcomm-bsp]
+    if: needs.build-qualcomm-bsp.result == 'success' && inputs.RUN_LAVA_TESTS == true
+    uses: ./.github/workflows/lava-tests.yml
+    with:
+      release-name: ${{ inputs.BUILD_RELEASE_NAME }}
+      build-version: ${{ inputs.BUILD_VERSION }}
+      build-name: ${{ inputs.BUILD_NAME }}
+      swu-filename: ${{ inputs.BUILD_IMAGE }}-swu-${{ inputs.BUILD_MACHINE }}.swu
+      board-tag: '8550-12gb'
+      # 8500 not 9000: this board idles at ~9.2GB available, so 9000 was within
+      # noise of a fresh boot's memory usage (false failures).
+      mem-min-mb: '8500'
+      has-camera: true
+      has-sdcard: true
+      has-wifi: true
+      # wg-slot: ${{ needs.build-qualcomm-bsp.outputs.wg-slot-12gb }}
+      is-pr: ${{ github.event_name == 'pull_request' }}
+      pr-number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
+      self-hosted-runner: ${{ inputs.SELF_HOSTED_RUNNER }}
+    secrets: inherit

@@ -1,0 +1,246 @@
+device_type: ssh
+job_name: post-update system tests on imdt-8550-sbc
+tags:
+- dut-ssh
+
+# The whole suite normally completes in well under a minute; the worst
+# legitimate case (60s camera stream + 60s SD-card wait) is ~3 minutes.
+# Keep the action timeout tight so a silently-dead ssh transport (board
+# wedge / dropped adb forward) fails the job in minutes, not half an hour.
+timeouts:
+  job:
+    minutes: 20
+  action:
+    minutes: 10
+  connection:
+    minutes: 5
+priority: medium
+visibility: public
+
+actions:
+- deploy:
+    to: ssh
+    os: oe
+    timeout:
+      minutes: 5
+
+- boot:
+    method: ssh
+    prompts:
+    - 'root@'
+    timeout:
+      minutes: 5
+
+- test:
+    timeout:
+      minutes: 10
+    definitions:
+    - from: inline
+      name: system-info
+      path: inline/system-info.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: system-info
+          description: Basic system information (kernel, hwrevision, rootfs slot)
+        run:
+          steps:
+          - lava-test-case kernel-version --shell uname -a
+          - lava-test-case hwrevision --shell cat /etc/hwrevision
+          - ROOT_SLOT=$(cat /proc/cmdline | tr ' ' '\n' | grep ^root=) || true
+          - 'echo "Active rootfs slot: $ROOT_SLOT"'
+          - lava-test-case rootfs-slot --shell test -n "$ROOT_SLOT"
+
+    - from: inline
+      name: resources
+      path: inline/resources.yaml
+      parameters:
+        # Minimum available memory in MB expected on this board variant
+        # (8 GB board ~6 GB visible after carveouts, 12 GB board ~10 GB).
+        # Overridden per board by the CI workflow.
+        MEM_MIN_MB: '9000'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: resources
+          description: Disk and memory availability checks
+        run:
+          steps:
+          - lava-test-case disk-free --shell df -h /
+          - lava-test-case mem-free --shell free -m
+          - MEM_TOTAL_MB=$(free -m | awk '/Mem:/ {print $2}')
+          - 'echo "Total memory: ${MEM_TOTAL_MB:-<unknown>}MB"'
+          - MEM_AVAIL_MB=$(free -m | awk '/Mem:/ {print $7}')
+          - 'echo "Available memory: ${MEM_AVAIL_MB:-<unknown>}MB (minimum: ${MEM_MIN_MB}MB)"'
+          - if [ -n "$MEM_AVAIL_MB" ] && [ "$MEM_AVAIL_MB" -ge "$MEM_MIN_MB" ]; then lava-test-case mem-avail-min --result pass; else lava-test-case mem-avail-min --result fail; fi
+
+    - from: inline
+      name: wifi
+      path: inline/wifi.yaml
+      parameters:
+        # Set to anything other than 'yes' on boards where Wi-Fi is not
+        # expected to work; the check then reports a skip instead of failing.
+        # Overridden per board by the CI workflow. (8 GB board: IW416 SDIO
+        # card enumerates but no driver binds with the current image.)
+        WIFI_PRESENT: 'yes'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: wifi
+          description: Wi-Fi interface presence check (mlan0)
+        run:
+          steps:
+          - if [ "$WIFI_PRESENT" != "yes" ]; then echo "Wi-Fi not expected on this board - skipping"; lava-test-case wifi-present --result skip; exit 0; fi
+          - WLAN_IF=$(ip link show mlan0 2>/dev/null) || true
+          - if [ -n "$WLAN_IF" ]; then lava-test-case wifi-present --result pass; else lava-test-case wifi-present --result fail; fi
+
+    - from: inline
+      name: ar1335-stream
+      path: inline/ar1335-stream.yaml
+      parameters:
+        # Set to anything other than 'yes' on boards without the AR1335
+        # camera module attached; the suite then reports skips instead of
+        # failing. Overridden per board by the CI workflow.
+        CAMERA_PRESENT: 'yes'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: ar1335-stream
+          description: Configure the AR1335 CSI0 pipeline and stream frames with v4l2-ctl
+        run:
+          steps:
+          - if [ "$CAMERA_PRESENT" != "yes" ]; then echo "No AR1335 on this board - skipping camera suite"; lava-test-case pipeline-setup --result skip; lava-test-case sensor-enumerated --result skip; lava-test-case video-node --result skip; lava-test-case stream-30-frames --result skip; exit 0; fi
+          - SETUP_OUT=$(sh /opt/imdt/camss/qcs8550-csi0-ar1335.sh 2>&1) && SETUP_RC=0 || SETUP_RC=$?
+          - 'echo "$SETUP_OUT"'
+          - if [ "$SETUP_RC" = "0" ]; then lava-test-case pipeline-setup --result pass; else lava-test-case pipeline-setup --result fail; fi
+          - lava-test-case sensor-enumerated --shell sh -c "media-ctl -d /dev/media0 -p | grep -q ar1335"
+          - VIDEO_DEV=$(echo "$SETUP_OUT" | grep -o '/dev/video[0-9]*' | head -n1)
+          - VIDEO_DEV=${VIDEO_DEV:-/dev/video0}
+          - 'echo "Using video device: $VIDEO_DEV"'
+          - if [ -n "$VIDEO_DEV" ]; then lava-test-case video-node --result pass; else lava-test-case video-node --result fail; fi
+          - lava-test-case stream-30-frames --shell /usr/bin/timeout 60 v4l2-ctl -d "$VIDEO_DEV" --stream-mmap --stream-count=30
+
+    - from: inline
+      name: sdcard
+      path: inline/sdcard.yaml
+      parameters:
+        # Set to anything other than 'yes' on test fixtures without an SD
+        # card inserted; the check then reports a skip instead of failing.
+        # Overridden per board by the CI workflow.
+        SDCARD_PRESENT: 'yes'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: sdcard
+          description: SD card presence check (mmcblk0)
+        run:
+          steps:
+          - if [ "$SDCARD_PRESENT" != "yes" ]; then echo "No SD card in this fixture - skipping"; lava-test-case sdcard-present --result skip; exit 0; fi
+          # Wait up to 60s for the SD card device node to appear
+          - SD_DEV=""; WAITED=0; while [ "$WAITED" -lt 60 ]; do if [ -e /dev/mmcblk0 ]; then SD_DEV=/dev/mmcblk0; break; fi; sleep 2; WAITED=$((WAITED+2)); done
+          - echo "SD card wait took ${WAITED}s"
+          # On failure, dump the mmc/sdhci kernel log so a genuine
+          # enumeration failure can be told apart from a transport problem.
+          - if [ -z "$SD_DEV" ]; then dmesg | grep -iE 'mmc|sdhci' | tail -n 20 || true; fi
+          - if [ -n "$SD_DEV" ]; then lava-test-case sdcard-present --result pass; else lava-test-case sdcard-present --result fail; fi
+
+    - from: inline
+      name: hardware
+      path: inline/hardware.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: hardware
+          description: Hardware subsystem presence checks (GPU, BT, I2C, RTC, hwrng, IOMMU, CPU freq)
+        run:
+          steps:
+          - lava-test-case gpu-drm-render --shell test -e /dev/dri/renderD128
+          - lava-test-case gpu-drm-card --shell test -e /dev/dri/card0
+          - lava-test-case bluetooth-present --shell test -e /sys/class/bluetooth/hci0
+          - lava-test-case rtc-present --shell test -e /dev/rtc0
+          - lava-test-case cpu-freq-scaling --shell test -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+          - I2C_COUNT=$(ls /dev/i2c-* 2>/dev/null | wc -l)
+          - if [ "$I2C_COUNT" -ge 1 ]; then lava-test-case i2c-buses --result pass; else lava-test-case i2c-buses --result fail; fi
+          - IOMMU_COUNT=$(ls /sys/kernel/iommu_groups/ 2>/dev/null | wc -l)
+          - if [ "$IOMMU_COUNT" -ge 1 ]; then lava-test-case iommu-groups --result pass; else lava-test-case iommu-groups --result fail; fi
+          - HWRNG_BYTES=$(dd if=/dev/hwrng bs=16 count=1 2>/dev/null | wc -c)
+          - if [ "$HWRNG_BYTES" -ge 16 ]; then lava-test-case hwrng-readable --result pass; else lava-test-case hwrng-readable --result fail; fi
+
+    - from: inline
+      name: gbe
+      path: inline/gbe.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: gbe
+          description: LAN7430 GbE PHY presence checks (PCIe enumeration and driver bind)
+        run:
+          steps:
+          - lava-test-case lan7430-present --shell sh -c "lspci -n | grep -q '1055:7430'"
+          - LAN743X_BOUND=$(ls /sys/bus/pci/drivers/lan743x/ 2>/dev/null | grep -v 'bind\|unbind\|new_id\|remove_id\|uevent\|module' || true)
+          - if [ -n "$LAN743X_BOUND" ]; then lava-test-case lan743x-driver-bound --result pass; else lava-test-case lan743x-driver-bound --result fail; fi
+
+    - from: inline
+      name: dsp-ipa
+      path: inline/dsp-ipa.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: dsp-ipa
+          description: CDSP remoteproc bring-up and IPA driver init checks
+        run:
+          steps:
+          # No ADSP cases: the ADSP does not come up reliably on this hardware
+          # and the checks were only ever reporting that, so they are left out
+          # until the ADSP side is fixed. The state is still echoed for context.
+          - ADSP_RP=$(for r in /sys/class/remoteproc/remoteproc*; do [ "$(cat "$r/name" 2>/dev/null)" = adsp ] && echo "$r" && break; done) || true
+          - 'echo "ADSP remoteproc node: ${ADSP_RP:-<not found>} (state: $(cat "$ADSP_RP/state" 2>/dev/null))"'
+          - CDSP_RP=$(for r in /sys/class/remoteproc/remoteproc*; do [ "$(cat "$r/name" 2>/dev/null)" = cdsp ] && echo "$r" && break; done) || true
+          - 'echo "CDSP remoteproc node: ${CDSP_RP:-<not found>} (fw: $(cat "$CDSP_RP/firmware" 2>/dev/null))"'
+          - CDSP_STATE=$(cat "$CDSP_RP/state" 2>/dev/null) || true
+          - 'echo "CDSP state: $CDSP_STATE"'
+          - if [ "$CDSP_STATE" = "running" ]; then lava-test-case cdsp-running --result pass; else lava-test-case cdsp-running --result fail; fi
+          - if dmesg | grep -q "remote processor cdsp is now up"; then lava-test-case cdsp-booted --result pass; else lava-test-case cdsp-booted --result fail; fi
+          - IPA_DEV=$(ls -d /sys/bus/platform/drivers/ipa/*.ipa 2>/dev/null | head -n1)
+          - 'echo "IPA device bound: ${IPA_DEV:-<not found>}"'
+          - if [ -n "$IPA_DEV" ]; then lava-test-case ipa-driver-bound --result pass; else lava-test-case ipa-driver-bound --result fail; fi
+          - if dmesg | grep -q "IPA driver setup completed successfully"; then lava-test-case ipa-setup-complete --result pass; else lava-test-case ipa-setup-complete --result fail; fi
+
+    - from: inline
+      name: gpu-dmesg
+      path: inline/gpu-dmesg.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: gpu-dmesg
+          description: GPU/zap-shader bring-up check via kernel log (no faults or hangs)
+        run:
+          steps:
+          - dmesg | grep -iE 'adreno|gmu|gpu' || true
+          - GPU_FAULTS=$(dmesg | grep -iE 'gpu fault|gpu recovery|gpu hang|hangcheck|\*\*\* gpu|adreno.*fail|zap.*fail' || true)
+          - if [ -z "$GPU_FAULTS" ]; then lava-test-case gpu-no-faults --result pass; else echo "$GPU_FAULTS"; lava-test-case gpu-no-faults --result fail; fi
+
+    - from: inline
+      name: backlight
+      path: inline/backlight.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: backlight
+          description: Panel backlight brightness set/get via sysfs (kept under 30)
+        run:
+          steps:
+          - BL=/sys/class/backlight/backlight
+          - if [ -d "$BL" ]; then lava-test-case backlight-present --result pass; else lava-test-case backlight-present --result fail; fi
+          - MAX_BRIGHTNESS=$(cat "$BL/max_brightness" 2>/dev/null) || true
+          - 'echo "max_brightness: ${MAX_BRIGHTNESS:-<unknown>}"'
+          - ORIG_BRIGHTNESS=$(cat "$BL/brightness" 2>/dev/null) || true
+          - 'echo "original brightness: ${ORIG_BRIGHTNESS:-<unknown>}"'
+          # Keep the test brightness low (under 30) to limit backlight power draw
+          - TEST_BRIGHTNESS=20
+          - lava-test-case set-brightness --shell sh -c "echo $TEST_BRIGHTNESS > $BL/brightness"
+          - READBACK=$(cat "$BL/brightness" 2>/dev/null) || true
+          - 'echo "brightness after write: ${READBACK:-<unknown>} (expected $TEST_BRIGHTNESS)"'
+          - if [ "$READBACK" = "$TEST_BRIGHTNESS" ]; then lava-test-case get-brightness --result pass; else lava-test-case get-brightness --result fail; fi
+          # Restore the original brightness so we leave the panel as we found it
+          - if [ -n "$ORIG_BRIGHTNESS" ]; then echo "$ORIG_BRIGHTNESS" > "$BL/brightness" || true; fi

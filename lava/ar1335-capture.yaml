@@ -1,0 +1,78 @@
+device_type: docker
+job_name: AR1335 frame capture and de-mosaic on imdt-8550-sbc
+tags:
+- dut
+
+timeouts:
+  job:
+    minutes: 15
+  action:
+    minutes: 10
+  connection:
+    minutes: 5
+priority: medium
+visibility: public
+
+actions:
+- deploy:
+    to: docker
+    image:
+      name: lava-adb:latest
+      local: true
+    timeout:
+      minutes: 5
+
+- boot:
+    method: docker
+    command: /bin/bash
+    prompts:
+    - 'root@lava'
+    timeout:
+      minutes: 5
+
+- test:
+    timeout:
+      minutes: 10
+    definitions:
+    - from: inline
+      name: ar1335-capture
+      path: inline/ar1335-capture.yaml
+      parameters:
+        # DUT address reachable from the dispatcher/container over the LAN
+        # (GbE/Wi-Fi). Auth is key-based: the lava-adb image ships the private
+        # key matching lava-dut-key.pub in root's authorized_keys on the DUT.
+        SSH_HOST: 'SET-BY-CI'
+        SSH_PORT: '2222'
+        SSH_USER: 'root'
+        # Output PNG on the LAVA host (/images is bind-mounted by the dut0
+        # device dict from the LAVA images dir on the server). The CI
+        # workflow makes this board-specific so parallel board runs don't
+        # overwrite each other's frame.
+        FRAME_OUT: '/images/ar1335_4208x3120.png'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: ar1335-capture
+          description: Capture a raw frame from the AR1335 at 4208x3120, de-mosaic to full-resolution PNG, save to /images/
+        run:
+          steps:
+          # All DUT access is over ssh/scp, matching the other imdt-8550-sbc
+          # jobs. UserKnownHostsFile=/dev/null + StrictHostKeyChecking=no avoid
+          # host-key prompts/failures; ConnectTimeout keeps the wait-loop
+          # responsive.
+          - SSH="ssh -p $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 $SSH_USER@$SSH_HOST"
+          - SCP="scp -P $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10"
+          - 'echo "DUT: $SSH_USER@$SSH_HOST:$SSH_PORT"'
+          # Wait for the board to be reachable over ssh (it may still be booting
+          # when the job starts).
+          - i=0; SSH_OK=0; while [ $i -lt 60 ]; do if $SSH true >/dev/null 2>&1; then SSH_OK=1; break; fi; i=$((i+1)); sleep 2; done
+          - if [ "$SSH_OK" = 1 ]; then lava-test-case ssh-detect --result pass; else lava-test-case ssh-detect --result fail; fi
+          - SETUP_OUT=$($SSH "sh /opt/imdt/camss/qcs8550-csi0-ar1335.sh" 2>&1) && SETUP_RC=0 || SETUP_RC=$?
+          - 'echo "$SETUP_OUT"'
+          - lava-test-case pipeline-setup --result $([ "$SETUP_RC" = "0" ] && echo pass || echo fail)
+          - VIDEO_DEV=$(echo "$SETUP_OUT" | grep -o '/dev/video[0-9]*' | head -n1)
+          - VIDEO_DEV=${VIDEO_DEV:-/dev/video0}
+          - 'echo "Using video device: $VIDEO_DEV"'
+          - lava-test-case capture-raw-frame --shell $SSH "v4l2-ctl -d $VIDEO_DEV --set-fmt-video=width=4208,height=3120,pixelformat=pgAA --stream-mmap --stream-count=1 --stream-to=/tmp/ar1335_frame.raw"
+          - lava-test-case pull-frame --shell $SCP "$SSH_USER@$SSH_HOST:/tmp/ar1335_frame.raw" /tmp/ar1335_frame.raw
+          - lava-test-case demosaic --shell python3 /usr/local/bin/demosaic.py /tmp/ar1335_frame.raw "$FRAME_OUT"

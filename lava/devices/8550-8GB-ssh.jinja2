@@ -1,0 +1,32 @@
+{# Device dictionary for the 8550-8GB-ssh LAVA device (device-type: ssh) —
+   the 8 GB IMDT 8550 SBC.
+
+   ssh_host is the IP of the host that forwards the DUT's sshd (adb forward
+   + relay, set up by the lava-forwarding service). Both boards now sit
+   behind the SAME relay address and are told apart by port: 2222 is the
+   12 GB board, 2223 is this 8 GB one. The 8 GB board used to have its own
+   LAN address; it does not any more.
+
+   ssh_host must NOT be 'localhost': the ssh client runs inside the
+   lava-dispatcher container on the compose bridge network, where
+   localhost is the container itself.
+
+   The identity file is the private key matching
+   recipes-core/lava-ssh-keys/files/lava-dut-key.pub, installed into the
+   dispatcher's worker-state volume:
+
+     docker compose cp lava-dut-key lava-dispatcher:/var/lib/lava/dispatcher/worker/lava-dut-key
+
+   Install on the server with:
+
+     lava-server manage devices add 8550-8GB-ssh --device-type ssh --worker worker0 --tags dut-ssh 8550-8gb
+     # then place this file at
+     # /etc/lava-server/dispatcher-config/devices/8550-8GB-ssh.jinja2 (owner lavaserver)
+#}
+{# ssh-keepalive, not stock ssh: adds ServerAlive keepalive to the primary
+   connection — see ssh-keepalive.jinja2 for why it has its own name. #}
+{% extends 'ssh-keepalive.jinja2' %}
+{% set ssh_host = 'DUT-SSH-RELAY-IP' %}
+{% set ssh_port = 2223 %}
+{% set ssh_user = 'root' %}
+{% set ssh_identity_file = '/var/lib/lava/dispatcher/worker/lava-dut-key' %}

@@ -1,0 +1,101 @@
+device_type: docker
+job_name: PCIe Key-B overlay switch on imdt-8550-sbc
+tags:
+- dut
+
+# Budget allows for the pre-reboot rootfs-grow wait (capped at 3 min) on top
+# of the ~5 min boot wait.
+timeouts:
+  job:
+    minutes: 20
+  action:
+    minutes: 10
+  connection:
+    minutes: 5
+priority: medium
+visibility: public
+
+actions:
+- deploy:
+    to: docker
+    image:
+      name: lava-adb:latest
+      local: true
+    timeout:
+      minutes: 5
+
+- boot:
+    method: docker
+    command: /bin/bash
+    prompts:
+    - 'root@lava'
+    timeout:
+      minutes: 5
+
+- test:
+    timeout:
+      minutes: 15
+    definitions:
+    - from: inline
+      name: pcie-keyb-switch
+      path: inline/pcie-keyb-switch.yaml
+      parameters:
+        PCIE_KEYB_ENABLE: 'yes'
+        DEFAULT_OVERLAYS: 'qcs8550-imdt-sbc-display.dtbo qcs8550-imdt-sbc-ar1335-csi0.dtbo'
+        KEYB_OVERLAYS: 'qcs8550-imdt-sbc-display.dtbo qcs8550-imdt-sbc-ar1335-csi0.dtbo qcs8550-imdt-sbc-pcie-keyb.dtbo'
+        # DUT address reachable from the dispatcher/container over the LAN
+        # (GbE/Wi-Fi). Auth is key-based: the lava-adb image ships the private
+        # key matching lava-dut-key.pub in root's authorized_keys on the DUT.
+        SSH_HOST: 'SET-BY-CI'
+        SSH_PORT: '2222'
+        SSH_USER: 'root'
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: pcie-keyb-switch
+          description: Enable or disable the PCIe Key-B overlay via fw_setenv, then reboot
+        run:
+          steps:
+          # All DUT access is over ssh. UserKnownHostsFile=/dev/null +
+          # StrictHostKeyChecking=no avoid host-key prompts/mismatches (the key
+          # can differ per rootfs slot); ConnectTimeout keeps the reboot
+          # wait-loops responsive. We ssh in as root directly, so no `adb root`.
+          - SSH="ssh -p $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 $SSH_USER@$SSH_HOST"
+          - 'echo "DUT: $SSH_USER@$SSH_HOST:$SSH_PORT"'
+          # Wait for the board to be reachable over ssh (it may still be booting
+          # when the job starts).
+          - i=0; SSH_OK=0; while [ $i -lt 60 ]; do if $SSH true >/dev/null 2>&1; then SSH_OK=1; break; fi; i=$((i+1)); sleep 2; done
+          - if [ "$SSH_OK" = 1 ]; then lava-test-case ssh-detect --result pass; else lava-test-case ssh-detect --result fail; fi
+          - if [ "${PCIE_KEYB_ENABLE}" = "yes" ]; then TARGET_OVERLAYS="${KEYB_OVERLAYS}"; else TARGET_OVERLAYS="${DEFAULT_OVERLAYS}"; fi
+          - 'echo "Setting u-boot overlays env to: ${TARGET_OVERLAYS}"'
+          - lava-test-case fw-setenv --shell $SSH "fw_setenv overlays '${TARGET_OVERLAYS}'"
+          - lava-test-case fw-printenv --shell $SSH "fw_printenv overlays"
+          # Record the current boot so the reboot can be detected reliably
+          # (boot_id comparison — same approach as swu-deploy.yaml; a single
+          # transient ssh failure must not be mistaken for the reboot).
+          # Probes are guarded with `|| ...`: the test shell runs with set -e.
+          - i=0; BOOT_ID_BEFORE=""; while [ $i -lt 3 ] && [ -z "$BOOT_ID_BEFORE" ]; do BOOT_ID_BEFORE=$($SSH cat /proc/sys/kernel/random/boot_id 2>/dev/null) || BOOT_ID_BEFORE=""; i=$((i+1)); done
+          - 'echo "boot_id before reboot: ${BOOT_ID_BEFORE:-<unknown>}"'
+          # Never reboot through a rootfs grow. resize-rootfs re-arms on every
+          # SWUpdate install (its `systemctl disable` latch lives in the /etc
+          # that gets overwritten), so a board deployed just before this job
+          # may still be expanding ext4 to fill its ~22 GiB slot, with
+          # ext4lazyinit zeroing the new inode tables afterwards. Interrupting
+          # either leaves half-initialised metadata on disk. Same gate as
+          # swu-deploy.yaml.
+          - 'wait_fs_settle() { i=0; while [ $i -lt 90 ]; do GA=$($SSH systemctl is-active systemd-growfs-root.service 2>/dev/null) || GA=inactive; LZ=$($SSH ps ax 2>/dev/null | grep ext4lazyinit | grep -v grep | wc -l) || LZ=0; if [ "$GA" != activating ] && [ "$LZ" = 0 ]; then return 0; fi; echo "waiting for fs to settle (growfs=$GA lazyinit=$LZ)"; i=$((i+1)); sleep 2; done; return 1; }'
+          - if wait_fs_settle; then lava-test-case fs-settle --result pass; else lava-test-case fs-settle --result fail; fi
+          # Issue the reboot in the background and detach: `reboot` tears down
+          # the ssh connection, so the command would otherwise return 255.
+          - $SSH 'nohup sh -c "sleep 1; reboot" >/dev/null 2>&1 &' || true
+          - lava-test-case reboot --result pass
+          # Wait for ssh to come back under a NEW boot_id.
+          - 'echo "Waiting for DUT to come back with a new boot_id..."'
+          - i=0; NEW_BOOT=0; while [ $i -lt 150 ]; do BID=$($SSH cat /proc/sys/kernel/random/boot_id 2>/dev/null) || BID=""; if [ -n "$BID" ] && [ "$BID" != "$BOOT_ID_BEFORE" ]; then NEW_BOOT=1; break; fi; i=$((i+1)); sleep 2; done
+          - 'echo "boot_id after reboot: ${BID:-<unreachable>}"'
+          - if [ "$NEW_BOOT" = 1 ] && [ -n "$BOOT_ID_BEFORE" ]; then lava-test-case wait-reboot --result pass; else lava-test-case wait-reboot --result fail; fi
+          # Verify the env survived the reboot
+          - ACTUAL=$($SSH fw_printenv overlays 2>/dev/null | sed 's/overlays=//')
+          - 'echo "overlays after reboot: ${ACTUAL}"'
+          - LAST_OVERLAY=$(echo "${TARGET_OVERLAYS}" | awk '{print $NF}')
+          - if echo "${ACTUAL}" | grep -qF "${LAST_OVERLAY}"; then lava-test-case env-verified --result pass; else lava-test-case env-verified --result fail; fi

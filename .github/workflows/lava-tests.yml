@@ -1,0 +1,641 @@
+name: LAVA Hardware Tests
+
+on:
+  workflow_call:
+    inputs:
+      release-name:
+        description: >
+          Release name used to locate the release
+          tarball for adb deployment. Only used when swu-deployment is false.
+        type: string
+        required: true
+      build-version:
+        description: >
+          Build version (e.g. 1.0.0) used to locate the release tarball for adb
+          deployment. Only used when swu-deployment is false.
+        type: string
+        required: true
+      build-name:
+        description: >
+          Build directory name under $CI_DIR/builds (e.g.
+          imdt-qcom-bsp-v2.1.0), used to locate the built artifact (.swu or
+          release tarball) to move to the LAVA host.
+        type: string
+        required: true
+      swu-filename:
+        description: Filename of the SWU image for this build
+        type: string
+        required: true
+      board-tag:
+        description: LAVA device tag selecting the board variant (e.g. 8550-8gb, 8550-12gb)
+        type: string
+        required: true
+      mem-min-mb:
+        description: Minimum available memory (MB) expected on this board variant
+        type: string
+        default: '9000'
+      has-camera:
+        description: Whether the AR1335 camera module is attached to this board
+        type: boolean
+        default: true
+      has-sdcard:
+        description: Whether an SD card is inserted in this board's slot
+        type: boolean
+        default: true
+      has-wifi:
+        description: Whether Wi-Fi (mlan0) is expected to work on this board
+        type: boolean
+        default: true
+      wg-slot:
+        description: >
+          WireGuard client slot used to reach the lab LAN when self-hosted is
+          false, resolved to the WG_CONF_<slot> secret. Unused when self-hosted.
+        type: string
+        default: ''
+      is-pr:
+        type: boolean
+        default: false
+      pr-number:
+        type: number
+        default: 0
+      
+      # Development options
+      self-hosted-runner:
+        description: >
+          Run on the self-hosted [linux, x64, qcom] runner (already on the
+          lab LAN, no tunnel needed) instead of a GitHub-hosted runner (needs
+          the WireGuard tunnel steps below to reach the lab LAN).
+        type: boolean
+        default: true
+
+      swu-deployment:
+        description: >
+          Whether to deploy the image via swupdate (true) or adb/fastboot
+          (false). Defaults to swupdate; adb/fastboot deployment is not yet
+          implemented (see lava/adb-deploy.yaml).
+        type: boolean
+        default: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  lava-test:
+    # self-hosted-runner: true runs on the same single [self-hosted, linux, x64,
+    # qcom] machine the build workflow runs on, already on the lab LAN, so
+    # the WireGuard steps below are skipped. self-hosted-runner: false runs on a
+    # GitHub-hosted runner instead, which brings up a WireGuard tunnel to
+    # reach the lab LAN (LAVA server, DUT ssh endpoints).
+    #
+    # On the self-hosted machine, the concurrency group below only
+    # serialises jobs for the SAME board-tag, so a differently-tagged
+    # board's job can run in parallel on this same box. The ssh key and
+    # lavacli identity below are identical regardless of board (no
+    # board-specific fields), so they stay at their original fixed paths -
+    # concurrent writes of identical content can't conflict. Only the
+    # job-definition YAMLs actually differ per board (SSH_HOST, SSH_PORT,
+    # MEM_MIN_MB, ...), so LAVA_RUN_DIR scopes just those, keeping two
+    # concurrent board jobs from overwriting each other's in-flight job
+    # files. (On GitHub-hosted this is all moot - every run gets a fresh VM.)
+    runs-on: ${{ inputs.self-hosted-runner && fromJSON('["self-hosted","linux","x64","qcom"]') || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    # Serialise per board: each physical DUT runs one pipeline at a time,
+    # but the two boards' pipelines run in parallel.
+    concurrency:
+      group: lava-dut-${{ inputs.board-tag }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    env:
+      LAVA_TOKEN: ${{ secrets.LAVA_TOKEN }}
+      LAVA_RUN_DIR: /temp/lava-${{ inputs.board-tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+
+      # ── Lab LAN access (GitHub-hosted only) ──────────────────────────────
+      # The client configs are pre-provisioned as static peers on the lab
+      # WireGuard server, so nothing is generated at run time. They are split
+      # tunnels (AllowedIPs = the two lab subnets only), so the runner's
+      # default route is untouched. Server-side iptables restricts these
+      # slots to the LAVA host's ports 80 and 22 and nothing else.
+      - name: Bring up WireGuard tunnel to lab LAN
+        if: ${{ !inputs.self-hosted-runner }}
+        env:
+          WG_CONF: ${{ secrets[format('WG_CONF_{0}', inputs.wg-slot)] }}
+        run: |
+          if [ -z "$WG_CONF" ]; then
+            echo "Secret WG_CONF_${{ inputs.wg-slot }} is empty or not set."
+            echo "Fork PRs do not receive secrets; otherwise check the slot number."
+            exit 1
+          fi
+          # Retry via apt-get update: the runner image's package lists can be
+          # stale enough to 404 on the pinned version.
+          sudo apt-get install -y wireguard-tools >/dev/null 2>&1 \
+            || { sudo apt-get update -qq && sudo apt-get install -y wireguard-tools >/dev/null; }
+          printf '%s\n' "$WG_CONF" | sudo tee /etc/wireguard/wg0.conf >/dev/null
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+          # Assert reachability now: without this, a dead tunnel or a slot
+          # collision surfaces much later as an opaque lavacli timeout.
+          for i in $(seq 30); do
+            ping -c1 -W1 "${{ vars.LAVA_HOST }}" >/dev/null 2>&1 && break
+            sleep 1
+          done
+          if ! curl -fsS --max-time 10 -o /dev/null "http://${{ vars.LAVA_HOST }}/"; then
+            echo "LAVA host ${{ vars.LAVA_HOST }} unreachable over the tunnel"
+            sudo wg show
+            exit 1
+          fi
+          echo "Tunnel up on slot ${{ inputs.wg-slot }}; LAVA host reachable"
+
+      # (GitHub-hosted)
+      # Needed by the camera-frame rsync near the end of this job. Written
+      # from the GH secret every run (rather than relying on a key
+      # provisioned by hand into this account) so rotation and provenance
+      # both live in the workflow/secret, not on the machine.
+      #
+      # (Self-hosted)
+      # Only write if the secret actually changed. On the rare write,
+      # go via a temp file + mv (same filesystem, so the rename is
+      # atomic) rather than a truncating redirect, so a concurrent
+      # reader always sees either the old or new complete file.
+      - name: Install LAVA host ssh key
+        env:
+          LAVA_SSH_KEY: ${{ secrets.LAVA_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+
+          if [ "$(cat ~/.ssh/id_lava 2>/dev/null)" != "$LAVA_SSH_KEY" ]; then
+            printf '%s\n' "$LAVA_SSH_KEY" > ~/.ssh/id_lava.tmp
+            chmod 600 ~/.ssh/id_lava.tmp
+            mv ~/.ssh/id_lava.tmp ~/.ssh/id_lava
+          fi
+
+      # (GitHub-hosted)
+      # The GitHub-hosted image does not ship pip3, unlike the self-hosted
+      # builder this job used to run on, so bootstrap it instead of assuming
+      # it. A venv also side-steps PEP 668's block on the system Python, and
+      # only the lavacli entry point is linked onto PATH so the venv's
+      # interpreter cannot shadow the python3 the result-parsing steps use.
+      #
+      # (Self-hosted)
+      # On the self-hosted machine this only installs once and is skipped on
+      # every later run (command -v lavacli short-circuits) - a persistent,
+      # already-provisioned runner doesn't get re-pinned to whatever's latest
+      # on PyPI every single run. 
+      - name: Install lavacli
+        run: |
+          if command -v lavacli >/dev/null; then
+            lavacli --version
+            exit 0
+          fi
+          if ! python3 -m venv "$HOME/lavacli-venv" 2>/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y python3-venv >/dev/null
+            python3 -m venv "$HOME/lavacli-venv"
+          fi
+          "$HOME/lavacli-venv/bin/pip" install lavacli --quiet
+          sudo ln -sf "$HOME/lavacli-venv/bin/lavacli" /usr/local/bin/lavacli
+          lavacli --version
+
+
+      # Only write if content differs from secret
+      - name: Configure lavacli identity
+        run: |
+          mkdir -p ~/.config
+          LAVACLI_CONF=$(cat <<EOF
+          lava-ci:
+            uri: http://${{ vars.LAVA_HOST }}/RPC2
+            username: ${{ secrets.LAVA_USERNAME }}
+            token: ${LAVA_TOKEN}
+          EOF
+          )
+
+          if [ "$(cat ~/.config/lavacli.yaml 2>/dev/null)" != "$LAVACLI_CONF" ]; then
+            printf '%s\n' "$LAVACLI_CONF" > ~/.config/lavacli.yaml
+          fi
+
+      # ── Board-specific job definitions ──────────────────────────────────
+      # Every submitted job targets one specific board:
+      #  * ssh-device jobs (ssh-tests, pcie-keyb-test) are pinned by replacing
+      #    the generic dut-ssh tag with the board tag (8550-8gb / 8550-12gb);
+      #  * docker-device jobs (swu-deploy, ar1335-capture, pcie-keyb-switch)
+      #    reach the board over ssh, so SSH_HOST/SSH_PORT are set to the relay
+      #    forwarding this board — the endpoint is a repo secret per board tag;
+      #  * the memory threshold and camera presence match the board variant.
+      - name: Prepare board-specific LAVA job definitions
+        run: |
+          # Both boards now sit behind the same relay address, distinguished
+          # only by port, so the port is board-specific too. It defaults to
+          # 2222 (the historic value, and still the 12 GB board's) when the
+          # secret is unset, so a repo that has not set it keeps working.
+          case "${{ inputs.board-tag }}" in
+            8550-8gb)
+              DUT_SSH_HOST="${{ secrets.DUT_SSH_HOST_8GB }}"
+              DUT_SSH_PORT="${{ secrets.DUT_SSH_PORT_8GB }}"
+              ;;
+            8550-12gb)
+              DUT_SSH_HOST="${{ secrets.DUT_SSH_HOST_12GB }}"
+              DUT_SSH_PORT="${{ secrets.DUT_SSH_PORT_12GB }}"
+              ;;
+            *) echo "Unknown board-tag '${{ inputs.board-tag }}'"; exit 1 ;;
+          esac
+          if [ -z "$DUT_SSH_HOST" ]; then
+            echo "DUT ssh host secret for '${{ inputs.board-tag }}' is not set"
+            exit 1
+          fi
+          DUT_SSH_PORT="${DUT_SSH_PORT:-2222}"
+          mkdir -p "$LAVA_RUN_DIR/lava-jobs"
+          CAMERA_PRESENT="${{ inputs.has-camera && 'yes' || 'no' }}"
+          SDCARD_PRESENT="${{ inputs.has-sdcard && 'yes' || 'no' }}"
+          WIFI_PRESENT="${{ inputs.has-wifi && 'yes' || 'no' }}"
+          for f in lava/*.yaml; do
+            sed -e "s|^- dut-ssh$|- ${{ inputs.board-tag }}|" \
+                -e "s|SSH_HOST: '[^']*'|SSH_HOST: '${DUT_SSH_HOST}'|" \
+                -e "s|SSH_PORT: '[^']*'|SSH_PORT: '${DUT_SSH_PORT}'|" \
+                -e "s|MEM_MIN_MB: '[^']*'|MEM_MIN_MB: '${{ inputs.mem-min-mb }}'|" \
+                -e "s|CAMERA_PRESENT: '[^']*'|CAMERA_PRESENT: '${CAMERA_PRESENT}'|" \
+                -e "s|SDCARD_PRESENT: '[^']*'|SDCARD_PRESENT: '${SDCARD_PRESENT}'|" \
+                -e "s|WIFI_PRESENT: '[^']*'|WIFI_PRESENT: '${WIFI_PRESENT}'|" \
+                -e "s|FRAME_OUT: '[^']*'|FRAME_OUT: '/images/ar1335_${{ inputs.board-tag }}.png'|" \
+                -e "s|^job_name: \(.*\)|job_name: \1 [${{ inputs.board-tag }}]|" \
+                "$f" > "$LAVA_RUN_DIR/lava-jobs/$(basename "$f")"
+          done
+
+      # ── Move built artifact to the LAVA host ─────────────────────────────
+      # copy-swu (swu-deploy.yaml) and the adb-deploy equivalent both expect
+      # the artifact to already be sitting in $LAVA_IMAGES_DIR on the LAVA
+      # host - this stages it there before either job is submitted.
+      - name: Move artifact to LAVA host
+        run: |
+          if [ "${{ inputs.swu-deployment }}" = "true" ]; then
+            ARTIFACT="${{ inputs.swu-filename }}"
+          else
+            ARTIFACT="${{ inputs.release-name }}_v${{ inputs.build-version }}.tar.gz"
+          fi
+          SRC="${CI_DIR}/builds/${{ inputs.build-name }}/release/${ARTIFACT}"
+          if [ ! -f "$SRC" ]; then
+            echo "Artifact not found: $SRC"
+            exit 1
+          fi
+
+          SSH_LAVA="ssh -i ~/.ssh/id_lava -o StrictHostKeyChecking=accept-new"
+          if ! $SSH_LAVA "${{ vars.LAVA_USER }}@${{ vars.LAVA_HOST }}" "test -d '${{ vars.LAVA_IMAGES_DIR }}'"; then
+            echo "LAVA_IMAGES_DIR '${{ vars.LAVA_IMAGES_DIR }}' does not exist on ${{ vars.LAVA_HOST }}"
+            exit 1
+          fi
+
+          rsync -av -e "$SSH_LAVA" \
+            "$SRC" ${{ vars.LAVA_USER }}@${{ vars.LAVA_HOST }}:${{ vars.LAVA_IMAGES_DIR }}/
+
+  #     # ── Job 1: Image deployment ─────────────────────────────────────────
+  #     # ── Option 1: swu-deploy (SSH) ──────────────────────────────────────
+  #     - name: Submit swu-deploy LAVA job
+  #       if: ${{ inputs.swu-deployment }}
+  #       run: |
+  #         SWU_FILE="${{ inputs.swu-filename }}"
+  #         sed -e "s|SWU_FILE: '.*'|SWU_FILE: '${SWU_FILE}'|" \
+  #             "$LAVA_RUN_DIR/lava-jobs/swu-deploy.yaml" > "$LAVA_RUN_DIR/lava-swu-deploy.yaml"
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit "$LAVA_RUN_DIR/lava-swu-deploy.yaml")
+  #         echo "swu-deploy: $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "DEPLOY_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     # ── Option 2: adb-deploy (not yet implemented, see lava/adb-deploy.yaml) ──
+  #     - name : Submit adb-deploy LAVA job
+  #       if: ${{ !inputs.swu-deployment }}
+  #       run: |
+  #         # TODO: adb-deploy.yaml doesn't yet have a RELEASE_TARBALL
+  #         # placeholder to sed-patch (unlike SWU_FILE above) - wire this in
+  #         # once the job's actual adb/fastboot flash steps are implemented.
+  #         RELEASE_TARBALL="${{ inputs.release-name }}_v${{ inputs.build-version }}.tar.gz"
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit "$LAVA_RUN_DIR/lava-jobs/adb-deploy.yaml")
+  #         echo "adb-deploy: $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "DEPLOY_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for deployment job
+  #       run: bash lava/wait-job.sh "$DEPLOY_JOB_ID"
+
+  #     # ── Job 2: ssh-tests (SSH DUT) ──────────────────────────────────────
+  #     - name: Submit ssh-tests LAVA job
+  #       run: |
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit $LAVA_RUN_DIR/lava-jobs/ssh-tests.yaml)
+  #         echo "ssh-tests: $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "SSHTESTS_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for ssh-tests
+  #       run: bash lava/wait-job.sh "$SSHTESTS_JOB_ID"
+
+  #     # ── Job 3: ar1335 frame capture — camera boards only ───────────────
+  #     - name: Submit ar1335-capture LAVA job
+  #       if: inputs.has-camera
+  #       run: |
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit $LAVA_RUN_DIR/lava-jobs/ar1335-capture.yaml)
+  #         echo "ar1335-capture: $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "CAPTURE_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for ar1335-capture
+  #       if: inputs.has-camera
+  #       run: bash lava/wait-job.sh "$CAPTURE_JOB_ID"
+
+  #     # ── Job 4: PCIe Key-B switch (enable) ───────────────────────────────
+  #     - name: Submit pcie-keyb-switch (enable) LAVA job
+  #       run: |
+  #         sed "s|PCIE_KEYB_ENABLE: '.*'|PCIE_KEYB_ENABLE: 'yes'|" $LAVA_RUN_DIR/lava-jobs/pcie-keyb-switch.yaml \
+  #           > $LAVA_RUN_DIR/lava-keyb-enable.yaml
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit $LAVA_RUN_DIR/lava-keyb-enable.yaml)
+  #         echo "pcie-keyb-switch (enable): $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "KEYB_ENABLE_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for pcie-keyb-switch (enable)
+  #       run: lavacli --identity lava-ci jobs wait "$KEYB_ENABLE_JOB_ID"
+
+  #     # ── Job 5: PCIe Key-B tests (SSH DUT) ───────────────────────────────
+  #     - name: Submit pcie-keyb-test LAVA job
+  #       run: |
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit $LAVA_RUN_DIR/lava-jobs/pcie-keyb-test.yaml)
+  #         echo "pcie-keyb-test: $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "KEYB_TEST_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for pcie-keyb-test
+  #       run: lavacli --identity lava-ci jobs wait "$KEYB_TEST_JOB_ID"
+
+  #     # ── Job 6: PCIe Key-B switch (restore default) — always runs ────────
+  #     - name: Submit pcie-keyb-switch (restore) LAVA job
+  #       if: always() && env.KEYB_ENABLE_JOB_ID != ''
+  #       run: |
+  #         sed "s|PCIE_KEYB_ENABLE: '.*'|PCIE_KEYB_ENABLE: 'no'|" $LAVA_RUN_DIR/lava-jobs/pcie-keyb-switch.yaml \
+  #           > $LAVA_RUN_DIR/lava-keyb-restore.yaml
+  #         JOB_ID=$(lavacli --identity lava-ci jobs submit $LAVA_RUN_DIR/lava-keyb-restore.yaml)
+  #         echo "pcie-keyb-switch (restore): $JOB_ID — http://${{ vars.LAVA_HOST }}/scheduler/job/$JOB_ID"
+  #         echo "KEYB_RESTORE_JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+  #     - name: Wait for pcie-keyb-switch (restore)
+  #       if: always() && env.KEYB_RESTORE_JOB_ID != ''
+  #       run: lavacli --identity lava-ci jobs wait "$KEYB_RESTORE_JOB_ID"
+
+  #     # ── Results ─────────────────────────────────────────────────────────
+  #     - name: Show all LAVA job results
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       run: |
+  #         for JOB_ID in "$DEPLOY_JOB_ID" "$SSHTESTS_JOB_ID" "$CAPTURE_JOB_ID" \
+  #                       "$KEYB_ENABLE_JOB_ID" "$KEYB_TEST_JOB_ID" "$KEYB_RESTORE_JOB_ID"; do
+  #           [ -z "$JOB_ID" ] && continue
+  #           echo "=== Job $JOB_ID ==="
+  #           lavacli --identity lava-ci jobs show "$JOB_ID" || true
+  #           echo ""
+  #           lavacli --identity lava-ci results "$JOB_ID" || true
+  #           echo ""
+  #         done
+
+  #     - name: Fetch and combine LAVA results CSVs
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       run: |
+  #         HEADER_WRITTEN=0
+  #         for JOB_ID in "$DEPLOY_JOB_ID" "$SSHTESTS_JOB_ID" "$CAPTURE_JOB_ID" \
+  #                       "$KEYB_ENABLE_JOB_ID" "$KEYB_TEST_JOB_ID" "$KEYB_RESTORE_JOB_ID"; do
+  #           [ -z "$JOB_ID" ] && continue
+  #           curl -fsSL -H "Authorization: Token $LAVA_TOKEN" \
+  #             "http://${{ vars.LAVA_HOST }}/results/${JOB_ID}/csv" \
+  #             -o "$LAVA_RUN_DIR/lava-${JOB_ID}.csv" 2>/dev/null || continue
+  #           if [ "$HEADER_WRITTEN" = "0" ]; then
+  #             cat "$LAVA_RUN_DIR/lava-${JOB_ID}.csv" > lava-all-results.csv
+  #             HEADER_WRITTEN=1
+  #           else
+  #             tail -n +2 "$LAVA_RUN_DIR/lava-${JOB_ID}.csv" >> lava-all-results.csv
+  #           fi
+  #         done
+
+  #     - name: Compute badge values
+  #       id: badge
+  #       if: always()
+  #       run: |
+  #         if [ ! -f lava-all-results.csv ]; then
+  #           echo "status=error" >> "$GITHUB_OUTPUT"
+  #           echo "color=e4e669" >> "$GITHUB_OUTPUT"
+  #           exit 0
+  #         fi
+  #         python3 - <<'PYEOF'
+  #         import csv, os
+  #         rows = [r for r in csv.DictReader(open('lava-all-results.csv')) if r.get('suite') != 'lava']
+  #         scored = [r for r in rows if r.get('result', '').lower() != 'skip']
+  #         passed = sum(1 for r in scored if r.get('result', '').lower() == 'pass')
+  #         total = len(scored)
+  #         skipped = len(rows) - total
+  #         status = f'{passed} / {total} passed'
+  #         if skipped:
+  #             status += f' ({skipped} skipped)'
+  #         color = '3fb950' if passed == total and total > 0 else ('f85149' if total > 0 else 'e4e669')
+  #         with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+  #             out.write(f'status={status}\n')
+  #             out.write(f'color={color}\n')
+  #         PYEOF
+
+  #     - name: Fetch LAVA logs
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       run: |
+  #         mkdir -p lava-logs
+  #         for name_job in \
+  #             "deploy:$DEPLOY_JOB_ID" \
+  #             "ssh-tests:$SSHTESTS_JOB_ID" \
+  #             "ar1335-capture:$CAPTURE_JOB_ID" \
+  #             "pcie-keyb-enable:$KEYB_ENABLE_JOB_ID" \
+  #             "pcie-keyb-test:$KEYB_TEST_JOB_ID" \
+  #             "pcie-keyb-restore:$KEYB_RESTORE_JOB_ID"; do
+  #           name="${name_job%%:*}"
+  #           job_id="${name_job##*:}"
+  #           [ -z "$job_id" ] && continue
+  #           lavacli --identity lava-ci jobs logs "$job_id" \
+  #             > "lava-logs/${name}-${job_id}.log" 2>&1 || true
+  #         done
+  #         cp lava-all-results.csv lava-logs/ 2>/dev/null || true
+
+  #     - name: Upload LAVA logs artifact
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: lava-logs-${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }}-${{ inputs.board-tag }}-${{ github.sha }}
+  #         path: lava-logs/
+  #         if-no-files-found: ignore
+  #         retention-days: 30
+
+  #     - name: Convert LAVA results to JUnit XML
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       run: |
+  #         python3 lava/lava_to_junit.py lava-all-results.csv lava-results.xml \
+  #           "$DEPLOY_JOB_ID $SSHTESTS_JOB_ID $CAPTURE_JOB_ID $KEYB_ENABLE_JOB_ID $KEYB_TEST_JOB_ID $KEYB_RESTORE_JOB_ID"
+
+  #     - name: Publish test results
+  #       if: always() && env.DEPLOY_JOB_ID != ''
+  #       uses: dorny/test-reporter@v2
+  #       with:
+  #         name: LAVA Test Results (${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }}, ${{ inputs.board-tag }})
+  #         path: lava-results.xml
+  #         reporter: java-junit
+  #         fail-on-error: true
+
+  #     - name: Generate PR comment body
+  #       if: always() && env.DEPLOY_JOB_ID != '' && inputs.is-pr
+  #       run: |
+  #         python3 - <<'PYEOF'
+  #         import csv, os, re
+
+  #         lava_host = "${{ vars.LAVA_HOST }}"
+  #         image_name = "${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }}"
+  #         board_tag = "${{ inputs.board-tag }}"
+  #         jobs = [
+  #             ('deploy',           os.environ.get('DEPLOY_JOB_ID', '')),
+  #             ('ssh-tests',        os.environ.get('SSHTESTS_JOB_ID', '')),
+  #             ('ar1335',           os.environ.get('CAPTURE_JOB_ID', '')),
+  #             ('pcie-keyb-enable', os.environ.get('KEYB_ENABLE_JOB_ID', '')),
+  #             ('pcie-keyb-test',   os.environ.get('KEYB_TEST_JOB_ID', '')),
+  #             ('pcie-keyb-restore',os.environ.get('KEYB_RESTORE_JOB_ID', '')),
+  #         ]
+
+  #         rows = []
+  #         try:
+  #             with open('lava-all-results.csv', newline='') as f:
+  #                 for row in csv.DictReader(f):
+  #                     if row.get('suite', '') == 'lava':
+  #                         continue
+  #                     rows.append(row)
+  #         except FileNotFoundError:
+  #             pass
+
+  #         def suite_name(raw):
+  #             return re.sub(r'^\d+_', '', raw)
+
+  #         passed  = sum(1 for r in rows if r.get('result', '').lower() == 'pass')
+  #         failed  = sum(1 for r in rows if r.get('result', '').lower() not in ('pass', 'skip'))
+  #         skipped = sum(1 for r in rows if r.get('result', '').lower() == 'skip')
+
+  #         status = '✅' if (failed == 0 and rows) else '❌'
+  #         job_links = ' &nbsp;·&nbsp; '.join(
+  #             f"[{name} #{jid}](http://{lava_host}/scheduler/job/{jid})"
+  #             for name, jid in jobs if jid
+  #         )
+
+  #         lines = [
+  #             f"## {status} LAVA Test Results — `{image_name}` on `{board_tag}`",
+  #             "",
+  #             job_links,
+  #             "",
+  #             f"**{passed} passed** &nbsp;·&nbsp; **{failed} failed** &nbsp;·&nbsp; {skipped} skipped",
+  #             "",
+  #             "| Suite | Test Case | Result |",
+  #             "|-------|-----------|--------|",
+  #         ]
+
+  #         for row in rows:
+  #             result = row.get('result', '').lower()
+  #             icon = '✅' if result == 'pass' else ('⏭️' if result == 'skip' else '❌')
+  #             lines.append(f"| {suite_name(row.get('suite', 'unknown'))} | `{row.get('name', '')}` | {icon} {result} |")
+
+  #         if not rows:
+  #             lines.append("| — | No test results found | — |")
+
+  #         with open('lava-comment.md', 'w') as f:
+  #             f.write('\n'.join(lines) + '\n')
+  #         PYEOF
+
+  #     - name: Post results to PR
+  #       if: always() && inputs.is-pr
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const fs = require('fs');
+  #           let body;
+  #           try {
+  #             body = fs.readFileSync('lava-comment.md', 'utf8');
+  #           } catch {
+  #             body = `## ❓ LAVA Test Results\n\nResults not available — check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`;
+  #           }
+  #           await github.rest.issues.createComment({
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             issue_number: ${{ inputs.pr-number }},
+  #             body,
+  #           });
+
+  #     - name: Fetch camera frame from LAVA server
+  #       if: always() && env.CAPTURE_JOB_ID != ''
+  #       run: |
+  #         # Same class of assumption as pip3 above: this step ignores failures,
+  #         # so a missing rsync would drop the frame artifact silently.
+  #         command -v rsync >/dev/null || { sudo apt-get update -qq; sudo apt-get install -y rsync >/dev/null; }
+  #         rsync -av -e "ssh -i ~/.ssh/id_lava -o StrictHostKeyChecking=accept-new" \
+  #           ${{ vars.LAVA_USER }}@${{ vars.LAVA_HOST }}:${{ vars.LAVA_IMAGES_DIR }}/ar1335_${{ inputs.board-tag }}.png \
+  #           ar1335_${{ inputs.board-tag }}.png 2>/dev/null || true
+
+  #     - name: Upload camera frame artifact
+  #       if: always() && env.CAPTURE_JOB_ID != ''
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ar1335-frame-${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }}-${{ inputs.board-tag }}-${{ github.sha }}
+  #         path: ar1335_${{ inputs.board-tag }}.png
+  #         if-no-files-found: ignore
+  #         retention-days: 30
+
+  #     - name: Fail if any LAVA job did not complete or had test failures
+  #       if: env.DEPLOY_JOB_ID != ''
+  #       run: |
+  #         FAILED=0
+  #         for JOB_ID in "$DEPLOY_JOB_ID" "$SSHTESTS_JOB_ID" "$CAPTURE_JOB_ID" \
+  #                       "$KEYB_ENABLE_JOB_ID" "$KEYB_TEST_JOB_ID" "$KEYB_RESTORE_JOB_ID"; do
+  #           [ -z "$JOB_ID" ] && continue
+  #           HEALTH=$(lavacli --identity lava-ci jobs show "$JOB_ID" | grep '^Health' | awk '{print $NF}')
+  #           echo "Job $JOB_ID health: $HEALTH"
+  #           [ "$HEALTH" = "Complete" ] || { FAILED=1; continue; }
+  #           CSV_FILE="$LAVA_RUN_DIR/lava-${JOB_ID}.csv"
+  #           if [ ! -f "$CSV_FILE" ]; then
+  #             curl -fsSL -H "Authorization: Token $LAVA_TOKEN" \
+  #               "http://${{ vars.LAVA_HOST }}/results/${JOB_ID}/csv" \
+  #               -o "$CSV_FILE" || { FAILED=1; continue; }
+  #           fi
+  #           python3 lava/check_results.py < "$CSV_FILE"
+  #           [ $? -eq 0 ] || FAILED=1
+  #         done
+  #         [ "$FAILED" = "0" ] || { echo "One or more LAVA jobs did not complete or had test failures"; exit 1; }
+
+  #     - name: Update hardware test badge
+  #       if: always() && !inputs.is-pr
+  #       uses: schneegans/dynamic-badges-action@v1.8.0
+  #       with:
+  #         auth: ${{ secrets.GIST_SECRET }}
+  #         gistID: ${{ vars.BADGE_GIST_ID }}
+  #         filename: hardware-tests-${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }}-${{ inputs.board-tag }}.json
+  #         label: ${{ inputs.board-tag }} ${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }} LAVA QA
+  #         message: ${{ steps.badge.outputs.status }}
+  #         color: ${{ steps.badge.outputs.color }}
+  #         namedLogo: qualcomm
+
+  #     - name: Cleanup
+  #       if: always()
+  #       run: rm -f ~/.config/lavacli.yaml ~/.ssh/id_lava
+
+  #     # Last step in the job: everything above needs the tunnel, including
+  #     # the camera-frame rsync. No-op when self-hosted (nothing was brought up).
+  #     - name: Tear down WireGuard tunnel
+  #       if: always() && !inputs.self-hosted-runner
+  #       run: sudo wg-quick down wg0 || true
+
+  # notify-lava:
+  #   runs-on: ubuntu-latest
+  #   needs: lava-test
+  #   if: always()
+  #   steps:
+  #     - name: Send Slack notification
+  #       uses: slackapi/slack-github-action@v2
+  #       with:
+  #         webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+  #         webhook-type: webhook-trigger
+  #         payload: |
+  #           {
+  #             "text": "${{ needs.lava-test.result == 'success' && '✅' || '❌' }} *LAVA tests* (${{ inputs.swu-deployment && inputs.swu-filename || inputs.release-name }} on ${{ inputs.board-tag }}) — ${{ needs.lava-test.result }}\n\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Triggered by:* ${{ github.actor }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+  #           }
