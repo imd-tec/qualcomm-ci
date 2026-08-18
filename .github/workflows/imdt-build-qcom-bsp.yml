@@ -56,12 +56,16 @@ on:
 
         BASE_DOCKER_IMAGE:
           required: true
-          description: Docker base image to use (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
+          description: >
+            Docker base image to use 
+            (e.g. imdtec/imdt-qualcomm-build-setup:0.5.1)
           type: string
 
         IMDT_PATCH_SCRIPT_PATH:
           required: true
-          description: Path to IMDT patch build script (e.g. LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh)
+          description: >
+            Path to IMDT patch build script 
+            (e.g. LE.PRODUCT.2.1.r1/apps_proc/imdt-patch-qcs8550-build.sh)
           type: string
 
         BUILD_RELEASE_NAME:
@@ -77,17 +81,22 @@ on:
 
         QCS_SOURCES:
           required: true
-          description: Qualcomm source files to use (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1)
+          description: >
+            Qualcomm source files to use 
+            (e.g. qcs8550-le-1-0_amss_standard_oem_apqgps-r00087.1)
           type: string
 
         SKIP_STEPS:
           required: false
-          description: Build steps to skip, defined by 'contains' conditionals below (e.g. [sync_repos, build_hlos])
+          description: >
+            Build steps to skip, defined by 'contains' conditionals below 
+            (e.g. [sync_repos, build_hlos])
           type: string
 
         DEV_STATE_LOG:
           required: false
-          description: Development build details for logging purposes (see $CI_DEV_DIR/state)
+          description: >
+            Development build details for logging purposes (see $CI_DEV_DIR/state)
           type: string
 
         BUILD_SWU:
@@ -104,7 +113,8 @@ on:
 
         PRESERVE_DOCKER:
           required: false
-          description: Whether to preserve docker container and image after build completion
+          description: >
+            Whether to preserve docker container and image after build completion
           type: boolean
           default: false
 
@@ -122,9 +132,20 @@ on:
 
         SELF_HOSTED_RUNNER:
           required: false
-          description: Flag to specify if the LAVA tests should execute on a self-hosted runner (true) or a remote GitHub runner (false)
+          description: >
+            Flag to specify if the LAVA tests should execute on a self-hosted 
+            runner (true) or a remote GitHub runner (false)
           type: boolean
           default: true
+
+        TEST_ONLY:
+          required: false
+          description: >
+            Skip the build and run LAVA tests against the existing artifact
+            already present at $CI_DIR/builds/BUILD_NAME/release. Requires
+            RUN_LAVA_TESTS to have any effect.
+          type: boolean
+          default: false
 
 
 env:
@@ -133,6 +154,8 @@ env:
   
 jobs:
   build-qualcomm-bsp:
+    # Skip the build job if TEST_ONLY is true, but still allow LAVA test jobs to run
+    if: inputs.TEST_ONLY != true
     #specify labels to run on qcom desktop
     runs-on: [self-hosted, linux, x64, qcom]
     timeout-minutes: ${{ inputs.JOB_TIMEOUT }}
@@ -333,21 +356,50 @@ jobs:
             rm -rf "${BUILD_PROJECT_DIR:?}/patches"  
           fi
 
+  # Skip-build path: verify the artifact already exists at BUILD_NAME before
+  # letting the LAVA jobs below try to move it, rather than surfacing a
+  # missing-file error deep inside lava-tests.yml. Mirrors the path/naming
+  # convention create-artifact.sh/generate-swu.sh use on a real build.
+  check-existing-artifact:
+    if: inputs.TEST_ONLY == true
+    runs-on: [self-hosted, linux, x64, qcom]
+    steps:
+      - name: Verify existing artifact is present
+        run: |
+          if [ "${{ inputs.BUILD_VERSION }}" = "development" ]; then
+            REPO_NAME=$(basename "${{ inputs.MANIFEST_REPOSITORY }}")
+            RELEASE_DIR="${CI_DIR}/builds/${{ inputs.BUILD_NAME }}/release/${REPO_NAME}"
+          else
+            RELEASE_DIR="${CI_DIR}/builds/${{ inputs.BUILD_NAME }}/release"
+          fi
+          SWU_FILE="${RELEASE_DIR}/${{ inputs.BUILD_IMAGE }}-swu-${{ inputs.BUILD_MACHINE }}.swu"
+          if [ "${{ inputs.BUILD_VERSION }}" = "development" ]; then
+            TARBALL="${RELEASE_DIR}/${{ inputs.BUILD_RELEASE_NAME }}_${{ inputs.BUILD_VERSION }}.tar.gz"
+          else
+            TARBALL="${RELEASE_DIR}/${{ inputs.BUILD_RELEASE_NAME }}_v${{ inputs.BUILD_VERSION }}.tar.gz"
+          fi
+
+          FOUND=0
+          for SRC in "$SWU_FILE" "$TARBALL"; do
+            if [ -f "$SRC" ]; then
+              echo "Found existing artifact: $SRC"
+              FOUND=1
+            else
+              echo "Artifact not found: $SRC"
+            fi
+          done
+          [ "$FOUND" = 1 ] || { echo "Neither the .swu nor the release tarball was found"; exit 1; }
+
   # LAVA test jobs for 8GB and 12GB boards
   # @WilliamBright-IMD
   lava-8gb:
-    needs: [build-qualcomm-bsp]
-    if: needs.build-qualcomm-bsp.result == 'success' && inputs.RUN_LAVA_TESTS == true
+    needs: [build-qualcomm-bsp, check-existing-artifact]
+    if: |
+      ((inputs.TEST_ONLY == true && needs.check-existing-artifact.result == 'success') ||
+       (inputs.TEST_ONLY != true && needs.build-qualcomm-bsp.result == 'success')) &&
+      inputs.RUN_LAVA_TESTS == true
     uses: ./.github/workflows/lava-tests.yml
     with:
-      # if [ "$BUILD_VERSION" == "development" ]; then
-      #     REPO_NAME=$(basename "$MANIFEST_REPOSITORY")
-      #     RELEASE_PATH="/home/dev/Qualcomm/release/${REPO_NAME}"
-      #     FULL_RELEASE_NAME="${RELEASE_NAME}_${BUILD_VERSION}"
-      # else
-      #     FULL_RELEASE_NAME="${RELEASE_NAME}_v${BUILD_VERSION}"
-      #     RELEASE_PATH="/home/dev/Qualcomm/release"
-      # fi
       release-name: ${{ inputs.BUILD_RELEASE_NAME }}
       build-version: ${{ inputs.BUILD_VERSION }}
       build-name: ${{ inputs.BUILD_NAME }}
@@ -366,8 +418,11 @@ jobs:
     secrets: inherit
 
   lava-12gb:
-    needs: [build-qualcomm-bsp]
-    if: needs.build-qualcomm-bsp.result == 'success' && inputs.RUN_LAVA_TESTS == true
+    needs: [build-qualcomm-bsp, check-existing-artifact]
+    if: |
+      ((inputs.TEST_ONLY == true && needs.check-existing-artifact.result == 'success') ||
+       (inputs.TEST_ONLY != true && needs.build-qualcomm-bsp.result == 'success')) &&
+      inputs.RUN_LAVA_TESTS == true
     uses: ./.github/workflows/lava-tests.yml
     with:
       release-name: ${{ inputs.BUILD_RELEASE_NAME }}

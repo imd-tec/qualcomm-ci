@@ -264,7 +264,7 @@ jobs:
                 -e "s|CAMERA_PRESENT: '[^']*'|CAMERA_PRESENT: '${CAMERA_PRESENT}'|" \
                 -e "s|SDCARD_PRESENT: '[^']*'|SDCARD_PRESENT: '${SDCARD_PRESENT}'|" \
                 -e "s|WIFI_PRESENT: '[^']*'|WIFI_PRESENT: '${WIFI_PRESENT}'|" \
-                -e "s|FRAME_OUT: '[^']*'|FRAME_OUT: '/images/ar1335_${{ inputs.board-tag }}.png'|" \
+                -e "s|FRAME_OUT: '[^']*'|FRAME_OUT: '/images/prop/ar1335_${{ inputs.board-tag }}.png'|" \
                 -e "s|^job_name: \(.*\)|job_name: \1 [${{ inputs.board-tag }}]|" \
                 "$f" > "$LAVA_RUN_DIR/lava-jobs/$(basename "$f")"
           done
@@ -275,12 +275,25 @@ jobs:
       # host - this stages it there before either job is submitted.
       - name: Move artifact to LAVA host
         run: |
+          # Development builds are laid out per-repo under
+          # $CI_DIR/builds/development/release/<repo-name>/, and their release
+          # tarball omits the 'v' before the version - matches
+          # create-artifact.sh/generate-swu.sh exactly.
+          if [ "${{ inputs.build-version }}" = "development" ]; then
+            REPO_NAME=$(basename "${{ github.event.repository.html_url }}")
+            RELEASE_DIR="${CI_DIR}/builds/${{ inputs.build-name }}/release/${REPO_NAME}"
+            TARBALL_NAME="${{ inputs.release-name }}_${{ inputs.build-version }}.tar.gz"
+          else
+            RELEASE_DIR="${CI_DIR}/builds/${{ inputs.build-name }}/release"
+            TARBALL_NAME="${{ inputs.release-name }}_v${{ inputs.build-version }}.tar.gz"
+          fi
+
           if [ "${{ inputs.swu-deployment }}" = "true" ]; then
             ARTIFACT="${{ inputs.swu-filename }}"
           else
-            ARTIFACT="${{ inputs.release-name }}_v${{ inputs.build-version }}.tar.gz"
+            ARTIFACT="$TARBALL_NAME"
           fi
-          SRC="${CI_DIR}/builds/${{ inputs.build-name }}/release/${ARTIFACT}"
+          SRC="${RELEASE_DIR}/${ARTIFACT}"
           if [ ! -f "$SRC" ]; then
             echo "Artifact not found: $SRC"
             exit 1
