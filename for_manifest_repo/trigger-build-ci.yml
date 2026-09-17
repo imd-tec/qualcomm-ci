@@ -37,6 +37,15 @@ on:
         required: true
         default: false
         type: boolean
+      create_release:
+        description: 'Create a GitHub release from this run (for testing against a `list` dispatch build; a push to the release branch always creates one)?'
+        required: true
+        default: false
+        type: boolean
+      test_release_tag_suffix:
+        description: 'Suffix appended to the derived release tag, so a manual test release does not collide with a real one'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -159,3 +168,15 @@ jobs:
       SKIP_STEPS:               ${{ matrix.skip_steps }}
       PRESERVE_BUILD_DIR:       ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_build_dir || false }}
       PRESERVE_DOCKER:          ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_docker || false }}
+
+  release-and-notify:
+    #runs once per pipeline run (not matrixed) after every per-manifest build above has finished
+    needs: [get_changed_manifests, build]
+    if: ${{ needs.get_changed_manifests.outputs.manifest_list != '[]' }}
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-release.yml@stable
+    secrets: inherit
+    with:
+      MANIFEST_LIST:            ${{ needs.get_changed_manifests.outputs.manifest_list }}
+      BUILD_RESULT:             ${{ needs.build.result }}
+      CREATE_RELEASE:           ${{ github.event_name == 'workflow_dispatch' && inputs.create_release || false }}
+      TEST_RELEASE_TAG_SUFFIX:  ${{ github.event_name == 'workflow_dispatch' && inputs.test_release_tag_suffix || '' }}
