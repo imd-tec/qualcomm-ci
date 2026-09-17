@@ -34,7 +34,7 @@ on:
 
       RELEASE_TAG_PREFIX:
         required: false
-        description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp-)
+        description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp, with or without a trailing '-')
         type: string
         default: "imdt-qcom-bsp"
 
@@ -79,8 +79,18 @@ jobs:
           : "${CI_DIR:?CI_DIR is not set on this runner}"
 
           # The manifest key doubles as its filename stem, e.g.
-          # ${RELEASE_TAG_PREFIX}-v1.1.0.
-          TAG="${BUILD_NAME#$RELEASE_TAG_PREFIX}-${TEST_TAG_SUFFIX}"
+          # ${RELEASE_TAG_PREFIX}-v1.1.0 -- strip the prefix and its
+          # separator together so callers don't need to remember a trailing
+          # '-' on RELEASE_TAG_PREFIX (it's stripped here if they add it anyway).
+          TAG="${BUILD_NAME#${RELEASE_TAG_PREFIX%-}-}"
+
+          # No suffix: tag reads plain vX.X.X. With one: only add the '-'
+          # separator if the tag doesn't already end with one, so callers
+          # don't have to remember to lead their suffix with a hyphen either.
+          if [ -n "$TEST_TAG_SUFFIX" ]; then
+            [[ "$TAG" == *- ]] || TAG="${TAG}-"
+            TAG="${TAG}${TEST_TAG_SUFFIX}"
+          fi
 
           RELEASE_DIR="${CI_DIR}/builds/${BUILD_NAME}/release"
           ASSETS=()
