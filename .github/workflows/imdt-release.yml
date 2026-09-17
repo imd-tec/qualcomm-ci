@@ -8,7 +8,6 @@ defaults:
     shell: bash -ueo pipefail {0}
 
 on:
-  #only triggered on external workflow call
   workflow_call:
     inputs:
       MANIFEST_LIST:
@@ -37,7 +36,7 @@ on:
         required: false
         description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp-)
         type: string
-        default: "imdt-qcom-bsp-"
+        default: "imdt-qcom-bsp"
 
 jobs:
   # Cuts a GitHub release per production manifest built above, on a merge to
@@ -73,25 +72,19 @@ jobs:
           # Only set (and only meaningful) on a manual test dispatch -- see
           # CREATE_RELEASE/TEST_RELEASE_TAG_SUFFIX above. Empty on a real push.
           TEST_TAG_SUFFIX: ${{ github.event_name == 'workflow_dispatch' && inputs.TEST_RELEASE_TAG_SUFFIX || '' }}
+          # Often the project name e.g.
           RELEASE_TAG_PREFIX: ${{ inputs.RELEASE_TAG_PREFIX }}
         run: |
           set -euo pipefail
           : "${CI_DIR:?CI_DIR is not set on this runner}"
 
           # The manifest key doubles as its filename stem, e.g.
-          # ${RELEASE_TAG_PREFIX}v1.1.0 -- drop the calling repo's common
-          # prefix so the tag reads v1.1.0, matching the version consumers
-          # actually care about.
-          TAG="${BUILD_NAME#$RELEASE_TAG_PREFIX}${TEST_TAG_SUFFIX}"
+          # ${RELEASE_TAG_PREFIX}-v1.1.0.
+          TAG="${BUILD_NAME#$RELEASE_TAG_PREFIX}-${TEST_TAG_SUFFIX}"
 
-          # development manifests never reach this job: get-changed-manifests.sh
-          # filters them out of manifest_list before a build is even queued, so
-          # every artifact below is named per its respective script's
-          # non-development branch.
           RELEASE_DIR="${CI_DIR}/builds/${BUILD_NAME}/release"
           ASSETS=()
 
-          # Mirrors create-artifact.sh's own naming. Always produced.
           TAR="${RELEASE_DIR}/${RELEASE_NAME}_v${BUILD_VERSION}.tar.gz"
           if [ ! -f "$TAR" ]; then
             echo "::error::expected release artifact not found at $TAR"
@@ -99,8 +92,6 @@ jobs:
           fi
           ASSETS+=("$TAR")
 
-          # Mirrors generate-swu.sh's naming. Only produced when the manifest
-          # opts into a SWUpdate image (build_swu: true).
           if [ "$BUILD_SWU" == "true" ]; then
             SWU="${RELEASE_DIR}/${BUILD_IMAGE}-swu-${BUILD_MACHINE}.swu"
             if [ ! -f "$SWU" ]; then
@@ -110,8 +101,6 @@ jobs:
             ASSETS+=("$SWU")
           fi
 
-          # Mirrors generate-sdk.sh's naming. Skipped when the manifest's
-          # skip_steps includes build_sdk (e.g. development builds).
           if [[ "$SKIP_STEPS" != *"build_sdk"* ]]; then
             SDK="${RELEASE_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VERSION}.sh"
             if [ ! -f "$SDK" ]; then
@@ -139,8 +128,7 @@ jobs:
           mkdir -p "$OUT"
 
           # Split below GitHub's 2 GiB per-asset cap, with headroom so the
-          # upload never bumps the ceiling. The SDK installer script in
-          # particular routinely lands over this limit.
+          # upload never bumps the ceiling.
           CHUNK_MIB=1900
           LIMIT=$(( CHUNK_MIB * 1024 * 1024 ))
 
@@ -186,10 +174,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: ${{ steps.locate.outputs.tag }}
           # No body/body_path: release notes are left for the repo owner to
-          # write by hand. softprops/action-gh-release only touches fields it
-          # is given, so a first-time release is created with an empty body,
-          # and a later re-run (e.g. re-uploading assets) leaves whatever the
-          # owner has since written untouched.
+          # write by hand.
           files: ${{ runner.temp }}/release/*
 
       - name: Build release announcement
@@ -223,10 +208,6 @@ jobs:
               "text": "${{ steps.msg.outputs.text }}"
             }
 
-  # Overall build result, for every triggered run (development, dispatch or
-  # release). Guarded on manifest_list rather than plain always(), since most
-  # schedule ticks and no-op pushes skip `build` entirely -- without the
-  # guard this would post a "skipped" message to Slack on every such tick.
   notify:
     runs-on: ubuntu-latest
     if: ${{ inputs.MANIFEST_LIST != '[]' }}

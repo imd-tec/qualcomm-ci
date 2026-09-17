@@ -170,7 +170,6 @@ jobs:
       PRESERVE_DOCKER:          ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_docker || false }}
 
   release-and-notify:
-    #runs once per pipeline run (not matrixed) after every per-manifest build above has finished
     needs: [get_changed_manifests, build]
     if: ${{ needs.get_changed_manifests.outputs.manifest_list != '[]' }}
     uses: imd-tec/qualcomm-ci/.github/workflows/imdt-release.yml@stable
