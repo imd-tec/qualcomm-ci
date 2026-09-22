@@ -1,7 +1,7 @@
 #Reusable workflow triggered by workflow_call from a manifest repo's trigger
 #workflow, once per pipeline run (not matrixed) -- after its `build` job's
 #per-manifest matrix calls to imdt-build-qcom-bsp.yml have all finished.
-name: Create IMDT QCOM BSP release and notify build status
+name: Create IMDT QCOM BSP release
 
 defaults:
   run:
@@ -15,17 +15,6 @@ on:
         description: JSON array of manifest build details for this run, as produced by get_changed_manifests (see build-manifest-matrix.py)
         type: string
 
-      BUILD_RESULT:
-        required: true
-        description: Result of the caller's build job (e.g. success, failure)
-        type: string
-
-      CREATE_RELEASE:
-        required: false
-        description: Force a release on a manual workflow_dispatch run (a push to the release branch always creates one)
-        type: boolean
-        default: false
-
       TEST_RELEASE_TAG_SUFFIX:
         required: false
         description: Suffix appended to the derived release tag, for exercising a manual test release without colliding with a real one
@@ -34,15 +23,14 @@ on:
 
       RELEASE_TAG_PREFIX:
         required: false
-        description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp, with or without a trailing '-')
+        description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp, with or without a trailing '-'). Leave unset/empty to use BUILD_NAME as-is.
         type: string
-        default: "imdt-qcom-bsp"
 
 jobs:
-  # Cuts a GitHub release per production manifest built above, on a merge to
-  # kirkstone only.
+  # Cuts a GitHub release per production manifest built above. The caller
+  # (trigger-build-ci.yml) only invokes this workflow once the build has
+  # succeeded and it isn't a development build.
   create-release:
-    if: ${{ inputs.BUILD_RESULT == 'success' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.CREATE_RELEASE)) }}
     runs-on: [self-hosted, linux, x64, qcom]
     strategy:
       fail-fast: false
@@ -70,7 +58,7 @@ jobs:
           # substring-ish way as the `if:` above, just in bash.
           SKIP_STEPS: ${{ matrix.skip_steps }}
           # Only set (and only meaningful) on a manual test dispatch -- see
-          # CREATE_RELEASE/TEST_RELEASE_TAG_SUFFIX above. Empty on a real push.
+          # TEST_RELEASE_TAG_SUFFIX above. Empty on a real push.
           TEST_TAG_SUFFIX: ${{ github.event_name == 'workflow_dispatch' && inputs.TEST_RELEASE_TAG_SUFFIX || '' }}
           # Often the project name e.g.
           RELEASE_TAG_PREFIX: ${{ inputs.RELEASE_TAG_PREFIX }}
@@ -209,38 +197,6 @@ jobs:
 
       - name: Send Slack release announcement
         if: steps.locate.outcome == 'success'
-        uses: slackapi/slack-github-action@v2
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: webhook-trigger
-          payload: |
-            {
-              "text": "${{ steps.msg.outputs.text }}"
-            }
-
-  notify:
-    runs-on: ubuntu-latest
-    if: ${{ inputs.MANIFEST_LIST != '[]' }}
-    steps:
-      - name: Build notification message
-        id: msg
-        run: |
-          RESULT="${{ inputs.BUILD_RESULT }}"
-          if [ "$RESULT" = "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          MSG="${EMOJI} *${{ github.workflow }}* — ${RESULT}"
-          MSG="${MSG}\n"
-          MSG="${MSG}\n*Branch:* ${{ github.ref_name }}"
-          MSG="${MSG}\n*Event:* ${{ github.event_name }}"
-          MSG="${MSG}\n*Commit:* ${{ github.sha }}"
-          MSG="${MSG}\n*Triggered by:* ${{ github.actor }}"
-          MSG="${MSG}\n"
-          MSG="${MSG}\n<${RUN_URL}|View run>"
-
-          echo "text=${MSG}" >> "$GITHUB_OUTPUT"
-
-      - name: Send Slack notification
         uses: slackapi/slack-github-action@v2
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
