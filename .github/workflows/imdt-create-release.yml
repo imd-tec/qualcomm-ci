@@ -23,7 +23,7 @@ on:
 
       RELEASE_TAG_PREFIX:
         required: false
-        description: Prefix shared by every manifest key/filename in the calling repo, stripped from BUILD_NAME to derive the release tag (e.g. imdt-qcom-bsp, with or without a trailing '-'). Leave unset/empty to use BUILD_NAME as-is.
+        description: Prefix prepended to the release tag, e.g. imdt-qcom-bsp gives imdt-qcom-bsp-v1.1.0 (with or without a trailing '-'). Leave unset/empty for a plain vX.X.X tag.
         type: string
 
 jobs:
@@ -32,6 +32,8 @@ jobs:
   # succeeded and it isn't a development build.
   create-release:
     runs-on: [self-hosted, linux, x64, qcom]
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -60,24 +62,26 @@ jobs:
           # Only set (and only meaningful) on a manual test dispatch -- see
           # TEST_RELEASE_TAG_SUFFIX above. Empty on a real push.
           TEST_TAG_SUFFIX: ${{ github.event_name == 'workflow_dispatch' && inputs.TEST_RELEASE_TAG_SUFFIX || '' }}
-          # Often the project name e.g.
+          # Often the project name e.g. imdt-qcom-bsp.
           RELEASE_TAG_PREFIX: ${{ inputs.RELEASE_TAG_PREFIX }}
         run: |
           set -euo pipefail
           : "${CI_DIR:?CI_DIR is not set on this runner}"
 
-          # The manifest key doubles as its filename stem, e.g.
-          # ${RELEASE_TAG_PREFIX}-v1.1.0 -- strip the prefix and its
-          # separator together so callers don't need to remember a trailing
-          # '-' on RELEASE_TAG_PREFIX (it's stripped here if they add it anyway).
-          TAG="${BUILD_NAME#${RELEASE_TAG_PREFIX%-}-}"
+          # Tag is vX.X.X, led by RELEASE_TAG_PREFIX and a '-' when one is
+          # given -- a trailing '-' on the prefix is dropped first so callers
+          # can include it or not without it doubling up.
+          TAG="v${BUILD_VERSION}"
+          RELEASE_TAG_PREFIX="${RELEASE_TAG_PREFIX%-}"
+          if [ -n "$RELEASE_TAG_PREFIX" ]; then
+            TAG="${RELEASE_TAG_PREFIX}-${TAG}"
+          fi
 
-          # No suffix: tag reads plain vX.X.X. With one: only add the '-'
-          # separator if the tag doesn't already end with one, so callers
-          # don't have to remember to lead their suffix with a hyphen either.
+          # Likewise the suffix: a leading '-' is dropped, then it's joined
+          # with one.
+          TEST_TAG_SUFFIX="${TEST_TAG_SUFFIX#-}"
           if [ -n "$TEST_TAG_SUFFIX" ]; then
-            [[ "$TAG" == *- ]] || TAG="${TAG}-"
-            TAG="${TAG}${TEST_TAG_SUFFIX}"
+            TAG="${TAG}-${TEST_TAG_SUFFIX}"
           fi
 
           RELEASE_DIR="${CI_DIR}/builds/${BUILD_NAME}/release"
