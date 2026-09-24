@@ -12,9 +12,9 @@ services:
 
     # RUN
     container_name: ${CONTAINER_NAME}
-    
+
     command: ["sleep", "infinity"]
-    
+
     environment:
       - MANIFEST_REPOSITORY=${MANIFEST_REPOSITORY}
       - MANIFEST_BRANCH=${MANIFEST_BRANCH}
@@ -32,8 +32,7 @@ services:
     volumes:
       - ${BUILD_PROJECT_DIR}:/home/dev/Qualcomm
       - ${GITHUB_WORKSPACE}/qualcomm_ci/scripts/container_scripts/:/home/dev/tools/container_scripts/
-      - ${DL_DIR}:/home/dev/downloads
-      - ${SSTATE_DIR}:/home/dev/sstate-cache
+      - ${DL_DIR}:/home/dev/yocto/downloads
+      - ${SSTATE_DIR}:/home/dev/yocto/sstate-cache
       - ${CI_DIR}/builds/PRESERVED_BUILDS/:/home/dev/PRESERVED_BUILDS/
       - ${HOME}/.netrc:/home/dev/.netrc
-      

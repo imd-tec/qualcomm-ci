@@ -14,11 +14,10 @@ source poky/qti-conf/set_bb_env.sh
 
 # if build version is development, override config cache directories 
 if [ "${BUILD_VERSION}" = "development" ]; then
-    echo "Appending CI cache paths to conf/auto.conf..."    
-cat >> conf/auto.conf <<EOF
-DL_DIR = "/home/dev/downloads"
-SSTATE_DIR = "/home/dev/sstate-cache"
-EOF
+    echo "Using Yocto sstate-cache and downloads cache..."
+    export DL_DIR="/home/dev/yocto/downloads"
+    export SSTATE_DIR="/home/dev/yocto/sstate-cache"
+    export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS} DL_DIR SSTATE_DIR"
 fi
 
 echo "Yocto environment setup completed"
