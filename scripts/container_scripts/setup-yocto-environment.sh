@@ -12,6 +12,8 @@ export MACHINE=$MACHINE
 export DISTRO=$DISTRO
 source poky/qti-conf/set_bb_env.sh
 
+export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS} QCOM_ROOT_DIR"
+
 # if build version is development, override config cache directories 
 if [ "${BUILD_VERSION}" = "development" ]; then
     echo "Using Yocto sstate-cache and downloads cache..."
