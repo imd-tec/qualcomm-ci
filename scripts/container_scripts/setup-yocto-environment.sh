@@ -22,4 +22,13 @@ if [ "${BUILD_VERSION}" = "development" ]; then
     export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS} DL_DIR SSTATE_DIR"
 fi
 
+# if LAVA testing is enabled, bake the LAVA dispatcher's SSH key into the image.
+# This script is sourced before each bitbake step, so drop any existing line first
+# (also stops a reused build directory carrying it into a build without the flag)
+sed -i '/^LAVA_TESTING = /d' conf/auto.conf 2>/dev/null || true
+if [ "${LAVA_TESTING:-false}" = "true" ]; then
+    echo "Enabling LAVA testing in conf/auto.conf..."
+    echo 'LAVA_TESTING = "1"' >> conf/auto.conf
+fi
+
 echo "Yocto environment setup completed"

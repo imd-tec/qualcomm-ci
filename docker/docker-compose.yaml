@@ -28,6 +28,7 @@ services:
       - MACHINE=${MACHINE}
       - DISTRO=${DISTRO}
       - IMDT_PATCH_SCRIPT_PATH=${IMDT_PATCH_SCRIPT_PATH}
+      - LAVA_TESTING=${LAVA_TESTING}
 
     volumes:
       - ${BUILD_PROJECT_DIR}:/home/dev/Qualcomm

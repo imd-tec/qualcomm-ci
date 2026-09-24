@@ -95,6 +95,12 @@ on:
           description: Generate SWUpdate update image
           type: boolean
           default: false
+
+        LAVA_TESTING:
+          required: false
+          description: Bake the LAVA dispatcher's SSH key into the image (lava-ssh-keys in meta-imdt-qcom-dev) so the LAVA lab can test it
+          type: boolean
+          default: false
           
         PRESERVE_BUILD_DIR:
           required: false
@@ -140,6 +146,7 @@ jobs:
       QCS_SOURCES: ${{ inputs.QCS_SOURCES }}
       SKIP_STEPS: ${{ inputs.SKIP_STEPS }}
       DEV_STATE_LOG: ${{ inputs.DEV_STATE_LOG }}
+      LAVA_TESTING: ${{ inputs.LAVA_TESTING }}
 
     steps:      
       - name: Set repository workspace
