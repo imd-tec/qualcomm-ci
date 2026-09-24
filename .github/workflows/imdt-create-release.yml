@@ -1,0 +1,211 @@
+#Reusable workflow triggered by workflow_call from a manifest repo's trigger
+#workflow, once per pipeline run (not matrixed) -- after its `build` job's
+#per-manifest matrix calls to imdt-build-qcom-bsp.yml have all finished.
+name: Create IMDT QCOM BSP release
+
+defaults:
+  run:
+    shell: bash -ueo pipefail {0}
+
+on:
+  workflow_call:
+    inputs:
+      MANIFEST_LIST:
+        required: true
+        description: JSON array of manifest build details for this run, as produced by get_changed_manifests (see build-manifest-matrix.py)
+        type: string
+
+      TEST_RELEASE_TAG_SUFFIX:
+        required: false
+        description: Suffix appended to the derived release tag, for exercising a manual test release without colliding with a real one
+        type: string
+        default: ""
+
+      RELEASE_TAG_PREFIX:
+        required: false
+        description: Prefix prepended to the release tag, e.g. imdt-qcom-bsp gives imdt-qcom-bsp-v1.1.0 (with or without a trailing '-'). Leave unset/empty for a plain vX.X.X tag.
+        type: string
+
+jobs:
+  # Cuts a GitHub release per production manifest built above. The caller
+  # (trigger-build-ci.yml) only invokes this workflow once the build has
+  # succeeded and it isn't a development build.
+  create-release:
+    runs-on: [self-hosted, linux, x64, qcom]
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.MANIFEST_LIST) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: manifest_repo
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Locate build artifacts and derive release tag
+        id: locate
+        if: ${{ !contains(matrix.skip_steps, 'create_release') }}
+        env:
+          BUILD_NAME: ${{ matrix.name }}
+          RELEASE_NAME: ${{ matrix.release_name }}
+          BUILD_VERSION: ${{ matrix.version }}
+          BUILD_IMAGE: ${{ matrix.image }}
+          BUILD_MACHINE: ${{ matrix.machine }}
+          BUILD_SWU: ${{ matrix.build_swu || false }}
+          # A comma(+space)-joined string, not a JSON array -- see
+          # build-manifest-matrix.py -- so it's matched the same
+          # substring-ish way as the `if:` above, just in bash.
+          SKIP_STEPS: ${{ matrix.skip_steps }}
+          # Only set (and only meaningful) on a manual test dispatch -- see
+          # TEST_RELEASE_TAG_SUFFIX above. Empty on a real push.
+          TEST_TAG_SUFFIX: ${{ github.event_name == 'workflow_dispatch' && inputs.TEST_RELEASE_TAG_SUFFIX || '' }}
+          # Often the project name e.g. imdt-qcom-bsp.
+          RELEASE_TAG_PREFIX: ${{ inputs.RELEASE_TAG_PREFIX }}
+        run: |
+          set -euo pipefail
+          : "${CI_DIR:?CI_DIR is not set on this runner}"
+
+          # Tag is vX.X.X, led by RELEASE_TAG_PREFIX and a '-' when one is
+          # given -- a trailing '-' on the prefix is dropped first so callers
+          # can include it or not without it doubling up.
+          TAG="v${BUILD_VERSION}"
+          RELEASE_TAG_PREFIX="${RELEASE_TAG_PREFIX%-}"
+          if [ -n "$RELEASE_TAG_PREFIX" ]; then
+            TAG="${RELEASE_TAG_PREFIX}-${TAG}"
+          fi
+
+          # Likewise the suffix: a leading '-' is dropped, then it's joined
+          # with one.
+          TEST_TAG_SUFFIX="${TEST_TAG_SUFFIX#-}"
+          if [ -n "$TEST_TAG_SUFFIX" ]; then
+            TAG="${TAG}-${TEST_TAG_SUFFIX}"
+          fi
+
+          RELEASE_DIR="${CI_DIR}/builds/${BUILD_NAME}/release"
+          ASSETS=()
+
+          TAR="${RELEASE_DIR}/${RELEASE_NAME}_v${BUILD_VERSION}.tar.gz"
+          if [ ! -f "$TAR" ]; then
+            echo "::error::expected release artifact not found at $TAR"
+            exit 1
+          fi
+          ASSETS+=("$TAR")
+
+          if [ "$BUILD_SWU" == "true" ]; then
+            SWU="${RELEASE_DIR}/${BUILD_IMAGE}-swu-${BUILD_MACHINE}.swu"
+            if [ ! -f "$SWU" ]; then
+              echo "::error::expected SWU artifact not found at $SWU"
+              exit 1
+            fi
+            ASSETS+=("$SWU")
+          fi
+
+          if [[ "$SKIP_STEPS" != *"build_sdk"* ]]; then
+            SDK="${RELEASE_DIR}/${RELEASE_NAME%_prebuilt*}-sdk-v${BUILD_VERSION}.sh"
+            if [ ! -f "$SDK" ]; then
+              echo "::error::expected SDK artifact not found at $SDK"
+              exit 1
+            fi
+            ASSETS+=("$SDK")
+          fi
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          {
+            echo "assets<<ASSETS_EOF"
+            printf '%s\n' "${ASSETS[@]}"
+            echo "ASSETS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release assets (split any over GitHub's 2 GiB limit)
+        if: steps.locate.outcome == 'success'
+        env:
+          ASSETS: ${{ steps.locate.outputs.assets }}
+        run: |
+          set -euo pipefail
+          OUT="${RUNNER_TEMP}/release"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+
+          # Split below GitHub's 2 GiB per-asset cap, with headroom so the
+          # upload never bumps the ceiling.
+          CHUNK_MIB=1900
+          LIMIT=$(( CHUNK_MIB * 1024 * 1024 ))
+
+          while IFS= read -r ASSET; do
+            [ -n "$ASSET" ] || continue
+            NAME="$(basename "$ASSET")"
+            SIZE=$(stat -c%s "$ASSET")
+
+            if [ "$SIZE" -ge "$LIMIT" ]; then
+              echo "${NAME} is ${SIZE} bytes (>= ${LIMIT}); splitting into ${CHUNK_MIB} MiB numbered parts."
+              # Produces NAME.part00, .part01, ... that reassemble byte-for-byte
+              # with `cat NAME.part* > NAME`.
+              split --bytes="${CHUNK_MIB}M" --numeric-suffixes --suffix-length=2 "$ASSET" "${OUT}/${NAME}.part"
+              echo "$(sha256sum "$ASSET" | cut -d' ' -f1)  ${NAME}" > "${OUT}/${NAME}.sha256"
+              # Release notes are left for the repo owner to write (see the
+              # Create GitHub release step below), so the reassembly steps for
+              # this split asset are surfaced here instead, in the run summary.
+              {
+                echo "### Reassembling ${NAME}"
+                echo ""
+                echo "This file is over GitHub's 2 GiB per-file release limit, so it is"
+                echo "split into numbered parts. Download every \`${NAME}.part*\` file, then:"
+                echo ""
+                echo '```sh'
+                echo "cat ${NAME}.part* > ${NAME}"
+                echo "sha256sum -c ${NAME}.sha256"
+                echo '```'
+                echo ""
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "${NAME} is ${SIZE} bytes (< ${LIMIT}); uploading as a single asset."
+              cp "$ASSET" "${OUT}/${NAME}"
+            fi
+          done <<< "$ASSETS"
+
+          ls -lh "$OUT"
+
+      - name: Create GitHub release
+        if: steps.locate.outcome == 'success'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.locate.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.locate.outputs.tag }}
+          # No body/body_path: release notes are left for the repo owner to
+          # write by hand.
+          files: ${{ runner.temp }}/release/*
+
+      - name: Build release announcement
+        if: steps.locate.outcome == 'success'
+        id: msg
+        env:
+          TAG: ${{ steps.locate.outputs.tag }}
+        run: |
+          RELEASE_URL="${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          MSG="🚀 *New release: ${TAG}*"
+          MSG="${MSG}\n"
+          MSG="${MSG}\n*Repository:* ${{ github.repository }}"
+          MSG="${MSG}\n*Manifest:* ${{ matrix.manifest }}"
+          MSG="${MSG}\n*Commit:* ${{ github.sha }}"
+          MSG="${MSG}\n*Released by:* ${{ github.actor }}"
+          MSG="${MSG}\n"
+          MSG="${MSG}\n<${RELEASE_URL}|View release> · <${RUN_URL}|View build>"
+
+          echo "text=${MSG}" >> "$GITHUB_OUTPUT"
+
+      - name: Send Slack release announcement
+        if: steps.locate.outcome == 'success'
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            {
+              "text": "${{ steps.msg.outputs.text }}"
+            }

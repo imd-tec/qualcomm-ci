@@ -37,6 +37,10 @@ on:
         required: true
         default: false
         type: boolean
+      test_release_tag_suffix:
+        description: 'Suffix appended to the derived release tag, so a manual test release does not collide with a real one'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -51,6 +55,7 @@ jobs:
     outputs:
       manifest_list: ${{ steps.build_manifest_matrix.outputs.manifest_list || '[]' }} #list of manifests to build
       dev_state_log: ${{ steps.get_scheduled_manifests.outputs.dev_state_log || '' }} #for scheduled logging dev builds
+      is_development_build: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'development') }} #true for a scheduled poll or a manual dispatch with build_type 'development'
 
     #checkout the current repository under 'manifest_repo' => Access manifests
     steps:
@@ -159,3 +164,36 @@ jobs:
       SKIP_STEPS:               ${{ matrix.skip_steps }}
       PRESERVE_BUILD_DIR:       ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_build_dir || false }}
       PRESERVE_DOCKER:          ${{ github.event_name == 'workflow_dispatch' && inputs.preserve_docker || false }}
+
+  create-release:
+    needs: [get_changed_manifests, build]
+    # No status function here, so GitHub Actions implicitly requires both
+    # `needs` jobs to have succeeded -- exactly what we want: only cut a
+    # release once the build has actually succeeded.
+    if: >-
+      ${{ needs.get_changed_manifests.outputs.manifest_list != '[]' &&
+          needs.get_changed_manifests.outputs.is_development_build != 'true' }}
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-create-release.yml@stable
+    secrets: inherit
+    with:
+      MANIFEST_LIST:            ${{ needs.get_changed_manifests.outputs.manifest_list }}
+      RELEASE_TAG_PREFIX:       "imdt-qcom-bsp"
+      TEST_RELEASE_TAG_SUFFIX:  ${{ github.event_name == 'workflow_dispatch' && inputs.test_release_tag_suffix || '' }}
+
+  notify:
+    needs: [get_changed_manifests, build]
+    # `always()` so this still runs (and reports) when `build` fails --
+    # otherwise a failed build never gets a Slack notification at all.
+    # get_changed_manifests must still have succeeded, since its output
+    # drives everything else here, and a cancelled build is skipped rather
+    # than reported.
+    if: >-
+      ${{ always() &&
+          needs.get_changed_manifests.result == 'success' &&
+          needs.build.result != 'cancelled' &&
+          needs.get_changed_manifests.outputs.manifest_list != '[]' &&
+          needs.get_changed_manifests.outputs.is_development_build != 'true' }}
+    uses: imd-tec/qualcomm-ci/.github/workflows/imdt-notify.yml@stable
+    secrets: inherit
+    with:
+      BUILD_RESULT: ${{ needs.build.result }}

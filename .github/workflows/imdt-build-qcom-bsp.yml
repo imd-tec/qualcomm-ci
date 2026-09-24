@@ -67,8 +67,8 @@ on:
         BUILD_RELEASE_NAME:
           required: true
           description: Release artifact name (e.g. imsu_glasses_prebuilt_release)
-          type: string     
-        
+          type: string
+
         PYENV:
           required: true
           description: Python environment version to use (e.g. 3.8.16)
@@ -317,5 +317,5 @@ jobs:
           fi
 
           if [ -d "${BUILD_PROJECT_DIR:?}/patches" ]; then
-            rm -rf "${BUILD_PROJECT_DIR:?}/patches"  
+            rm -rf "${BUILD_PROJECT_DIR:?}/patches"
           fi
